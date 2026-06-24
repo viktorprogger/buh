@@ -1,0 +1,16 @@
+# PDFs — never commit
+*.pdf
+
+# CTX generated context maps
+.context/
+
+# Claude Code internal files
+.claude/
+
+# Go build output
+buh
+/buh
+
+# Go test cache
+*.test
+*.out
