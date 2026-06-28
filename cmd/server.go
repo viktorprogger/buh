@@ -137,6 +137,29 @@ CREATE TABLE IF NOT EXISTS accountants (
 			name: "005_rename_jipd_to_pib",
 			sql:  `ALTER TABLE entrepreneurs RENAME COLUMN jipd TO pib;`,
 		},
+		{
+			name: "006_create_kpo_books",
+			sql: `CREATE TABLE IF NOT EXISTS kpo_books (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    entrepreneur_id UUID        NOT NULL REFERENCES entrepreneurs(id) ON DELETE CASCADE,
+    year            INTEGER     NOT NULL,
+    finalized_at    TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(entrepreneur_id, year)
+);`,
+		},
+		{
+			name: "007_create_kpo_entries",
+			sql: `CREATE TABLE IF NOT EXISTS kpo_entries (
+    id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    kpo_book_id     UUID          NOT NULL REFERENCES kpo_books(id) ON DELETE CASCADE,
+    collection_date DATE          NOT NULL,
+    invoice_number  TEXT          NOT NULL DEFAULT '',
+    product_revenue NUMERIC(15,2) NOT NULL DEFAULT 0,
+    service_revenue NUMERIC(15,2) NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+);`,
+		},
 	}
 
 	// Create migrations tracking table.

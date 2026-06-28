@@ -10,7 +10,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -19,6 +21,7 @@ import (
 	"buh/internal/entrepreneur"
 	"buh/internal/importer"
 	"buh/internal/ips"
+	"buh/internal/kpo"
 	"buh/internal/middleware"
 	"buh/internal/slip"
 	"buh/internal/sliprecord"
@@ -73,6 +76,7 @@ type handler struct {
 	sessions      *auth.SessionManager
 	entrepreneurs *entrepreneur.Repo
 	slips         *sliprecord.Repo
+	kpoBooks      *kpo.Repo
 	importer      *importer.Importer
 	tmpl          templates
 }
@@ -81,11 +85,13 @@ type handler struct {
 func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
 	entrepreneurs := entrepreneur.NewRepo(db)
 	slips := sliprecord.NewRepo(db)
+	kpoBooks := kpo.NewRepo(db)
 	h := &handler{
 		accountants:   accountants,
 		sessions:      sessions,
 		entrepreneurs: entrepreneurs,
 		slips:         slips,
+		kpoBooks:      kpoBooks,
 		importer:      importer.New(entrepreneurs, slips),
 		tmpl:          parseTemplates(),
 	}
@@ -101,6 +107,10 @@ func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db 
 	protected.HandleFunc("GET /entrepreneurs/new", h.handleEntrepreneurNewForm)
 	protected.HandleFunc("POST /entrepreneurs/new", h.handleEntrepreneurNewSubmit)
 	protected.HandleFunc("GET /entrepreneurs/{id}", h.handleEntrepreneur)
+	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries", h.handleKPOAddEntry)
+	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/delete", h.handleKPODeleteEntry)
+	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/finalize", h.handleKPOFinalize)
+	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/unfinalize", h.handleKPOUnfinalize)
 	protected.HandleFunc("GET /entrepreneurs/{id}/slips/new", h.handleSlipNewForm)
 	protected.HandleFunc("POST /entrepreneurs/{id}/slips/new", h.handleSlipNewSubmit)
 	protected.HandleFunc("GET /slips/{id}", h.handleSlip)
@@ -173,7 +183,9 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleEntrepreneur shows an entrepreneur's details and their slip list.
+// handleEntrepreneur shows the entrepreneur page with KPO for the selected year and slip list.
+// The ?year= query param selects the year; defaults to the current year. The KPO book is
+// auto-created on first view so the accountant always lands on an active ledger.
 func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := uuid.Parse(idStr)
@@ -182,7 +194,7 @@ func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e, err := h.entrepreneurs.FindByID(context.Background(), id)
+	e, err := h.entrepreneurs.FindByID(r.Context(), id)
 	if errors.Is(err, entrepreneur.ErrNotFound) {
 		http.NotFound(w, r)
 		return
@@ -192,16 +204,158 @@ func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slips, err := h.slips.ListByEntrepreneur(context.Background(), id)
+	selectedYear := time.Now().Year()
+	if ys := r.URL.Query().Get("year"); ys != "" {
+		if y, err := strconv.Atoi(ys); err == nil && y >= 2000 && y <= 2100 {
+			selectedYear = y
+		}
+	}
+
+	currentBook, err := h.kpoBooks.FindOrCreate(r.Context(), id, selectedYear)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
+		return
+	}
+
+	entries, err := h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		return
+	}
+
+	books, err := h.kpoBooks.ListByEntrepreneur(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО књига", http.StatusInternalServerError)
+		return
+	}
+
+	slips, err := h.slips.ListByEntrepreneur(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Грешка при учитавању уплатница", http.StatusInternalServerError)
 		return
 	}
 
+	var totalProduct, totalService float64
+	for _, en := range entries {
+		totalProduct += en.ProductRevenue
+		totalService += en.ServiceRevenue
+	}
+
 	renderTemplate(w, h.tmpl.entrepreneur, map[string]any{
 		"Entrepreneur": e,
+		"KPOBooks":     books,
+		"CurrentBook":  currentBook,
+		"KPOEntries":   entries,
+		"SelectedYear": selectedYear,
+		"TotalProduct": totalProduct,
+		"TotalService": totalService,
+		"TotalAll":     totalProduct + totalService,
 		"Slips":        slips,
 	})
+}
+
+// kpoBookFromPath resolves the entrepreneur ID and year from path values, verifies the entrepreneur
+// exists (and belongs to the logged-in accountant), and returns the KPO book.
+func (h *handler) kpoBookFromPath(r *http.Request) (entrepreneur.Entrepreneur, kpo.Book, int, error) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return entrepreneur.Entrepreneur{}, kpo.Book{}, 0, errors.New("bad id")
+	}
+	e, err := h.entrepreneurs.FindByID(r.Context(), id)
+	if err != nil {
+		return entrepreneur.Entrepreneur{}, kpo.Book{}, 0, err
+	}
+	year, err := strconv.Atoi(r.PathValue("year"))
+	if err != nil || year < 2000 || year > 2100 {
+		return entrepreneur.Entrepreneur{}, kpo.Book{}, 0, errors.New("bad year")
+	}
+	book, err := h.kpoBooks.FindOrCreate(r.Context(), id, year)
+	return e, book, year, err
+}
+
+func (h *handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је укњижен", http.StatusForbidden)
+		return
+	}
+
+	r.ParseForm()
+	dateStr := r.FormValue("collection_date")
+	collectionDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		http.Error(w, "Неисправан датум", http.StatusBadRequest)
+		return
+	}
+	productRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
+	serviceRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("service_revenue"), ",", "."), 64)
+
+	_, err = h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
+		KPOBookID:      book.ID,
+		CollectionDate: collectionDate,
+		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
+		ProductRevenue: productRev,
+		ServiceRevenue: serviceRev,
+	})
+	if err != nil {
+		http.Error(w, "Грешка при уносу ставке", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d#kpo-new", r.PathValue("id"), year), http.StatusFound)
+}
+
+func (h *handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је укњижен", http.StatusForbidden)
+		return
+	}
+	entryID, err := uuid.Parse(r.PathValue("entryID"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := h.kpoBooks.DeleteEntry(r.Context(), entryID); err != nil {
+		http.Error(w, "Грешка при брисању ставке", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
+}
+
+func (h *handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
+		http.Error(w, "Грешка при укњижавању", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
+}
+
+func (h *handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := h.kpoBooks.Unfinalize(r.Context(), book.ID); err != nil {
+		http.Error(w, "Грешка при откључавању", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
 }
 
 // handleEntrepreneurNewForm renders the manual entrepreneur creation form.
