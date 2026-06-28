@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  /* Color scheme — change these three values to restyle the entire app */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #eef2ff;
+}

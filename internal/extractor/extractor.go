@@ -8,12 +8,49 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/makiuchi-d/gozxing"
 	mqrcode "github.com/makiuchi-d/gozxing/multi/qrcode"
 )
+
+var (
+	// rePIB matches "ПИБ:" followed by optional whitespace/newlines and captures the numeric ID.
+	rePIB = regexp.MustCompile(`ПИБ:\s*\n?\s*(\d+)`)
+	// reBusinessName matches "ПОСЛОВНО СЕДИШТЕ:" and captures the firm name on the same line.
+	reBusinessName = regexp.MustCompile(`ПОСЛОВНО СЕДИШТЕ:\s*(.+)`)
+)
+
+// EntrepreneurInfo holds the entrepreneur's firm name and PIB extracted from a PDF.
+type EntrepreneurInfo struct {
+	// Name is the firm name from the "ПОСЛОВНО СЕДИШТЕ:" field (Latin script).
+	Name string
+	// PIB is the entrepreneur's tax identification number (Порески идентификациони број).
+	PIB string
+}
+
+// ExtractEntrepreneurInfo extracts the entrepreneur's firm name and PIB from a Serbian APR/ePorezi PDF.
+// Returns an EntrepreneurInfo with empty fields (not an error) if the data cannot be found.
+func ExtractEntrepreneurInfo(pdfPath string) (EntrepreneurInfo, error) {
+	out, err := exec.Command("pdftotext", pdfPath, "-").Output()
+	if err != nil {
+		return EntrepreneurInfo{}, fmt.Errorf("pdftotext: %w", err)
+	}
+	text := string(out)
+
+	var info EntrepreneurInfo
+
+	if m := rePIB.FindStringSubmatch(text); m != nil {
+		info.PIB = strings.TrimSpace(m[1])
+	}
+	if m := reBusinessName.FindStringSubmatch(text); m != nil {
+		info.Name = strings.TrimSpace(m[1])
+	}
+
+	return info, nil
+}
 
 // ExtractQRCodes renders the last pages of a PDF and returns all QR code strings found.
 func ExtractQRCodes(pdfPath string) (pageCount int, codes []string, err error) {

@@ -1,0 +1,55 @@
+{{template "base" .}}
+
+{{define "title"}}Предузетници — Паушалне уплатнице{{end}}
+
+{{define "content"}}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Предузетници</h1>
+  <p class="text-gray-500 text-sm mt-1">Листа предузетника за ваш налог</p>
+</div>
+
+<div class="mb-4">
+  <a href="/entrepreneurs/new"
+     class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+    + Нови предузетник
+  </a>
+</div>
+
+{{if .Entrepreneurs}}
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200">
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Назив / Предузетник</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">ПИБ</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Entrepreneurs}}
+      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/entrepreneurs/{{.ID}}'">
+        <td class="px-4 py-3 font-medium text-gray-900">{{.Name}}</td>
+        <td class="px-4 py-3 font-mono text-gray-600 text-xs">{{.PIB}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="bg-white border border-gray-200 rounded-lg p-6 text-sm text-gray-600 mb-6">
+  Нема предузетника. Учитајте PDF решење из е-Пореза да бисте аутоматски додали предузетника.
+</div>
+{{end}}
+
+<div class="bg-white border border-gray-200 rounded-lg p-6 shadow-xs">
+  <h2 class="text-lg font-semibold text-gray-900 mb-1">Учитај PDF решење</h2>
+  <p class="text-sm text-gray-500 mb-4">Изаберите до 4 PDF фајла из е-Пореза. Предузетник ће бити аутоматски препознат.</p>
+  <form method="POST" action="/process" enctype="multipart/form-data" class="flex gap-3 items-center flex-wrap">
+    <input type="file" id="pdfs" name="pdfs" accept=".pdf" multiple
+           class="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-white file:text-gray-700 hover:file:bg-gray-50">
+    <button type="submit"
+            class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+      Обради
+    </button>
+  </form>
+</div>
+{{end}}

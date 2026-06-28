@@ -1,0 +1,77 @@
+$schema: https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json
+
+# CTX configuration for buh — Serbian paušal payment slip tool
+documents:
+  - description: "Go source code: commands and server entrypoints"
+    outputPath: cmd.md
+    overwrite: true
+    tags: [go, cmd]
+    sources:
+      - type: tree
+        description: "CLI commands"
+        sourcePaths: ["cmd"]
+        filePattern: "*.go"
+        showSize: true
+        showCharCount: true
+      - type: tree
+        description: "Main entrypoint"
+        sourcePaths: ["."]
+        filePattern: "main.go"
+        maxDepth: 1
+        showSize: true
+        showCharCount: true
+
+  - description: "Internal packages: business logic, handlers, domain"
+    outputPath: internal.md
+    overwrite: true
+    tags: [go, internal]
+    sources:
+      - type: tree
+        description: "All internal packages"
+        sourcePaths: ["internal"]
+        filePattern: "*.go"
+        showSize: true
+        showCharCount: true
+
+  - description: "Web templates (HTML)"
+    outputPath: templates.md
+    overwrite: true
+    tags: [html, web, ui]
+    sources:
+      - type: tree
+        description: "HTML templates"
+        sourcePaths: ["internal/web/templates"]
+        filePattern: "*.html"
+        showSize: true
+        showCharCount: true
+
+  - description: "Database migrations"
+    outputPath: db.md
+    overwrite: true
+    tags: [sql, db]
+    sources:
+      - type: tree
+        description: "SQL migrations"
+        sourcePaths: ["db"]
+        filePattern: "*.sql"
+        showSize: true
+        showCharCount: true
+
+  - description: "Project config and docs"
+    outputPath: config.md
+    overwrite: true
+    tags: [config, docs]
+    sources:
+      - type: tree
+        description: "Root config files"
+        sourcePaths: ["."]
+        maxDepth: 1
+        filePattern: "*.yaml"
+        showSize: true
+        showCharCount: true
+      - type: tree
+        description: "Documentation"
+        sourcePaths: ["docs"]
+        filePattern: "*.md"
+        showSize: true
+        showCharCount: true

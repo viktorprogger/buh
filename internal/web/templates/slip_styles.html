@@ -1,0 +1,20 @@
+{{define "slip_styles"}}
+.slip-card { margin-bottom: 2rem; }
+.slip { --slip-field-fs: 9pt; width: 100%; border: 0.5mm solid #000; display: grid; grid-template-columns: 55% 1fr; font-family: Arial, sans-serif; font-size: 11pt; }
+.slip-left { border-right: 0.5mm solid #000; display: grid; grid-template-rows: auto 1fr 1fr 1fr; }
+.slip-right { display: grid; grid-template-rows: auto auto auto 1fr; padding: 6px; gap: 4px; }
+.slip-header { text-align: center; font-weight: bold; font-size: 13pt; padding: 4px; border-bottom: 0.5mm solid #000; text-transform: uppercase; letter-spacing: .3mm; }
+.slip-field { border: 0.2mm solid #bbb; padding: 3px 4px; margin: 2px; }
+.slip-label { font-size: 8pt; color: #555; text-transform: uppercase; letter-spacing: .2mm; margin-bottom: 1px; }
+.slip-row-fields { display: flex; gap: 4px; }
+.slip-row-fields .slip-field { flex: 1; }
+.slip-row-fields .slip-field.narrow { flex: 0 0 72px; }
+.slip-qr { display: flex; align-items: flex-end; justify-content: flex-end; padding: 4px; }
+.slip-actions { display: flex; margin-top: 1rem; }
+.slip-actions--end { justify-content: flex-end; gap: 0.5rem; }
+.slip-actions--between { justify-content: space-between; }
+@media (max-width: 925px) {
+  .slip { grid-template-columns: 1fr; }
+  .slip-left { border-right: none; border-bottom: 0.5mm solid #000; }
+}
+{{end}}

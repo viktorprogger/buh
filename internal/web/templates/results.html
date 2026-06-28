@@ -1,0 +1,88 @@
+{{template "base" .}}
+
+{{define "title"}}Резултати увоза — Паушалне уплатнице{{end}}
+
+{{define "content"}}
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Резултати увоза</h1>
+    <p class="text-sm text-gray-500 mt-1">Учитани PDF фајлови су обрађени и сачувани</p>
+  </div>
+  <a href="/" class="inline-flex items-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+    ← Списак предузетника
+  </a>
+</div>
+
+{{range .Errors}}
+<div class="mb-3 p-3 bg-red-50 border border-red-200 text-red-800 rounded text-sm flex gap-2">
+  <span>&#9888;</span>
+  <span>{{.}}</span>
+</div>
+{{end}}
+
+{{if not .Entrepreneurs}}
+  {{if not .Errors}}
+  <div class="bg-white border border-gray-200 rounded-lg p-8 text-center text-sm text-gray-500">
+    Нису пронађени предузетници ни уплатнице у учитаним фајловима.
+  </div>
+  {{end}}
+{{end}}
+
+{{range .Entrepreneurs}}
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs mb-4 overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+    <div>
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}" class="font-semibold text-gray-900 hover:text-primary">
+        {{.Entrepreneur.Name}}
+      </a>
+      <span class="ml-2 font-mono text-xs text-gray-400">ПИБ: {{.Entrepreneur.PIB}}</span>
+    </div>
+    {{if .IsNew}}
+    <span class="ml-auto inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Нови предузетник</span>
+    {{else}}
+    <span class="ml-auto inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Постојећи предузетник</span>
+    {{end}}
+  </div>
+
+  {{if .Slips}}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-100">
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-2.5">Сврха</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-2.5">Прималац</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-2.5">Износ</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-2.5">Статус</th>
+        <th class="px-4 py-2.5"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Slips}}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3 text-gray-800 max-w-xs">{{.Slip.Purpose}}</td>
+        <td class="px-4 py-3 text-gray-600">{{.Slip.Payee}}</td>
+        <td class="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{.Slip.Amount}} {{.Slip.Currency}}</td>
+        <td class="px-4 py-3">
+          {{if eq .Status "created"}}
+          <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Нова</span>
+          {{else if eq .Status "updated"}}
+          <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">Ажурирана</span>
+          {{else}}
+          <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Непромењена</span>
+          {{end}}
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="/slips/{{.Slip.ID}}"
+             class="inline-flex items-center rounded border border-primary px-3 py-1 text-xs font-medium text-primary hover:bg-primary-light">
+            Детаљи
+          </a>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <div class="px-5 py-4 text-sm text-gray-500">Нису пронађене уплатнице у овом фајлу.</div>
+  {{end}}
+</div>
+{{end}}
+{{end}}

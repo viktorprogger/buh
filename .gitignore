@@ -1,6 +1,12 @@
 # PDFs — never commit
 *.pdf
 
+# Environment secrets
+.env
+
+# Hot-reload temp dir (air)
+tmp/
+
 # CTX generated context maps
 .context/
 
@@ -14,3 +20,7 @@ buh
 # Go test cache
 *.test
 *.out
+
+# Node (Tailwind build tooling)
+node_modules/
+package-lock.json

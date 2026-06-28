@@ -1,0 +1,30 @@
+# Version control
+.git
+.gitignore
+
+# Environment / secrets
+.env
+.env.example
+
+# Docker data volumes (bind-mounted, not for the image)
+.docker
+
+# Agent / IDE metadata
+.claude
+.context
+
+# Source PDFs (too large, not needed at runtime)
+*.pdf
+
+# Pre-built binary (host arch, not portable)
+buh
+/buh
+
+# Documentation
+docs/
+CLAUDE.md
+plan-overview.md
+
+# Go test artifacts
+*.test
+*.out

@@ -2,6 +2,7 @@ package slip
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,12 @@ import (
 	"github.com/jung-kurt/gofpdf"
 	qrcode "github.com/skip2/go-qrcode"
 )
+
+//go:embed DejaVuSans.ttf
+var fontRegular []byte
+
+//go:embed DejaVuSans-Bold.ttf
+var fontBold []byte
 
 const (
 	pageW = 210.0
@@ -41,6 +48,8 @@ func GeneratePDF(pay *ips.Payment, outputPath string) error {
 		UnitStr: "mm",
 		Size:    gofpdf.SizeType{Wd: pageW, Ht: pageH},
 	})
+	pdf.AddUTF8FontFromBytes("DejaVu", "", fontRegular)
+	pdf.AddUTF8FontFromBytes("DejaVu", "B", fontBold)
 	pdf.SetMargins(0, 0, 0)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
@@ -60,7 +69,7 @@ func draw(pdf *gofpdf.Fpdf, pay *ips.Payment) {
 
 	// Header (left column only)
 	pdf.Line(0, headerH, divX, headerH)
-	pdf.SetFont("Helvetica", "B", 7.5)
+	pdf.SetFont("DejaVu", "B", 7.5)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetXY(0, 1.5)
 	pdf.CellFormat(divX, headerH-1.5, "NALOG ZA UPLATU", "", 0, "C", false, 0, "")
@@ -94,12 +103,12 @@ func fieldBox(pdf *gofpdf.Fpdf, x, y, w, h float64, label, value string) {
 	pdf.Rect(x+m, y+m, w-2*m, h-2*m, "D")
 	pdf.SetDrawColor(0, 0, 0)
 
-	pdf.SetFont("Helvetica", "", 5.5)
+	pdf.SetFont("DejaVu", "", 5.5)
 	pdf.SetTextColor(80, 80, 80)
 	pdf.SetXY(x+m+1, y+m+0.8)
 	pdf.Cell(w-2*(m+1), 3.5, label)
 
-	pdf.SetFont("Helvetica", "B", 8)
+	pdf.SetFont("DejaVu", "B", 8)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetXY(x+m+1, y+m+0.8+3.5)
 	pdf.MultiCell(w-2*(m+1), 4.5, value, "", "L", false)

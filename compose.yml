@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-buh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-buh}
+    volumes:
+      - ./.docker/data/pgsql/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-buh}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      BUH_ADDR: ${BUH_ADDR:-:8081}
+      BUH_DATABASE_URL: "postgres://${POSTGRES_USER:-buh}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-buh}?sslmode=disable"
+      BUH_SESSION_HASH_KEY: ${BUH_SESSION_HASH_KEY}
+      BUH_SESSION_BLOCK_KEY: ${BUH_SESSION_BLOCK_KEY}
+    ports:
+      - "${APP_HOST_PORT:-8081}:8081"
+    volumes:
+      - .:/app
+    entrypoint: []
+    command: ["air", "-c", "air.toml"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+

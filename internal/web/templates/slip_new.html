@@ -1,0 +1,86 @@
+{{template "base" .}}
+
+{{define "title"}}Нова уплатница — {{.Entrepreneur.Name}}{{end}}
+
+{{define "style"}}
+{{template "slip_styles" .}}
+.qr-placeholder { border: 1px dashed #aaa; border-radius: 4px; padding: 8px 10px; font-size: 9pt; color: #888; text-align: center; width: 56px; line-height: 1.3; }
+.amount-input, .payer-input, .slip-input { width: 100%; border: none; background: transparent; font-weight: bold; font-family: inherit; outline: none; border-bottom: 1.5px solid var(--color-primary); padding: 0 0 1px; }
+.amount-input { font-size: 9pt; }
+.payer-input, .slip-input { font-size: var(--slip-field-fs); }
+.slip select { background: transparent; color: inherit; border: none; font-size: var(--slip-field-fs); font-family: inherit; font-weight: bold; width: 100%; padding: 0; appearance: auto; border-bottom: 1.5px solid var(--color-primary); }
+{{end}}
+
+{{define "content"}}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Нова уплатница</h1>
+  <p class="text-sm text-gray-500 mt-1">Предузетник: <strong class="text-gray-700">{{.Entrepreneur.Name}}</strong></p>
+</div>
+
+{{if .Error}}
+<div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">{{.Error}}</div>
+{{end}}
+
+<div class="bg-white border border-gray-200 rounded-lg p-6 shadow-xs slip-card">
+  <form method="POST" action="/entrepreneurs/{{.Entrepreneur.ID}}/slips/new">
+    <div class="slip">
+      <div class="slip-left">
+        <div class="slip-header">Налог за уплату / Nalog za uplatu</div>
+        <div class="slip-field">
+          <div class="slip-label">Уплатилац / Uplatilac</div>
+          <input type="text" name="P" value="{{.Form.P}}" class="payer-input" placeholder="Ime i prezime / naziv firme" maxlength="70">
+        </div>
+        <div class="slip-field">
+          <div class="slip-label">Сврха уплате / Svrha uplate</div>
+          <input type="text" name="S" value="{{.Form.S}}" class="slip-input" placeholder="Сврха уплате" required maxlength="35">
+        </div>
+        <div class="slip-field">
+          <div class="slip-label">Прималац / Primalac</div>
+          <input type="text" name="N" value="{{.Form.N}}" class="slip-input" placeholder="Назив примаоца" required maxlength="70">
+        </div>
+      </div>
+      <div class="slip-right">
+        <div class="slip-row-fields">
+          <div class="slip-field narrow">
+            <div class="slip-label">Шифра плаћања</div>
+            <input type="text" name="SF" value="{{.Form.SF}}" class="slip-input" required maxlength="3" placeholder="253">
+          </div>
+          <div class="slip-field narrow">
+            <div class="slip-label">Валута</div>
+            <select name="currency">
+              <option value="RSD"{{if eq .Form.Currency "RSD"}} selected{{end}}>RSD</option>
+              <option value="EUR"{{if eq .Form.Currency "EUR"}} selected{{end}}>EUR</option>
+            </select>
+          </div>
+          <div class="slip-field">
+            <div class="slip-label">Износ / Iznos</div>
+            <input type="text" name="amount" value="{{.Form.Amount}}" class="amount-input" placeholder="нпр. 1000,00" required>
+          </div>
+        </div>
+        <div class="slip-field">
+          <div class="slip-label">Рачун примаоца / Racun primaoca</div>
+          <input type="text" name="R" value="{{.Form.R}}" class="slip-input" placeholder="XXX-XXXXXXXXXXXXX-XX" required>
+        </div>
+        <div class="slip-field">
+          <div class="slip-label">Позив на број / Poziv na broj</div>
+          <input type="text" name="RO" value="{{.Form.RO}}" class="slip-input" maxlength="35">
+        </div>
+        <div class="slip-qr">
+          <div class="qr-placeholder">Овде ће бити QR код</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slip-actions slip-actions--between">
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}"
+         class="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        Одустани
+      </a>
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        Сачувај и преузми PDF
+      </button>
+    </div>
+  </form>
+</div>
+{{end}}
