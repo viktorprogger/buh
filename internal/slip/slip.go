@@ -81,12 +81,12 @@ func draw(pdf *gofpdf.Fpdf, pay *ips.Payment) {
 
 	// Right: code row — values are bold (key metrics)
 	currency, amount := splitAmountParts(pay.I)
-	fieldBox(pdf, divX, 0, codeW, codeRowH, "Sifra placanja", pay.SF, true)
+	fieldBox(pdf, divX, 0, codeW, codeRowH, "Šifra plaćanja", pay.SF, true)
 	fieldBox(pdf, divX+codeW, 0, currW, codeRowH, "Valuta", currency, true)
 	fieldBox(pdf, divX+codeW+currW, 0, pageW-divX-codeW-currW, codeRowH, "Iznos", amount, true)
 
 	// Right: account + reference
-	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Racun primaoca", formatAccount(pay.R), false)
+	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Račun primaoca", formatAccount(pay.R), false)
 	fieldBox(pdf, divX, codeRowH+acctRowH, pageW-divX, refRowH, "Poziv na broj", pay.RO, false)
 
 	// QR: bottom-right, vertically centered in remaining area
