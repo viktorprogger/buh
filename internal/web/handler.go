@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,6 +29,31 @@ import (
 )
 
 const maxUploadFiles = 4
+
+// pausalalLimitForYear returns the paušal turnover limit in RSD for the given year.
+func pausalalLimitForYear(year int) int64 {
+	if year >= 2027 {
+		return 8_000_000
+	}
+	return 6_000_000
+}
+
+// formatIntWithSpaces formats n with space-separated thousands (Serbian convention).
+func formatIntWithSpaces(n int64) string {
+	s := strconv.FormatInt(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+	offset := len(s) % 3
+	var out []byte
+	for i := 0; i < len(s); i++ {
+		if i > 0 && (i-offset)%3 == 0 {
+			out = append(out, ' ')
+		}
+		out = append(out, s[i])
+	}
+	return string(out)
+}
 
 //go:embed templates
 var templateFS embed.FS
@@ -107,7 +133,10 @@ func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db 
 	protected.HandleFunc("GET /entrepreneurs/new", h.handleEntrepreneurNewForm)
 	protected.HandleFunc("POST /entrepreneurs/new", h.handleEntrepreneurNewSubmit)
 	protected.HandleFunc("GET /entrepreneurs/{id}", h.handleEntrepreneur)
+	protected.HandleFunc("POST /entrepreneurs/{id}", h.handleEntrepreneurUpdate)
 	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries", h.handleKPOAddEntry)
+	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/reorder", h.handleKPOReorderEntries)
+	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/update", h.handleKPOUpdateEntry)
 	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/delete", h.handleKPODeleteEntry)
 	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/finalize", h.handleKPOFinalize)
 	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/unfinalize", h.handleKPOUnfinalize)
@@ -116,6 +145,7 @@ func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db 
 	protected.HandleFunc("GET /slips/{id}", h.handleSlip)
 	protected.HandleFunc("POST /slips/{id}/save", h.handleSlipSave)
 	protected.HandleFunc("POST /slips/{id}/download", h.handleSlipDownload)
+	protected.HandleFunc("POST /slips/{id}/delete", h.handleSlipDelete)
 	protected.HandleFunc("GET /slips/{id}/pdf", h.handleSlipPDF)
 	protected.HandleFunc("/", h.handleIndex)
 
@@ -185,7 +215,7 @@ func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 // handleEntrepreneur shows the entrepreneur page with KPO for the selected year and slip list.
 // The ?year= query param selects the year; defaults to the current year. The KPO book is
-// auto-created on first view so the accountant always lands on an active ledger.
+// not persisted until the first entry is added.
 func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := uuid.Parse(idStr)
@@ -211,16 +241,22 @@ func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	currentBook, err := h.kpoBooks.FindOrCreate(r.Context(), id, selectedYear)
-	if err != nil {
+	currentBook, err := h.kpoBooks.FindByYear(r.Context(), id, selectedYear)
+	if err != nil && !errors.Is(err, kpo.ErrNotFound) {
 		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
 		return
 	}
+	if errors.Is(err, kpo.ErrNotFound) {
+		currentBook = kpo.Book{Year: selectedYear, EntrepreneurID: id}
+	}
 
-	entries, err := h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
-		return
+	var entries []kpo.Entry
+	if currentBook.ID != (uuid.UUID{}) {
+		entries, err = h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
+		if err != nil {
+			http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	books, err := h.kpoBooks.ListByEntrepreneur(r.Context(), id)
@@ -241,16 +277,40 @@ func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		totalService += en.ServiceRevenue
 	}
 
+	currentYear := time.Now().Year()
+	pausalalLimit := pausalalLimitForYear(currentYear)
+	var pausalalTotal float64
+	var pausalalHasData bool
+	if selectedYear == currentYear {
+		pausalalTotal = totalProduct + totalService
+		pausalalHasData = len(entries) > 0
+	} else {
+		pausalalTotal, pausalalHasData, err = h.kpoBooks.SumForYear(r.Context(), id, currentYear)
+		if err != nil {
+			http.Error(w, "Грешка при учитавању паушалног прага", http.StatusInternalServerError)
+			return
+		}
+	}
+	var pausalalPercent float64
+	if pausalalLimit > 0 {
+		pausalalPercent = pausalalTotal / float64(pausalalLimit) * 100
+	}
+
 	renderTemplate(w, h.tmpl.entrepreneur, map[string]any{
-		"Entrepreneur": e,
-		"KPOBooks":     books,
-		"CurrentBook":  currentBook,
-		"KPOEntries":   entries,
-		"SelectedYear": selectedYear,
-		"TotalProduct": totalProduct,
-		"TotalService": totalService,
-		"TotalAll":     totalProduct + totalService,
-		"Slips":        slips,
+		"Entrepreneur":      e,
+		"KPOBooks":          books,
+		"CurrentBook":       currentBook,
+		"KPOEntries":        entries,
+		"SelectedYear":      selectedYear,
+		"TotalProduct":      totalProduct,
+		"TotalService":      totalService,
+		"TotalAll":          totalProduct + totalService,
+		"Slips":             slips,
+		"PausalalYear":      currentYear,
+		"PausalalHasData":   pausalalHasData,
+		"PausalalTotalFmt":  formatIntWithSpaces(int64(math.Round(pausalalTotal))),
+		"PausalalLimitFmt":  formatIntWithSpaces(pausalalLimit),
+		"PausalalPercent":   pausalalPercent,
 	})
 }
 
@@ -274,6 +334,11 @@ func (h *handler) kpoBookFromPath(r *http.Request) (entrepreneur.Entrepreneur, k
 	return e, book, year, err
 }
 
+// parseDayMonth parses a "dd.mm" string combined with the given year into a time.Time.
+func parseDayMonth(s string, year int) (time.Time, error) {
+	return time.Parse("02.01.2006", strings.TrimSpace(s)+"."+strconv.Itoa(year))
+}
+
 func (h *handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
@@ -286,14 +351,13 @@ func (h *handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseForm()
-	dateStr := r.FormValue("collection_date")
-	collectionDate, err := time.Parse("2006-01-02", dateStr)
+	collectionDate, err := parseDayMonth(r.FormValue("collection_date"), year)
 	if err != nil {
-		http.Error(w, "Неисправан датум", http.StatusBadRequest)
+		http.Error(w, "Неисправан датум (очекује се дд.мм)", http.StatusBadRequest)
 		return
 	}
-	productRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
-	serviceRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("service_revenue"), ",", "."), 64)
+	productRev := round2(parseAmount(r.FormValue("product_revenue")))
+	serviceRev := round2(parseAmount(r.FormValue("service_revenue")))
 
 	_, err = h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
 		KPOBookID:      book.ID,
@@ -308,6 +372,80 @@ func (h *handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d#kpo-new", r.PathValue("id"), year), http.StatusFound)
+}
+
+func (h *handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је укњижен", http.StatusForbidden)
+		return
+	}
+
+	entryID, err := uuid.Parse(r.PathValue("entryID"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	r.ParseForm()
+	collectionDate, err := parseDayMonth(r.FormValue("collection_date"), year)
+	if err != nil {
+		http.Error(w, "Неисправан датум (очекује се дд.мм)", http.StatusBadRequest)
+		return
+	}
+	productRev := round2(parseAmount(r.FormValue("product_revenue")))
+	serviceRev := round2(parseAmount(r.FormValue("service_revenue")))
+
+	if err = h.kpoBooks.UpdateEntry(r.Context(), kpo.Entry{
+		ID:             entryID,
+		CollectionDate: collectionDate,
+		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
+		ProductRevenue: productRev,
+		ServiceRevenue: serviceRev,
+	}); err != nil {
+		http.Error(w, "Грешка при измени ставке", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d#kpo", r.PathValue("id"), year), http.StatusFound)
+}
+
+func (h *handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request) {
+	_, book, _, err := h.kpoBookFromPath(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је укњижен", http.StatusForbidden)
+		return
+	}
+
+	if err = r.ParseForm(); err != nil {
+		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		return
+	}
+	rawIDs := r.Form["ids"]
+	ids := make([]uuid.UUID, 0, len(rawIDs))
+	for _, s := range rawIDs {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			http.Error(w, "Неисправан ID", http.StatusBadRequest)
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	if err = h.kpoBooks.ReorderEntries(r.Context(), book.ID, ids); err != nil {
+		http.Error(w, "Грешка при преуређивању", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
@@ -430,7 +568,7 @@ func slipFormToRecord(r *http.Request, existing sliprecord.SlipRecord) sliprecor
 	existing.PayeeAccount = rawAccount
 	existing.Reference = strings.TrimSpace(r.FormValue("RO"))
 	existing.PaymentCode = strings.TrimSpace(r.FormValue("SF"))
-	existing.Amount = strings.TrimSpace(r.FormValue("amount"))
+	existing.Amount = formatAmount(r.FormValue("amount"))
 	existing.Currency = r.FormValue("currency")
 	return existing
 }
@@ -491,6 +629,33 @@ func (h *handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/slips/"+idStr+"?saved=1&download=1", http.StatusFound)
+}
+
+// handleSlipDelete deletes a slip record and redirects to the entrepreneur page.
+func (h *handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	s, err := h.slips.FindByID(r.Context(), id)
+	if errors.Is(err, sliprecord.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		http.Error(w, "Грешка при учитавању уплатнице", http.StatusInternalServerError)
+		return
+	}
+	entrepreneurID := s.EntrepreneurID
+
+	if err := h.slips.Delete(r.Context(), id); err != nil {
+		http.Error(w, "Грешка при брисању уплатнице", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/entrepreneurs/"+entrepreneurID.String(), http.StatusFound)
 }
 
 // handleSlipPDF generates the PDF from the current SlipRecord fields and streams it as an attachment.
@@ -667,7 +832,7 @@ func (h *handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	rec := sliprecord.SlipRecord{
 		EntrepreneurID: id,
 		PaymentCode:    pay.SF,
-		Amount:         form.Amount,
+		Amount:         formatAmount(form.Amount),
 		Currency:       form.Currency,
 		Purpose:        pay.S,
 		PayeeAccount:   rawAccount,
@@ -682,6 +847,47 @@ func (h *handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/slips/"+saved.ID.String(), http.StatusFound)
+}
+
+// handleEntrepreneurUpdate saves editable fields (Title, Name, PIB) for an entrepreneur.
+func (h *handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	e, err := h.entrepreneurs.FindByID(r.Context(), id)
+	if errors.Is(err, entrepreneur.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
+		return
+	}
+
+	r.ParseForm()
+	name := strings.TrimSpace(r.FormValue("name"))
+	pib := strings.TrimSpace(r.FormValue("pib"))
+	title := strings.TrimSpace(r.FormValue("title"))
+
+	if name == "" || pib == "" {
+		http.Redirect(w, r, "/entrepreneurs/"+idStr, http.StatusFound)
+		return
+	}
+
+	e.Name = name
+	e.PIB = pib
+	e.Title = title
+
+	if err := h.entrepreneurs.Update(r.Context(), e); err != nil {
+		http.Error(w, "Грешка при чувању предузетника", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/entrepreneurs/"+idStr, http.StatusFound)
 }
 
 // handlePrivacy renders the privacy policy placeholder.
@@ -711,6 +917,19 @@ func (h *handler) handleProcess(w http.ResponseWriter, r *http.Request) {
 
 	result := h.importer.ProcessFiles(r.Context(), accountantID, files)
 	renderTemplate(w, h.tmpl.results, result)
+}
+
+func parseAmount(s string) float64 {
+	v, _ := strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(s), ",", "."), 64)
+	return v
+}
+
+func round2(v float64) float64 { return math.Round(v*100) / 100 }
+
+// formatAmount parses a user-entered amount and returns it as "%.2f" string.
+// Returns "0.00" for empty or unparseable input.
+func formatAmount(s string) string {
+	return fmt.Sprintf("%.2f", round2(parseAmount(s)))
 }
 
 func sanitizeFilename(s string) string {

@@ -160,6 +160,23 @@ CREATE TABLE IF NOT EXISTS accountants (
     created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
 );`,
 		},
+		{
+			name: "008_add_title_to_entrepreneurs",
+			sql:  `ALTER TABLE entrepreneurs ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '';`,
+		},
+		{
+			name: "009_add_position_to_kpo_entries",
+			sql: `ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS position INTEGER;
+UPDATE kpo_entries e
+SET position = sub.rn
+FROM (
+  SELECT id,
+         ROW_NUMBER() OVER (PARTITION BY kpo_book_id ORDER BY collection_date, created_at) AS rn
+  FROM kpo_entries
+) sub
+WHERE e.id = sub.id AND e.position IS NULL;
+ALTER TABLE kpo_entries ALTER COLUMN position SET NOT NULL;`,
+		},
 	}
 
 	// Create migrations tracking table.

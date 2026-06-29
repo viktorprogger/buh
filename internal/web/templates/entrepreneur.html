@@ -1,49 +1,132 @@
 {{template "base" .}}
 
-{{define "title"}}{{.Entrepreneur.Name}} — КПО{{end}}
+{{define "title"}}{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}} — КПО{{end}}
 
 {{define "content"}}
-<div class="mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">{{.Entrepreneur.Name}}</h1>
-  <p class="text-sm text-gray-500 mt-1">ПИБ: <span class="font-mono">{{.Entrepreneur.PIB}}</span></p>
+<!-- ── Entrepreneur card ──────────────────────────────────────────────────── -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+    <h2 class="text-lg font-semibold text-gray-900">Подаци предузетника</h2>
+    <div class="flex items-center gap-4 text-sm">
+      {{if .PausalalHasData}}
+        <span class="text-gray-500">Паушалац {{.PausalalYear}}:</span>
+        <span class="font-mono font-medium text-gray-900">{{.PausalalTotalFmt}} / {{.PausalalLimitFmt}} RSD</span>
+        <span class="text-gray-500">({{printf "%.2f" .PausalalPercent}}%)</span>
+      {{else}}
+        <span class="text-gray-400 text-xs">Паушалац {{.PausalalYear}}: нема података</span>
+      {{end}}
+      <button id="e-edit-btn" type="button" onclick="eEdit(true)"
+              class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        Измени
+      </button>
+    </div>
+  </div>
+
+  <!-- View mode -->
+  <div id="e-view" class="px-6 py-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Назив (кратко)</div>
+        <div class="text-sm text-gray-900">{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Службени назив</div>
+        <div class="text-sm text-gray-900">{{.Entrepreneur.Name}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">ПИБ</div>
+        <div class="text-sm font-mono text-gray-900">{{.Entrepreneur.PIB}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit mode (hidden until Edit is clicked) -->
+  <form id="e-form" method="POST" action="/entrepreneurs/{{.Entrepreneur.ID}}"
+        class="hidden px-6 py-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-title">Назив (кратко)</label>
+        <input id="f-title" type="text" name="title" value="{{.Entrepreneur.Title}}"
+               placeholder="нпр. Милан водоинсталатер"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-name">Службени назив</label>
+        <input id="f-name" type="text" name="name" value="{{.Entrepreneur.Name}}" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-pib">ПИБ</label>
+        <input id="f-pib" type="text" name="pib" value="{{.Entrepreneur.PIB}}" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        Сачувај
+      </button>
+      <button type="button" onclick="eEdit(false)"
+              class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        Откажи
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function eEdit(on) {
+  document.getElementById('e-view').classList.toggle('hidden', on);
+  document.getElementById('e-form').classList.toggle('hidden', !on);
+  document.getElementById('e-edit-btn').classList.toggle('hidden', on);
+  if (on) document.getElementById('f-title').focus();
+}
+</script>
 </div>
 
 <!-- ── KPO section ───────────────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6" id="kpo">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
     <h2 class="text-lg font-semibold text-gray-900">КПО — Књига прихода</h2>
-    <form method="GET" action="/entrepreneurs/{{.Entrepreneur.ID}}" class="flex gap-2 items-center">
-      <input type="number" name="year" min="2000" max="2100" placeholder="Год."
-             class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-             title="Унесите годину и притисните Отвори">
-      <button type="submit"
+    <div class="flex flex-wrap gap-2 items-center">
+      {{if .KPOBooks}}
+      <select id="year-select"
+              class="rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              onchange="window.location.href='/entrepreneurs/{{.Entrepreneur.ID}}?year='+this.value+'#kpo'">
+        {{range .KPOBooks}}
+        <option value="{{.Year}}"{{if eq .Year $.SelectedYear}} selected{{end}}>{{.Year}}{{if .IsFinalized}} ✓{{end}}</option>
+        {{end}}
+      </select>
+      {{end}}
+      <button type="button"
+              onclick="var f=document.getElementById('add-year-form');f.style.display=f.style.display==='none'?'flex':'none'"
               class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        Отвори годину
+        + Додај годину
       </button>
-    </form>
+      <form id="add-year-form" method="GET" action="/entrepreneurs/{{.Entrepreneur.ID}}"
+            style="display:none" class="flex gap-2 items-center">
+        <input type="number" name="year" min="2000" max="2100" placeholder="Год."
+               class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+               title="Унесите годину и притисните Отвори">
+        <button type="submit"
+                class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
+          Отвори
+        </button>
+      </form>
+    </div>
   </div>
-
-  <!-- Year tabs -->
-  {{if .KPOBooks}}
-  <div class="flex border-b border-gray-200 overflow-x-auto px-2 pt-2 gap-0">
-    {{range .KPOBooks}}
-    <a href="/entrepreneurs/{{$.Entrepreneur.ID}}?year={{.Year}}#kpo"
-       class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap
-              {{if eq .Year $.SelectedYear}}border-primary text-primary{{else}}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{{end}}">
-      {{.Year}}{{if .IsFinalized}}&nbsp;✓{{end}}
-    </a>
-    {{end}}
-  </div>
-  {{end}}
 
   <!-- Entry table -->
   <div class="overflow-x-auto">
-    <!-- New-entry form lives outside the table so it doesn't break HTML validity;
-         inputs reference it via the form="kpo-new" attribute. -->
-    <form id="kpo-new"
-          method="POST"
+    <!-- Forms outside the table (inputs reference them via form="…") -->
+    <form id="kpo-new" method="POST"
           action="/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/entries"
           aria-label="Нова ставка КПО"></form>
+    {{if not .CurrentBook.IsFinalized}}
+    {{range .KPOEntries}}<form id="edit-{{.ID}}" method="POST"
+          action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.ID}}/update"></form>
+    {{end}}
+    {{end}}
 
     <table class="w-full text-sm" aria-label="КПО {{.SelectedYear}}">
       <thead>
@@ -54,28 +137,76 @@
           <th class="px-3 py-2 text-right">Продаја роба</th>
           <th class="px-3 py-2 text-right">Услуге</th>
           <th class="px-3 py-2 text-right">Укупно</th>
-          {{if not .CurrentBook.IsFinalized}}<th class="w-8"></th>{{end}}
+          {{if not .CurrentBook.IsFinalized}}<th class="w-10"></th>{{end}}
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody id="kpo-tbody" class="divide-y divide-gray-100">
 
         {{range .KPOEntries}}
-        <tr class="hover:bg-gray-50">
-          <td class="px-3 py-2 text-center text-gray-400 text-xs">{{.OrdinalNumber}}</td>
-          <td class="px-3 py-2 text-gray-600">{{.CollectionDate.Format "02.01.2006."}}</td>
-          <td class="px-3 py-2 text-gray-800">{{.InvoiceNumber}}</td>
-          <td class="px-3 py-2 text-right font-mono text-gray-800">{{printf "%.2f" .ProductRevenue}}</td>
-          <td class="px-3 py-2 text-right font-mono text-gray-800">{{printf "%.2f" .ServiceRevenue}}</td>
+        <tr class="hover:bg-gray-50" data-id="{{.ID}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
+          <!-- Ordinal / drag handle -->
+          <td class="px-3 py-2 text-center text-gray-400 text-xs{{if not $.CurrentBook.IsFinalized}} cursor-grab select-none{{end}}">
+            {{if not $.CurrentBook.IsFinalized}}<span class="text-gray-300 mr-0.5">⠿</span>{{end}}<span class="row-ordinal">{{.OrdinalNumber}}</span>
+          </td>
+          <!-- Date -->
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-600">{{.CollectionDate.Format "02.01.2006."}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.ID}}" type="text" name="collection_date"
+                   value="{{.CollectionDate.Format "02.01"}}" maxlength="5" placeholder="дд.мм"
+                   style="display:none"
+                   class="edit-input w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Invoice -->
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-800">{{.InvoiceNumber}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.ID}}" type="text" name="invoice_number"
+                   value="{{.InvoiceNumber}}" style="display:none"
+                   class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Product revenue -->
+          <td class="px-3 py-2 text-right">
+            <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ProductRevenue}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.ID}}" type="text" name="product_revenue"
+                   value="{{printf "%.2f" .ProductRevenue}}" style="display:none"
+                   class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Service revenue -->
+          <td class="px-3 py-2 text-right">
+            <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ServiceRevenue}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.ID}}" type="text" name="service_revenue"
+                   value="{{printf "%.2f" .ServiceRevenue}}" style="display:none"
+                   class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Total (view only) -->
           <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .Total}}</td>
+          <!-- Actions -->
           {{if not $.CurrentBook.IsFinalized}}
           <td class="px-2 py-2 text-center">
-            <form method="POST"
-                  action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.ID}}/delete"
-                  onsubmit="return confirm('Обрисати ставку?')">
-              <button type="submit"
-                      class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
-                      title="Обриши ставку" aria-label="Обриши">✕</button>
-            </form>
+            <div class="view-actions flex gap-1 items-center justify-center">
+              <button type="button" onclick="rowEdit('{{.ID}}', true)"
+                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="Измени">✎</button>
+              <form method="POST"
+                    action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.ID}}/delete"
+                    onsubmit="return confirm('Обрисати ставку?')">
+                <button type="submit"
+                        class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
+                        title="Обриши ставку" aria-label="Обриши">✕</button>
+              </form>
+            </div>
+            <div class="edit-actions flex gap-1 items-center justify-center" style="display:none">
+              <button form="edit-{{.ID}}" type="submit"
+                      class="text-green-600 hover:text-green-800 px-1 py-1" title="Сачувај">✓</button>
+              <button type="button" onclick="rowEdit('{{.ID}}', false)"
+                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="Откажи">✕</button>
+            </div>
           </td>
           {{end}}
         </tr>
@@ -97,9 +228,10 @@
         <tr class="bg-blue-50" id="kpo-new-row">
           <td class="px-3 py-1.5 text-center text-gray-300 text-xs select-none">+</td>
           <td class="px-1 py-1">
-            <input form="kpo-new" type="date" name="collection_date" required
+            <input form="kpo-new" type="text" name="collection_date" required
                    id="kpo-date" autofocus
-                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   maxlength="5" placeholder="дд.мм"
+                   class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                    aria-label="Датум наплате">
           </td>
           <td class="px-1 py-1">
@@ -176,6 +308,7 @@
         <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Сврха</th>
         <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Прималац</th>
         <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Износ</th>
+        <th class="w-10"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
@@ -185,6 +318,14 @@
         <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
         <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
         <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
+        <td class="px-2 py-2 text-center" onclick="event.stopPropagation()">
+          <form method="POST" action="/slips/{{.ID}}/delete"
+                onsubmit="return confirm('Обрисати уплатницу?')">
+            <button type="submit"
+                    class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
+                    title="Обриши уплатницу" aria-label="Обриши">✕</button>
+          </form>
+        </td>
       </tr>
       {{end}}
     </tbody>
@@ -195,24 +336,96 @@
 </div>
 
 <script>
+// ── Row edit toggle ──────────────────────────────────────────────────────────
+function rowEdit(id, on) {
+  var row = document.querySelector('tr[data-id="' + id + '"]');
+  if (!row) return;
+  row.querySelectorAll('.view-val').forEach(function(el) { el.style.display = on ? 'none' : ''; });
+  row.querySelectorAll('.edit-input').forEach(function(el) { el.style.display = on ? '' : 'none'; });
+  row.querySelector('.view-actions').style.display = on ? 'none' : '';
+  row.querySelector('.edit-actions').style.display = on ? 'flex' : 'none';
+  if (on) {
+    var first = row.querySelector('.edit-input');
+    if (first) { initDateInput(first); first.focus(); }
+  }
+}
+
+// ── Date input: auto-format, paste normalisation, range validation ───────────
+function pad2(s) { return ('0' + s).slice(-2); }
+
+function normDateInput(s) {
+  var m;
+  // dd.mm.yyyy or dd.mm.yyyy. (Serbian with optional trailing dot)
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.\d{2,4}\.?$/);
+  if (m) return pad2(m[1]) + '.' + pad2(m[2]);
+  // yyyy-mm-dd (ISO)
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return m[3] + '.' + m[2];
+  // dd.mm (already correct)
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.?$/);
+  if (m) return pad2(m[1]) + '.' + pad2(m[2]);
+  return null;
+}
+
+function initDateInput(el) {
+  if (el._dateInited) return;
+  el._dateInited = true;
+
+  el.addEventListener('paste', function(e) {
+    var text = (e.clipboardData || window.clipboardData).getData('text').trim();
+    var r = normDateInput(text);
+    if (r !== null) { e.preventDefault(); this.value = r; }
+  });
+
+  el.addEventListener('input', function(e) {
+    this.setCustomValidity('');
+    this.style.borderColor = '';
+    var digits = this.value.replace(/\D/g, '');
+    var deleting = e.inputType && e.inputType.startsWith('delete');
+    if (digits.length <= 1) {
+      this.value = digits;
+    } else if (digits.length === 2) {
+      // If user pressed dot (digits unchanged from before dot), don't re-append dot
+      this.value = deleting ? digits : digits + '.';
+    } else {
+      this.value = digits.slice(0, 2) + '.' + digits.slice(2, 4);
+    }
+  });
+
+  el.addEventListener('blur', function() {
+    var m = this.value.match(/^(\d{2})\.(\d{2})$/);
+    if (!m) return;
+    var d = +m[1], mo = +m[2];
+    if (d < 1 || d > 31 || mo < 1 || mo > 12) {
+      this.setCustomValidity('Дан 1–31, месец 1–12');
+      this.reportValidity();
+      this.style.borderColor = '#ef4444';
+    }
+  });
+}
+
 (function () {
-  // Live total in the new-entry row
+  // Init paste stripping on the new-entry date input.
+  var kpoDate = document.getElementById('kpo-date');
+  if (kpoDate) initDateInput(kpoDate);
+
+  // Live total in the new-entry row.
   function parseNum(id) {
     return parseFloat(document.getElementById(id)?.value?.replace(',', '.')) || 0;
   }
   function refreshTotal() {
-    const el = document.getElementById('kpo-row-total');
+    var el = document.getElementById('kpo-row-total');
     if (el) el.textContent = (parseNum('kpo-product') + parseNum('kpo-service')).toFixed(2);
   }
-  ['kpo-product', 'kpo-service'].forEach(function (id) {
-    const el = document.getElementById(id);
+  ['kpo-product', 'kpo-service'].forEach(function(id) {
+    var el = document.getElementById(id);
     if (el) el.addEventListener('input', refreshTotal);
   });
 
-  // Enter on the last numeric field submits the form
-  const svc = document.getElementById('kpo-service');
+  // Enter on the last numeric field of the new-entry row submits the form.
+  var svc = document.getElementById('kpo-service');
   if (svc) {
-    svc.addEventListener('keydown', function (e) {
+    svc.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
         document.getElementById('kpo-new')?.submit();
@@ -220,11 +433,76 @@
     });
   }
 
-  // Scroll to and focus the new-entry row when the URL hash is #kpo-new
+  // Scroll to and focus the new-entry row when the URL hash is #kpo-new.
   if (window.location.hash === '#kpo-new') {
-    const dateInput = document.getElementById('kpo-date');
+    var dateInput = document.getElementById('kpo-date');
     if (dateInput) { dateInput.focus(); dateInput.scrollIntoView({ block: 'center' }); }
   }
+
+  // ── Drag-and-drop row reordering ───────────────────────────────────────────
+  var tbody = document.getElementById('kpo-tbody');
+  if (!tbody) return;
+
+  var dragRow = null;
+  var overRow = null;
+  var dropBefore = true;
+
+  tbody.addEventListener('dragstart', function(e) {
+    var row = e.target.closest('tr[data-id]');
+    if (!row) { e.preventDefault(); return; }
+    dragRow = row;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.id);
+    setTimeout(function() { row.classList.add('opacity-40'); }, 0);
+  });
+
+  tbody.addEventListener('dragover', function(e) {
+    if (!dragRow) return;
+    e.preventDefault();
+    var target = e.target.closest('tr[data-id]');
+    if (!target || target === dragRow) return;
+    if (overRow && overRow !== target) clearIndicator(overRow);
+    overRow = target;
+    var rect = target.getBoundingClientRect();
+    dropBefore = e.clientY < rect.top + rect.height / 2;
+    target.style.borderTop = dropBefore ? '2px solid #2563eb' : '';
+    target.style.borderBottom = dropBefore ? '' : '2px solid #2563eb';
+  });
+
+  function clearIndicator(row) {
+    if (!row) return;
+    row.style.borderTop = '';
+    row.style.borderBottom = '';
+  }
+
+  tbody.addEventListener('dragleave', function(e) {
+    if (!tbody.contains(e.relatedTarget)) { clearIndicator(overRow); overRow = null; }
+  });
+
+  tbody.addEventListener('drop', function(e) {
+    e.preventDefault();
+    if (!dragRow || !overRow || overRow === dragRow) { clearIndicator(overRow); overRow = null; return; }
+    clearIndicator(overRow);
+    tbody.insertBefore(dragRow, dropBefore ? overRow : overRow.nextElementSibling);
+    tbody.querySelectorAll('tr[data-id] .row-ordinal').forEach(function(span, i) { span.textContent = i + 1; });
+    overRow = null;
+  });
+
+  tbody.addEventListener('dragend', function(e) {
+    if (!dragRow) return;
+    dragRow.classList.remove('opacity-40');
+    clearIndicator(overRow);
+    overRow = null;
+
+    var ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(function(r) { return r.dataset.id; });
+    fetch('/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/entries/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: ids.map(function(id) { return 'ids=' + encodeURIComponent(id); }).join('&')
+    }).catch(function() { location.reload(); });
+
+    dragRow = null;
+  });
 })();
 </script>
 {{end}}

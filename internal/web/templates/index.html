@@ -27,7 +27,7 @@
     <tbody class="divide-y divide-gray-100">
       {{range .Entrepreneurs}}
       <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/entrepreneurs/{{.ID}}'">
-        <td class="px-4 py-3 font-medium text-gray-900">{{.Name}}</td>
+        <td class="px-4 py-3 font-medium text-gray-900">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}</td>
         <td class="px-4 py-3 font-mono text-gray-600 text-xs">{{.PIB}}</td>
       </tr>
       {{end}}

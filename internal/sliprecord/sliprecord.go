@@ -158,6 +158,22 @@ func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (SlipRec
 	return s, UpsertUpdated, nil
 }
 
+// Delete removes the slip record with the given ID.
+func (r *Repo) Delete(ctx context.Context, id uuid.UUID) error {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM slip_records WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // FindByID returns the slip record with the given ID, or ErrNotFound.
 func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (SlipRecord, error) {
 	var s SlipRecord
