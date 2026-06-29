@@ -61,33 +61,33 @@ func GeneratePDF(pay *ips.Payment, outputPath string) error {
 }
 
 func draw(pdf *gofpdf.Fpdf, pay *ips.Payment) {
-	// Outer border + vertical divider
-	pdf.SetLineWidth(0.5)
-	pdf.SetDrawColor(0, 0, 0)
+	// Outer border + vertical divider in light gray
+	pdf.SetLineWidth(0.3)
+	pdf.SetDrawColor(209, 213, 219)
 	pdf.Rect(0, 0, pageW, pageH, "D")
 	pdf.Line(divX, 0, divX, pageH)
 
 	// Header (left column only)
 	pdf.Line(0, headerH, divX, headerH)
-	pdf.SetFont("DejaVu", "B", 7.5)
-	pdf.SetTextColor(0, 0, 0)
+	pdf.SetFont("DejaVu", "B", 7)
+	pdf.SetTextColor(31, 41, 55)
 	pdf.SetXY(0, 1.5)
 	pdf.CellFormat(divX, headerH-1.5, "NALOG ZA UPLATU", "", 0, "C", false, 0, "")
 
 	// Left: payer, purpose, payee
-	fieldBox(pdf, 0, headerH+0*leftRowH, divX, leftRowH, "Uplatilac", joinNonEmpty(pay.P, formatAccount(pay.O)))
-	fieldBox(pdf, 0, headerH+1*leftRowH, divX, leftRowH, "Svrha uplate", pay.S)
-	fieldBox(pdf, 0, headerH+2*leftRowH, divX, leftRowH, "Primalac", pay.N)
+	fieldBox(pdf, 0, headerH+0*leftRowH, divX, leftRowH, "Uplatilac", joinNonEmpty(pay.P, formatAccount(pay.O)), false)
+	fieldBox(pdf, 0, headerH+1*leftRowH, divX, leftRowH, "Svrha uplate", pay.S, false)
+	fieldBox(pdf, 0, headerH+2*leftRowH, divX, leftRowH, "Primalac", pay.N, false)
 
-	// Right: code row
+	// Right: code row — values are bold (key metrics)
 	currency, amount := splitAmountParts(pay.I)
-	fieldBox(pdf, divX, 0, codeW, codeRowH, "Sifra placanja", pay.SF)
-	fieldBox(pdf, divX+codeW, 0, currW, codeRowH, "Valuta", currency)
-	fieldBox(pdf, divX+codeW+currW, 0, pageW-divX-codeW-currW, codeRowH, "Iznos", amount)
+	fieldBox(pdf, divX, 0, codeW, codeRowH, "Sifra placanja", pay.SF, true)
+	fieldBox(pdf, divX+codeW, 0, currW, codeRowH, "Valuta", currency, true)
+	fieldBox(pdf, divX+codeW+currW, 0, pageW-divX-codeW-currW, codeRowH, "Iznos", amount, true)
 
 	// Right: account + reference
-	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Racun primaoca", formatAccount(pay.R))
-	fieldBox(pdf, divX, codeRowH+acctRowH, pageW-divX, refRowH, "Poziv na broj", pay.RO)
+	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Racun primaoca", formatAccount(pay.R), false)
+	fieldBox(pdf, divX, codeRowH+acctRowH, pageW-divX, refRowH, "Poziv na broj", pay.RO, false)
 
 	// QR: bottom-right, vertically centered in remaining area
 	qrX := pageW - qrSize - 2.0
@@ -95,23 +95,35 @@ func draw(pdf *gofpdf.Fpdf, pay *ips.Payment) {
 	pdf.ImageOptions("qr", qrX, qrY, qrSize, qrSize, false, gofpdf.ImageOptions{ImageType: "PNG"}, 0, "")
 }
 
-func fieldBox(pdf *gofpdf.Fpdf, x, y, w, h float64, label, value string) {
-	const m = 1.0 // margin from cell edge to field border
+func fieldBox(pdf *gofpdf.Fpdf, x, y, w, h float64, label, value string, boldValue bool) {
+	const (
+		m   = 1.0 // gap from cell edge to field border
+		pad = 2.5 // padding from border to text
+	)
 
 	pdf.SetLineWidth(0.2)
-	pdf.SetDrawColor(180, 180, 180)
+	pdf.SetDrawColor(209, 213, 219)
 	pdf.Rect(x+m, y+m, w-2*m, h-2*m, "D")
-	pdf.SetDrawColor(0, 0, 0)
+
+	labelX := x + m + pad
+	labelY := y + m + 1.2
+	textX := x + m + pad
+	textY := labelY + 3.5
+	textW := w - 2*(m+pad)
 
 	pdf.SetFont("DejaVu", "", 5.5)
-	pdf.SetTextColor(80, 80, 80)
-	pdf.SetXY(x+m+1, y+m+0.8)
-	pdf.Cell(w-2*(m+1), 3.5, label)
+	pdf.SetTextColor(107, 114, 128)
+	pdf.SetXY(labelX, labelY)
+	pdf.Cell(textW, 3.5, label)
 
-	pdf.SetFont("DejaVu", "B", 8)
-	pdf.SetTextColor(0, 0, 0)
-	pdf.SetXY(x+m+1, y+m+0.8+3.5)
-	pdf.MultiCell(w-2*(m+1), 4.5, value, "", "L", false)
+	weight := ""
+	if boldValue {
+		weight = "B"
+	}
+	pdf.SetFont("DejaVu", weight, 9)
+	pdf.SetTextColor(31, 41, 55)
+	pdf.SetXY(textX, textY)
+	pdf.MultiCell(textW, 4.5, value, "", "L", false)
 }
 
 func formatAccount(s string) string {
