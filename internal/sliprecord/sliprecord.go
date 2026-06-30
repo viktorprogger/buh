@@ -36,6 +36,8 @@ type SlipRecord struct {
 	Reference      string
 	Payee          string
 	Payer          string
+	Year           int
+	Advance        bool
 	GeneratedAt    time.Time
 }
 
@@ -49,18 +51,28 @@ func NewRepo(db *sql.DB) *Repo {
 	return &Repo{db: db}
 }
 
+const selectCols = `id, entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance, generated_at`
+
+func scanSlip(row interface {
+	Scan(...any) error
+}, s *SlipRecord) error {
+	return row.Scan(
+		&s.ID, &s.EntrepreneurID, &s.PaymentCode, &s.Amount, &s.Currency,
+		&s.Purpose, &s.PayeeAccount, &s.Reference, &s.Payee, &s.Payer,
+		&s.Year, &s.Advance, &s.GeneratedAt,
+	)
+}
+
 // Save inserts a new SlipRecord. The ID and GeneratedAt fields are set by the database.
 func (r *Repo) Save(ctx context.Context, s SlipRecord) (SlipRecord, error) {
-	err := r.db.QueryRowContext(ctx,
+	err := scanSlip(r.db.QueryRowContext(ctx,
 		`INSERT INTO slip_records
-		 (entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		 RETURNING id, entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, generated_at`,
-		s.EntrepreneurID, s.PaymentCode, s.Amount, s.Currency, s.Purpose, s.PayeeAccount, s.Reference, s.Payee, s.Payer,
-	).Scan(
-		&s.ID, &s.EntrepreneurID, &s.PaymentCode, &s.Amount, &s.Currency,
-		&s.Purpose, &s.PayeeAccount, &s.Reference, &s.Payee, &s.Payer, &s.GeneratedAt,
-	)
+		 (entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		 RETURNING `+selectCols,
+		s.EntrepreneurID, s.PaymentCode, s.Amount, s.Currency, s.Purpose,
+		s.PayeeAccount, s.Reference, s.Payee, s.Payer, s.Year, s.Advance,
+	), &s)
 	if err != nil {
 		return SlipRecord{}, err
 	}
@@ -70,7 +82,7 @@ func (r *Repo) Save(ctx context.Context, s SlipRecord) (SlipRecord, error) {
 // ListByEntrepreneur returns all slip records for the given entrepreneur, newest first.
 func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID) ([]SlipRecord, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, generated_at
+		`SELECT `+selectCols+`
 		 FROM slip_records
 		 WHERE entrepreneur_id = $1
 		 ORDER BY generated_at DESC`,
@@ -84,10 +96,7 @@ func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID)
 	var out []SlipRecord
 	for rows.Next() {
 		var s SlipRecord
-		if err := rows.Scan(
-			&s.ID, &s.EntrepreneurID, &s.PaymentCode, &s.Amount, &s.Currency,
-			&s.Purpose, &s.PayeeAccount, &s.Reference, &s.Payee, &s.Payer, &s.GeneratedAt,
-		); err != nil {
+		if err := scanSlip(rows, &s); err != nil {
 			return nil, err
 		}
 		out = append(out, s)
@@ -99,9 +108,10 @@ func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID)
 func (r *Repo) Update(ctx context.Context, s SlipRecord) error {
 	res, err := r.db.ExecContext(ctx,
 		`UPDATE slip_records
-		 SET payer=$1, purpose=$2, payee=$3, payee_account=$4, reference=$5, payment_code=$6, amount=$7, currency=$8
-		 WHERE id=$9`,
-		s.Payer, s.Purpose, s.Payee, s.PayeeAccount, s.Reference, s.PaymentCode, s.Amount, s.Currency, s.ID,
+		 SET payer=$1, purpose=$2, payee=$3, payee_account=$4, reference=$5, payment_code=$6, amount=$7, currency=$8, year=$9, advance=$10
+		 WHERE id=$11`,
+		s.Payer, s.Purpose, s.Payee, s.PayeeAccount, s.Reference,
+		s.PaymentCode, s.Amount, s.Currency, s.Year, s.Advance, s.ID,
 	)
 	if err != nil {
 		return err
@@ -116,22 +126,20 @@ func (r *Repo) Update(ctx context.Context, s SlipRecord) error {
 	return nil
 }
 
-// FindOrUpdateByPurpose looks up a slip by (entrepreneur_id, purpose).
+// FindOrUpdateByPurpose looks up a slip by (entrepreneur_id, purpose, advance).
 // If found and unchanged it returns UpsertUnchanged; if fields differ it updates and returns UpsertUpdated.
 // If not found it inserts and returns UpsertCreated.
+// The advance field is part of the key because the same purpose text can appear on both a main slip
+// and an advance slip from different tax-year resolutions.
 func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (SlipRecord, UpsertStatus, error) {
 	var existing SlipRecord
-	err := r.db.QueryRowContext(ctx,
-		`SELECT id, entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, generated_at
+	err := scanSlip(r.db.QueryRowContext(ctx,
+		`SELECT `+selectCols+`
 		 FROM slip_records
-		 WHERE entrepreneur_id = $1 AND purpose = $2
+		 WHERE entrepreneur_id = $1 AND purpose = $2 AND advance = $3
 		 LIMIT 1`,
-		s.EntrepreneurID, s.Purpose,
-	).Scan(
-		&existing.ID, &existing.EntrepreneurID, &existing.PaymentCode, &existing.Amount,
-		&existing.Currency, &existing.Purpose, &existing.PayeeAccount, &existing.Reference,
-		&existing.Payee, &existing.Payer, &existing.GeneratedAt,
-	)
+		s.EntrepreneurID, s.Purpose, s.Advance,
+	), &existing)
 	if errors.Is(err, sql.ErrNoRows) {
 		saved, err := r.Save(ctx, s)
 		return saved, UpsertCreated, err
@@ -146,7 +154,8 @@ func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (SlipRec
 		existing.PayeeAccount == s.PayeeAccount &&
 		existing.Reference == s.Reference &&
 		existing.Payee == s.Payee &&
-		existing.Payer == s.Payer {
+		existing.Payer == s.Payer &&
+		existing.Year == s.Year {
 		return existing, UpsertUnchanged, nil
 	}
 
@@ -177,15 +186,10 @@ func (r *Repo) Delete(ctx context.Context, id uuid.UUID) error {
 // FindByID returns the slip record with the given ID, or ErrNotFound.
 func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (SlipRecord, error) {
 	var s SlipRecord
-	err := r.db.QueryRowContext(ctx,
-		`SELECT id, entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, generated_at
-		 FROM slip_records
-		 WHERE id = $1`,
+	err := scanSlip(r.db.QueryRowContext(ctx,
+		`SELECT `+selectCols+` FROM slip_records WHERE id = $1`,
 		id,
-	).Scan(
-		&s.ID, &s.EntrepreneurID, &s.PaymentCode, &s.Amount, &s.Currency,
-		&s.Purpose, &s.PayeeAccount, &s.Reference, &s.Payee, &s.Payer, &s.GeneratedAt,
-	)
+	), &s)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SlipRecord{}, ErrNotFound
 	}

@@ -177,6 +177,87 @@ FROM (
 WHERE e.id = sub.id AND e.position IS NULL;
 ALTER TABLE kpo_entries ALTER COLUMN position SET NOT NULL;`,
 		},
+		{
+			name: "010_add_year_advance_to_slip_records",
+			sql: `ALTER TABLE slip_records ADD COLUMN IF NOT EXISTS year INT NOT NULL DEFAULT 0;
+ALTER TABLE slip_records ADD COLUMN IF NOT EXISTS advance BOOLEAN NOT NULL DEFAULT FALSE;`,
+		},
+		{
+			name: "011_add_address_bank_to_entrepreneurs",
+			sql: `ALTER TABLE entrepreneurs ADD COLUMN IF NOT EXISTS address TEXT NOT NULL DEFAULT '';
+ALTER TABLE entrepreneurs ADD COLUMN IF NOT EXISTS bank_account TEXT NOT NULL DEFAULT '';`,
+		},
+		{
+			name: "012_create_clients",
+			sql: `CREATE TABLE IF NOT EXISTS clients (
+    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    entrepreneur_id     UUID        NOT NULL REFERENCES entrepreneurs(id) ON DELETE CASCADE,
+    name                TEXT        NOT NULL,
+    pib                 TEXT        NOT NULL DEFAULT '',
+    registration_number TEXT        NOT NULL DEFAULT '',
+    email               TEXT        NOT NULL DEFAULT '',
+    address             TEXT        NOT NULL DEFAULT '',
+    is_foreign          BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS clients_entrepreneur_id_idx ON clients(entrepreneur_id);`,
+		},
+		{
+			name: "013_create_invoices",
+			sql: `CREATE TABLE IF NOT EXISTS invoices (
+    id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    entrepreneur_id UUID          NOT NULL REFERENCES entrepreneurs(id) ON DELETE CASCADE,
+    client_id       UUID          REFERENCES clients(id) ON DELETE SET NULL,
+    client_name     TEXT          NOT NULL DEFAULT '',
+    invoice_type    TEXT          NOT NULL DEFAULT 'standard',
+    invoice_number  TEXT          NOT NULL DEFAULT '',
+    issue_date      DATE          NOT NULL,
+    period_start    DATE,
+    period_end      DATE,
+    due_date        DATE,
+    currency        TEXT          NOT NULL DEFAULT 'RSD',
+    notes           TEXT          NOT NULL DEFAULT '',
+    total_rsd       NUMERIC(15,2) NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS invoice_items (
+    id           UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_id   UUID          NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    description  TEXT          NOT NULL DEFAULT '',
+    quantity     NUMERIC(10,2) NOT NULL DEFAULT 1,
+    unit_price   NUMERIC(15,2) NOT NULL DEFAULT 0,
+    discount_pct NUMERIC(5,2)  NOT NULL DEFAULT 0,
+    is_product   BOOLEAN       NOT NULL DEFAULT FALSE,
+    position     INTEGER       NOT NULL DEFAULT 0
+);`,
+		},
+		{
+			name: "014_create_bank_accounts",
+			sql: `CREATE TABLE IF NOT EXISTS bank_accounts (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    entrepreneur_id UUID        NOT NULL REFERENCES entrepreneurs(id) ON DELETE CASCADE,
+    account_type    TEXT        NOT NULL DEFAULT 'local',
+    bank_name       TEXT        NOT NULL DEFAULT '',
+    account_number  TEXT        NOT NULL DEFAULT '',
+    iban            TEXT        NOT NULL DEFAULT '',
+    swift           TEXT        NOT NULL DEFAULT '',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS bank_accounts_entrepreneur_id_idx ON bank_accounts(entrepreneur_id);
+CREATE TABLE IF NOT EXISTS correspondent_banks (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    bank_account_id UUID        NOT NULL REFERENCES bank_accounts(id) ON DELETE CASCADE,
+    bank_name       TEXT        NOT NULL DEFAULT '',
+    swift           TEXT        NOT NULL DEFAULT '',
+    bank_address    TEXT        NOT NULL DEFAULT '',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);`,
+		},
+		{
+			name: "015_add_bank_account_to_invoices",
+			sql: `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_account_id UUID REFERENCES bank_accounts(id) ON DELETE SET NULL;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS correspondent_bank_id UUID REFERENCES correspondent_banks(id) ON DELETE SET NULL;`,
+		},
 	}
 
 	// Create migrations tracking table.

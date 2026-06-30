@@ -1,0 +1,146 @@
+{{template "base" .}}
+
+{{define "title"}}{{if .IsNew}}Нови рачун{{else}}Измена рачуна{{end}} — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings" class="hover:text-primary">← Подешавања</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden max-w-xl">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">{{if .IsNew}}Нови банковни рачун{{else}}Измена банковног рачуна{{end}}</h2>
+  </div>
+
+  {{$action := printf "/entrepreneurs/%s/bank-accounts/new" (.Entrepreneur.ID.String)}}
+  {{if not .IsNew}}{{$action = printf "/entrepreneurs/%s/bank-accounts/%s" (.Entrepreneur.ID.String) (.Account.ID.String)}}{{end}}
+
+  <form method="POST" action="{{$action}}" class="px-6 py-4 space-y-4" id="bank-form">
+    <!-- Account type toggle -->
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Тип рачуна</label>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="account_type" value="local"
+                 {{if or .IsNew (eq (printf "%s" .Account.AccountType) "local")}}checked{{end}}
+                 onchange="toggleType(this.value)"
+                 class="text-primary focus:ring-primary">
+          <span class="text-sm">Домаћи (динарски)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="account_type" value="foreign"
+                 {{if eq (printf "%s" .Account.AccountType) "foreign"}}checked{{end}}
+                 onchange="toggleType(this.value)"
+                 class="text-primary focus:ring-primary">
+          <span class="text-sm">Девизни (IBAN/SWIFT)</span>
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label for="f-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Назив банке</label>
+      <input id="f-bank" type="text" name="bank_name" value="{{.Account.BankName}}"
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+    </div>
+
+    <!-- Local fields -->
+    <div id="local-fields" class="space-y-4">
+      <div>
+        <label for="f-accnum" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          Број рачуна <span class="text-red-500 local-req">*</span>
+        </label>
+        <input id="f-accnum" type="text" name="account_number" value="{{.Account.AccountNumber}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+               placeholder="265-1234567890-12">
+      </div>
+    </div>
+
+    <!-- Foreign fields -->
+    <div id="foreign-fields" class="space-y-4 hidden">
+      <div>
+        <label for="f-iban" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          IBAN <span class="text-red-500 foreign-req">*</span>
+        </label>
+        <input id="f-iban" type="text" name="iban" value="{{.Account.IBAN}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+               placeholder="DE89 3704 0044 0532 0130 00">
+      </div>
+      <div>
+        <label for="f-swift" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          SWIFT / BIC <span class="text-red-500 foreign-req">*</span>
+        </label>
+        <input id="f-swift" type="text" name="swift" value="{{.Account.SWIFT}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+               placeholder="DEUTDEDB">
+      </div>
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        {{if .IsNew}}Додај рачун{{else}}Сачувај{{end}}
+      </button>
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings"
+         class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        Одустани
+      </a>
+    </div>
+  </form>
+
+  <!-- Correspondent banks section (only for existing foreign accounts) -->
+  {{if and (not .IsNew) (eq (printf "%s" .Account.AccountType) "foreign")}}
+  <div class="border-t border-gray-200 px-6 py-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-sm font-semibold text-gray-700">Коресподентне банке</h3>
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}/bank-accounts/{{.Account.ID}}/correspondents/new"
+         class="rounded bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary-hover">
+        + Додај
+      </a>
+    </div>
+    {{if .Account.CorrespondentBanks}}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs font-semibold text-gray-500 uppercase border-b border-gray-200">
+          <th class="pb-1 text-left">Банка</th>
+          <th class="pb-1 text-left">SWIFT</th>
+          <th class="pb-1 text-left">Адреса</th>
+          <th class="pb-1"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {{range .Account.CorrespondentBanks}}
+        <tr>
+          <td class="py-1.5 pr-2">{{.BankName}}</td>
+          <td class="py-1.5 pr-2 font-mono text-xs">{{.SWIFT}}</td>
+          <td class="py-1.5 pr-2 text-xs text-gray-500">{{.BankAddress}}</td>
+          <td class="py-1.5 flex gap-2 justify-end">
+            <a href="/entrepreneurs/{{$.Entrepreneur.ID}}/bank-accounts/{{$.Account.ID}}/correspondents/{{.ID}}/edit"
+               class="text-xs text-primary hover:underline">Измени</a>
+            <form method="POST" action="/entrepreneurs/{{$.Entrepreneur.ID}}/bank-accounts/{{$.Account.ID}}/correspondents/{{.ID}}/delete"
+                  onsubmit="return confirm('Обриши кор. банку?')">
+              <button type="submit" class="text-xs text-red-600 hover:underline">Обриши</button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="text-sm text-gray-400">Нема коресподентних банака.</p>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+
+<script>
+function toggleType(val) {
+  document.getElementById('local-fields').classList.toggle('hidden', val !== 'local');
+  document.getElementById('foreign-fields').classList.toggle('hidden', val !== 'foreign');
+}
+// Init on load
+(function() {
+  const checked = document.querySelector('input[name="account_type"]:checked');
+  if (checked) toggleType(checked.value);
+})();
+</script>
+{{end}}

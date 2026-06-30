@@ -71,7 +71,28 @@
       </div>
     </div>
 
-    <div class="slip-actions slip-actions--between">
+    <div class="mt-6 border-t border-gray-100 pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-year">
+          Година
+          <span class="inline-block w-4 h-4 rounded-full bg-gray-100 text-gray-500 text-[10px] text-center leading-4 font-bold cursor-help ml-1 align-middle"
+                title="Пореска година на коју се ова уплатница односи — година из решења Пореске управе. Авансна уплата за следећу годину добија исту годину као и главна.">?</span>
+        </label>
+        <input id="f-year" type="number" name="year" value="{{.Form.Year}}" min="2000" max="2100" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div class="flex items-end pb-2">
+        <label class="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
+          <input type="checkbox" name="advance" {{if .Form.Advance}}checked{{end}}
+                 class="rounded border-gray-300 text-primary focus:ring-primary">
+          Аванс
+          <span class="inline-block w-4 h-4 rounded-full bg-gray-100 text-gray-500 text-[10px] text-center leading-4 font-bold cursor-help"
+                title="Означите ако је ово авансна уплата за наредну годину (привремена аконтација до доношења решења за ту годину).">?</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="slip-actions slip-actions--between mt-4">
       <a href="/entrepreneurs/{{.Entrepreneur.ID}}"
          class="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
         Одустани

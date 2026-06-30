@@ -15,6 +15,10 @@
       {{else}}
         <span class="text-gray-400 text-xs">Паушалац {{.PausalalYear}}: нема података</span>
       {{end}}
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings"
+         class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        Подешавања
+      </a>
       <button id="e-edit-btn" type="button" onclick="eEdit(true)"
               class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
         Измени
@@ -89,6 +93,10 @@ function eEdit(on) {
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
     <h2 class="text-lg font-semibold text-gray-900">КПО — Књига прихода</h2>
     <div class="flex flex-wrap gap-2 items-center">
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}/invoices/new"
+         class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
+        + Нова фактура
+      </a>
       {{if .KPOBooks}}
       <select id="year-select"
               class="rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -123,9 +131,9 @@ function eEdit(on) {
           action="/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/entries"
           aria-label="Нова ставка КПО"></form>
     {{if not .CurrentBook.IsFinalized}}
-    {{range .KPOEntries}}<form id="edit-{{.ID}}" method="POST"
-          action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.ID}}/update"></form>
-    {{end}}
+    {{range .KPORows}}{{if not .IsAdvanceInvoice}}<form id="edit-{{.EntryID}}" method="POST"
+          action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/update"></form>
+    {{end}}{{end}}
     {{end}}
 
     <table class="w-full text-sm" aria-label="КПО {{.SelectedYear}}">
@@ -142,28 +150,46 @@ function eEdit(on) {
       </thead>
       <tbody id="kpo-tbody" class="divide-y divide-gray-100">
 
-        {{range .KPOEntries}}
-        <tr class="hover:bg-gray-50" data-id="{{.ID}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
+        {{range .KPORows}}
+        {{if .IsAdvanceInvoice}}
+        <!-- Advance invoice row — muted, not counted in KPO totals -->
+        <tr class="opacity-50 hover:opacity-70"
+            title="Ова фактура се не узима у обзир у КПО">
+          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">А</td>
+          <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
+          <td class="px-3 py-2 text-gray-500">
+            <a href="/entrepreneurs/{{$.Entrepreneur.ID}}/invoices/{{.InvoiceID}}"
+               class="underline hover:text-primary">{{.InvoiceNum}}</a>
+            {{if .ClientName}}<span class="ml-1 text-xs text-gray-400">{{.ClientName}}</span>{{end}}
+          </td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-500">{{printf "%.2f" .TotalRSD}}</td>
+          {{if not $.CurrentBook.IsFinalized}}<td></td>{{end}}
+        </tr>
+        {{else}}
+        <!-- Regular KPO entry -->
+        <tr class="hover:bg-gray-50" data-id="{{.EntryID}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
           <!-- Ordinal / drag handle -->
           <td class="px-3 py-2 text-center text-gray-400 text-xs{{if not $.CurrentBook.IsFinalized}} cursor-grab select-none{{end}}">
             {{if not $.CurrentBook.IsFinalized}}<span class="text-gray-300 mr-0.5">⠿</span>{{end}}<span class="row-ordinal">{{.OrdinalNumber}}</span>
           </td>
           <!-- Date -->
           <td class="px-3 py-2">
-            <span class="view-val text-gray-600">{{.CollectionDate.Format "02.01.2006."}}</span>
+            <span class="view-val text-gray-600">{{.Date.Format "02.01.2006."}}</span>
             {{if not $.CurrentBook.IsFinalized}}
-            <input form="edit-{{.ID}}" type="text" name="collection_date"
-                   value="{{.CollectionDate.Format "02.01"}}" maxlength="5" placeholder="дд.мм"
+            <input form="edit-{{.EntryID}}" type="text" name="collection_date"
+                   value="{{.Date.Format "02.01"}}" maxlength="5" placeholder="дд.мм"
                    style="display:none"
                    class="edit-input w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
           <!-- Invoice -->
           <td class="px-3 py-2">
-            <span class="view-val text-gray-800">{{.InvoiceNumber}}</span>
+            <span class="view-val text-gray-800">{{.InvoiceNum}}</span>
             {{if not $.CurrentBook.IsFinalized}}
-            <input form="edit-{{.ID}}" type="text" name="invoice_number"
-                   value="{{.InvoiceNumber}}" style="display:none"
+            <input form="edit-{{.EntryID}}" type="text" name="invoice_number"
+                   value="{{.InvoiceNum}}" style="display:none"
                    class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
@@ -171,7 +197,7 @@ function eEdit(on) {
           <td class="px-3 py-2 text-right">
             <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ProductRevenue}}</span>
             {{if not $.CurrentBook.IsFinalized}}
-            <input form="edit-{{.ID}}" type="text" name="product_revenue"
+            <input form="edit-{{.EntryID}}" type="text" name="product_revenue"
                    value="{{printf "%.2f" .ProductRevenue}}" style="display:none"
                    class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
@@ -180,21 +206,21 @@ function eEdit(on) {
           <td class="px-3 py-2 text-right">
             <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ServiceRevenue}}</span>
             {{if not $.CurrentBook.IsFinalized}}
-            <input form="edit-{{.ID}}" type="text" name="service_revenue"
+            <input form="edit-{{.EntryID}}" type="text" name="service_revenue"
                    value="{{printf "%.2f" .ServiceRevenue}}" style="display:none"
                    class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
           <!-- Total (view only) -->
-          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .Total}}</td>
+          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .EntryTotal}}</td>
           <!-- Actions -->
           {{if not $.CurrentBook.IsFinalized}}
           <td class="px-2 py-2 text-center">
             <div class="view-actions flex gap-1 items-center justify-center">
-              <button type="button" onclick="rowEdit('{{.ID}}', true)"
+              <button type="button" onclick="rowEdit('{{.EntryID}}', true)"
                       class="text-gray-400 hover:text-gray-600 px-1 py-1" title="Измени">✎</button>
               <form method="POST"
-                    action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.ID}}/delete"
+                    action="/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/delete"
                     onsubmit="return confirm('Обрисати ставку?')">
                 <button type="submit"
                         class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
@@ -202,17 +228,18 @@ function eEdit(on) {
               </form>
             </div>
             <div class="edit-actions flex gap-1 items-center justify-center" style="display:none">
-              <button form="edit-{{.ID}}" type="submit"
+              <button form="edit-{{.EntryID}}" type="submit"
                       class="text-green-600 hover:text-green-800 px-1 py-1" title="Сачувај">✓</button>
-              <button type="button" onclick="rowEdit('{{.ID}}', false)"
+              <button type="button" onclick="rowEdit('{{.EntryID}}', false)"
                       class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="Откажи">✕</button>
             </div>
           </td>
           {{end}}
         </tr>
         {{end}}
+        {{end}}
 
-        <!-- Totals row (shown only when there are entries) -->
+        <!-- Totals row (shown only when there are regular KPO entries) -->
         {{if .KPOEntries}}
         <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
           <td colspan="3" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">Укупно:</td>
@@ -300,40 +327,103 @@ function eEdit(on) {
       + Нова уплатница
     </a>
   </div>
-  {{if .Slips}}
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="bg-gray-50 border-b border-gray-200">
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Датум</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Сврха</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Прималац</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Износ</th>
-        <th class="w-10"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {{range .Slips}}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/slips/{{.ID}}'">
-        <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
-        <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
-        <td class="px-2 py-2 text-center" onclick="event.stopPropagation()">
-          <form method="POST" action="/slips/{{.ID}}/delete"
-                onsubmit="return confirm('Обрисати уплатницу?')">
-            <button type="submit"
-                    class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
-                    title="Обриши уплатницу" aria-label="Обриши">✕</button>
-          </form>
-        </td>
-      </tr>
+
+  {{if or .LatestSlipYear.Regular .LatestSlipYear.Advance .PrevSlipYears}}
+  <!-- Tabs -->
+  <div class="border-b border-gray-200 flex">
+    <button id="slip-tab-latest-btn" onclick="slipTab('latest')"
+            class="px-5 py-2.5 text-sm font-medium text-primary border-b-2 border-primary -mb-px">
+      Текуће
+    </button>
+    <button id="slip-tab-prev-btn" onclick="slipTab('prev')"
+            class="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent -mb-px">
+      Претходне
+    </button>
+  </div>
+
+  <!-- Latest tab -->
+  <div id="slip-tab-latest">
+    {{if .LatestSlipYear.Year}}
+    <div class="px-6 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">{{.LatestSlipYear.Year}}</div>
+    {{end}}
+    {{if .LatestSlipYear.Regular}}
+    {{template "slip_table" (slipTableArgs .Entrepreneur.ID .LatestSlipYear.Regular)}}
+    {{else}}
+    <div class="px-6 py-4 text-sm text-gray-400">Нема редовних уплатница.</div>
+    {{end}}
+    {{if .LatestSlipYear.Advance}}
+    <details class="border-t border-gray-100">
+      <summary class="px-6 py-3 text-sm font-medium text-gray-700 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
+        <span class="text-gray-400 text-xs">▶</span>
+        Аванс ({{len .LatestSlipYear.Advance}})
+      </summary>
+      {{template "slip_table" (slipTableArgs .Entrepreneur.ID .LatestSlipYear.Advance)}}
+    </details>
+    {{end}}
+  </div>
+
+  <!-- Previous tab -->
+  <div id="slip-tab-prev" class="hidden">
+    {{if .PrevSlipYears}}
+    {{range .PrevSlipYears}}
+    <div class="border-t border-gray-100 first:border-t-0">
+      <div class="px-6 pt-4 pb-1 text-sm font-bold text-gray-700">{{.Year}}</div>
+      {{if .Regular}}
+      <details open>
+        <summary class="px-6 py-2 text-sm font-medium text-gray-600 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
+          <span class="text-gray-400 text-xs accordion-arrow">▶</span>
+          Редовне ({{len .Regular}})
+        </summary>
+        {{template "slip_table" (slipTableArgs $.Entrepreneur.ID .Regular)}}
+      </details>
       {{end}}
-    </tbody>
-  </table>
+      {{if .Advance}}
+      <details>
+        <summary class="px-6 py-2 text-sm font-medium text-gray-600 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
+          <span class="text-gray-400 text-xs accordion-arrow">▶</span>
+          Аванс ({{len .Advance}})
+        </summary>
+        {{template "slip_table" (slipTableArgs $.Entrepreneur.ID .Advance)}}
+      </details>
+      {{end}}
+    </div>
+    {{end}}
+    {{else}}
+    <div class="px-6 py-8 text-sm text-gray-500 text-center">Нема претходних уплатница.</div>
+    {{end}}
+  </div>
+
   {{else}}
   <div class="px-6 py-8 text-sm text-gray-500 text-center">Нема сачуваних уплатница.</div>
   {{end}}
 </div>
+
+<script>
+function slipTab(name) {
+  var latest = document.getElementById('slip-tab-latest');
+  var prev = document.getElementById('slip-tab-prev');
+  var btnLatest = document.getElementById('slip-tab-latest-btn');
+  var btnPrev = document.getElementById('slip-tab-prev-btn');
+  var isLatest = name === 'latest';
+  latest.classList.toggle('hidden', !isLatest);
+  prev.classList.toggle('hidden', isLatest);
+  btnLatest.classList.toggle('text-primary', isLatest);
+  btnLatest.classList.toggle('border-primary', isLatest);
+  btnLatest.classList.toggle('text-gray-500', !isLatest);
+  btnLatest.classList.toggle('border-transparent', !isLatest);
+  btnPrev.classList.toggle('text-primary', !isLatest);
+  btnPrev.classList.toggle('border-primary', !isLatest);
+  btnPrev.classList.toggle('text-gray-500', isLatest);
+  btnPrev.classList.toggle('border-transparent', isLatest);
+}
+// Rotate accordion arrow on open/close
+document.querySelectorAll('details').forEach(function(d) {
+  d.addEventListener('toggle', function() {
+    var arrow = d.querySelector('.accordion-arrow');
+    if (arrow) arrow.textContent = d.open ? '▼' : '▶';
+  });
+});
+</script>
 
 <script>
 // ── Row edit toggle ──────────────────────────────────────────────────────────

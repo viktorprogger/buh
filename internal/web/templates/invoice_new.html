@@ -1,0 +1,480 @@
+{{template "base" .}}
+
+{{define "title"}}Нова фактура — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="/entrepreneurs/{{.Entrepreneur.ID}}" class="hover:text-primary">← Назад</a>
+</div>
+
+{{if not .ProfileComplete}}
+<div class="mb-4 rounded bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+  <strong>Профил није завршен.</strong>
+  Следећа поља ће бити празна на фактури (PDF): ПИБ, адреса, жиро рачун.
+  Попуните их у <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings" class="underline hover:text-amber-900">Подешавањима</a>
+  или наставите и креирајте фактуру без тих поља.
+</div>
+{{end}}
+
+<div class="flex gap-4 items-start" style="min-height: 600px">
+  <!-- ── Left column: form (60%) ─────────────────────────────────────────── -->
+  <div class="flex-1" style="flex: 3">
+    <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Нова фактура</h2>
+      </div>
+
+      <form id="invoice-form" method="POST" action="/entrepreneurs/{{.Entrepreneur.ID}}/invoices" class="px-5 py-4 space-y-4">
+
+        <!-- Invoice type -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Тип фактуре</div>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" name="invoice_type" value="standard" checked class="text-primary focus:ring-primary" onchange="updatePreview()">
+              Фактура
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" name="invoice_type" value="advance" class="text-primary focus:ring-primary" onchange="updatePreview()">
+              Авансна фактура
+            </label>
+          </div>
+        </div>
+
+        <!-- Client -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Клијент</label>
+          <div class="relative">
+            <input type="text" id="client-search" placeholder="Претражи клијента по имену..."
+                   autocomplete="off"
+                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <input type="hidden" name="client_id" id="client-id-hidden">
+            <input type="hidden" name="client_name" id="client-name-hidden">
+            <ul id="client-dropdown"
+                class="absolute z-10 w-full bg-white border border-gray-200 rounded shadow-lg mt-1 hidden max-h-48 overflow-y-auto text-sm">
+            </ul>
+          </div>
+        </div>
+
+        <!-- Invoice number -->
+        <div>
+          <label for="f-invnum" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Број фактуре</label>
+          <input id="f-invnum" type="text" name="invoice_number" placeholder="нпр. 1/2026"
+                 class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                 oninput="updatePreview()">
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="f-issue" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Датум издавања <span class="text-red-500">*</span></label>
+            <input id="f-issue" type="date" name="issue_date" value="{{.Today}}" required
+                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   oninput="updatePreview()">
+          </div>
+          <div>
+            <label for="f-due" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Датум валуте (рок)</label>
+            <input id="f-due" type="date" name="due_date"
+                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   oninput="updatePreview()">
+          </div>
+        </div>
+
+        <!-- Period (collapsible) -->
+        <div>
+          <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input type="checkbox" id="period-toggle" class="rounded border-gray-300 text-primary focus:ring-primary"
+                   onchange="document.getElementById('period-fields').classList.toggle('hidden', !this.checked)">
+            Период промета (нпр. за континуиране услуге — IT сектор)
+          </label>
+          <div id="period-fields" class="hidden grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <label for="f-pstart" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Промет од</label>
+              <input id="f-pstart" type="date" name="period_start"
+                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                     oninput="updatePreview()">
+            </div>
+            <div>
+              <label for="f-pend" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Промет до</label>
+              <input id="f-pend" type="date" name="period_end"
+                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                     oninput="updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Currency -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Валута</div>
+          <div class="flex gap-2 flex-wrap">
+            {{range .Currencies}}
+            <label class="flex items-center">
+              <input type="radio" name="currency" value="{{.}}" {{if eq . "RSD"}}checked{{end}}
+                     class="sr-only peer" onchange="updatePreview()">
+              <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
+                           peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                           hover:bg-gray-50">{{.}}</span>
+            </label>
+            {{end}}
+          </div>
+        </div>
+
+        <!-- Line items -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Ставке фактуре</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="items-table">
+              <thead>
+                <tr class="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-200">
+                  <th class="pb-1 text-left pr-2">Опис услуге / робе</th>
+                  <th class="pb-1 text-right w-16 pr-2">Кол.</th>
+                  <th class="pb-1 text-right w-24 pr-2">Јед. цена</th>
+                  <th class="pb-1 text-right w-16 pr-2">Попуст%</th>
+                  <th class="pb-1 text-center w-16 pr-2">Роба</th>
+                  <th class="pb-1 w-8"></th>
+                </tr>
+              </thead>
+              <tbody id="items-body">
+                <!-- rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+          <button type="button" onclick="addItem()"
+                  class="mt-2 text-sm text-primary hover:text-primary-hover font-medium">
+            + Додај ставку
+          </button>
+        </div>
+
+        <!-- Total summary -->
+        <div class="text-right text-sm font-semibold text-gray-900 border-t border-gray-200 pt-3">
+          За уплату: <span id="grand-total-label">0,00</span> <span id="grand-total-currency">RSD</span>
+        </div>
+
+        <!-- Bank account -->
+        {{if .BankAccounts}}
+        <div>
+          <label for="f-bank-account" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Банковни рачун (опционо)</label>
+          <select id="f-bank-account" name="bank_account_id" onchange="onBankAccountChange()"
+                  class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="">— без рачуна —</option>
+            {{range .BankAccounts}}
+            <option value="{{.ID}}" data-type="{{.AccountType}}" data-label="{{.DisplayLabel}}">{{.DisplayLabel}}</option>
+            {{end}}
+          </select>
+        </div>
+        <div id="correspondent-section" class="hidden">
+          <label for="f-corr-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Коресподентна банка (опционо)</label>
+          <select id="f-corr-bank" name="correspondent_bank_id" onchange="updatePreview()"
+                  class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="">— без кор. банке —</option>
+          </select>
+        </div>
+        {{end}}
+
+        <!-- Notes -->
+        <div>
+          <label for="f-notes" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Напомена (опционо)</label>
+          <textarea id="f-notes" name="notes" rows="2"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    oninput="updatePreview()"></textarea>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="flex gap-3 pt-2 border-t border-gray-200">
+          <button type="submit"
+                  class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+            Креирај фактуру и генериши PDF
+          </button>
+          <a href="/entrepreneurs/{{.Entrepreneur.ID}}"
+             class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            Одустани
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Right column: live preview (40%) ───────────────────────────────── -->
+  <div style="flex: 2; min-width: 280px">
+    <div class="sticky top-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Преглед</div>
+      <div id="invoice-preview"
+           class="bg-white border border-gray-300 rounded shadow-sm p-6 text-xs font-sans leading-snug"
+           style="min-height: 500px">
+        <!-- updated by updatePreview() -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var ENTREPRENEUR_ID = '{{.Entrepreneur.ID}}';
+var FX_RATES = {
+  {{range $k, $v := .FXRates}}'{{$k}}': {{$v}},{{end}}
+};
+// Bank accounts data for correspondents lookup
+var BANK_ACCOUNTS = {
+  {{range .BankAccounts}}'{{.ID}}': {type:'{{.AccountType}}', correspondents:[
+    {{range .CorrespondentBanks}}{id:'{{.ID}}',name:'{{.BankName}}',swift:'{{.SWIFT}}',addr:'{{.BankAddress}}'},{{end}}
+  ]},{{end}}
+};
+
+// ── Line items ────────────────────────────────────────────────────────────────
+var itemCount = 0;
+
+function addItem() {
+  var tbody = document.getElementById('items-body');
+  var i = itemCount++;
+  var tr = document.createElement('tr');
+  tr.className = 'item-row border-b border-gray-100';
+  tr.innerHTML =
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_description[]" placeholder="Опис" oninput="updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_quantity[]" value="1" oninput="recalc(); updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_unit_price[]" value="0" oninput="recalc(); updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_discount[]" value="0" oninput="recalc(); updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2 text-center">' +
+      '<input type="checkbox" name="item_is_product[]" onchange="updatePreview()"' +
+             'class="rounded border-gray-300 text-primary focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1">' +
+      '<button type="button" onclick="removeItem(this)" class="text-red-400 hover:text-red-600 text-xs px-1">✕</button>' +
+    '</td>';
+  tbody.appendChild(tr);
+  tr.querySelector('input[name="item_description[]"]').focus();
+  updatePreview();
+}
+
+function removeItem(btn) {
+  btn.closest('tr').remove();
+  recalc();
+  updatePreview();
+}
+
+function parseNum(s) {
+  return parseFloat((s || '0').replace(',', '.')) || 0;
+}
+
+function recalc() {
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var total = 0;
+  rows.forEach(function(row) {
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    total += qty * price * (1 - disc / 100);
+  });
+  var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  document.getElementById('grand-total-label').textContent = total.toFixed(2).replace('.', ',');
+  document.getElementById('grand-total-currency').textContent = cur;
+}
+
+// ── Bank account selection ────────────────────────────────────────────────────
+function onBankAccountChange() {
+  var sel = document.getElementById('f-bank-account');
+  if (!sel) return;
+  var aid = sel.value;
+  var corrSection = document.getElementById('correspondent-section');
+  var corrSel = document.getElementById('f-corr-bank');
+  if (!aid || !BANK_ACCOUNTS[aid] || BANK_ACCOUNTS[aid].type !== 'foreign') {
+    if (corrSection) corrSection.classList.add('hidden');
+    if (corrSel) { corrSel.innerHTML = '<option value="">— без кор. банке —</option>'; corrSel.value = ''; }
+    updatePreview();
+    return;
+  }
+  // Foreign account: populate correspondent banks
+  var corrs = BANK_ACCOUNTS[aid].correspondents || [];
+  if (corrSel) {
+    corrSel.innerHTML = '<option value="">— без кор. банке —</option>';
+    corrs.forEach(function(cb) {
+      var opt = document.createElement('option');
+      opt.value = cb.id;
+      opt.textContent = cb.name + (cb.swift ? ' (' + cb.swift + ')' : '');
+      corrSel.appendChild(opt);
+    });
+  }
+  if (corrSection) corrSection.classList.toggle('hidden', corrs.length === 0);
+  updatePreview();
+}
+
+function getBankAccountPreviewLines() {
+  var sel = document.getElementById('f-bank-account');
+  if (!sel || !sel.value) return '';
+  var opt = sel.options[sel.selectedIndex];
+  var aid = sel.value;
+  var acc = BANK_ACCOUNTS[aid];
+  if (!acc) return '';
+  var lines = '<div>' + escHtml(opt.textContent) + '</div>';
+  var corrSel = document.getElementById('f-corr-bank');
+  if (corrSel && corrSel.value && acc.correspondents) {
+    var cb = acc.correspondents.find(function(c) { return c.id === corrSel.value; });
+    if (cb) {
+      lines += '<div style="color:#6b7280;margin-top:2px">Кор. банка: ' + escHtml(cb.name) + ' (' + escHtml(cb.swift) + ')</div>';
+      if (cb.addr) lines += '<div style="color:#6b7280">' + escHtml(cb.addr) + '</div>';
+    }
+  }
+  return lines;
+}
+
+// ── Client autocomplete ───────────────────────────────────────────────────────
+var searchTimeout;
+document.getElementById('client-search').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  var q = this.value.trim();
+  if (q.length < 1) {
+    hideDropdown();
+    document.getElementById('client-id-hidden').value = '';
+    document.getElementById('client-name-hidden').value = '';
+    updatePreview();
+    return;
+  }
+  searchTimeout = setTimeout(function() {
+    fetch('/entrepreneurs/' + ENTREPRENEUR_ID + '/clients/search?q=' + encodeURIComponent(q))
+      .then(function(r) { return r.json(); })
+      .then(function(items) {
+        var ul = document.getElementById('client-dropdown');
+        ul.innerHTML = '';
+        if (!items || items.length === 0) { hideDropdown(); return; }
+        items.forEach(function(item) {
+          var li = document.createElement('li');
+          li.textContent = item.name;
+          li.className = 'px-3 py-2 cursor-pointer hover:bg-gray-100';
+          li.addEventListener('click', function() {
+            document.getElementById('client-search').value = item.name;
+            document.getElementById('client-id-hidden').value = item.id;
+            document.getElementById('client-name-hidden').value = item.name;
+            hideDropdown();
+            updatePreview();
+          });
+          ul.appendChild(li);
+        });
+        ul.classList.remove('hidden');
+      }).catch(function() { hideDropdown(); });
+  }, 200);
+});
+
+document.getElementById('client-search').addEventListener('blur', function() {
+  // Delay so click on dropdown item registers first.
+  setTimeout(function() {
+    hideDropdown();
+    // If nothing was selected from dropdown, use typed text as client name.
+    var typed = document.getElementById('client-search').value.trim();
+    if (!document.getElementById('client-id-hidden').value && typed) {
+      document.getElementById('client-name-hidden').value = typed;
+    }
+    updatePreview();
+  }, 200);
+});
+
+function hideDropdown() {
+  document.getElementById('client-dropdown').classList.add('hidden');
+}
+
+// ── Live preview ──────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '';
+  var p = iso.split('-');
+  if (p.length !== 3) return iso;
+  return p[2] + '.' + p[1] + '.' + p[0] + '.';
+}
+
+function updatePreview() {
+  var type = document.querySelector('input[name="invoice_type"]:checked')?.value || 'standard';
+  var title = type === 'advance' ? 'АВАНСНА ФАКТУРА' : 'ФАКТУРА';
+  var invNum = document.getElementById('f-invnum').value || '—';
+  var issueDate = fmtDate(document.getElementById('f-issue').value);
+  var dueDate = fmtDate(document.getElementById('f-due').value);
+  var clientName = document.getElementById('client-name-hidden').value ||
+                   document.getElementById('client-search').value || '—';
+  var currency = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  var notes = document.getElementById('f-notes').value;
+
+  var periodStart = document.getElementById('period-toggle').checked
+    ? fmtDate(document.getElementById('f-pstart').value) : '';
+  var periodEnd = document.getElementById('period-toggle').checked
+    ? fmtDate(document.getElementById('f-pend').value) : '';
+
+  // Items
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var itemsHtml = '';
+  var grandTotal = 0;
+  rows.forEach(function(row) {
+    var desc = row.querySelector('[name="item_description[]"]').value || '—';
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    var lineTotal = qty * price * (1 - disc / 100);
+    grandTotal += lineTotal;
+    itemsHtml +=
+      '<tr style="border-bottom:1px solid #e5e7eb">' +
+        '<td style="padding:3px 4px">' + escHtml(desc) + '</td>' +
+        '<td style="padding:3px 4px;text-align:right">' + qty.toFixed(2) + '</td>' +
+        '<td style="padding:3px 4px;text-align:right;font-family:monospace">' + price.toFixed(2) + '</td>' +
+        '<td style="padding:3px 4px;text-align:right">' + disc.toFixed(0) + '%</td>' +
+        '<td style="padding:3px 4px;text-align:right;font-family:monospace;font-weight:600">' + lineTotal.toFixed(2) + '</td>' +
+      '</tr>';
+  });
+
+  var totalRSD = grandTotal * (FX_RATES[currency] || 1);
+  var totalLine = 'За уплату: ' + grandTotal.toFixed(2) + ' ' + currency;
+  if (currency !== 'RSD') totalLine += ' (≈ ' + totalRSD.toFixed(2) + ' RSD)';
+
+  var footer = 'Obveznik PDV-a nije u sistemu PDV-a — Paušalni preduzetnik.';
+  if (dueDate) footer = 'Plaćanje izvršiti u roku do ' + dueDate + '. ' + footer;
+
+  var bankLines = getBankAccountPreviewLines();
+
+  var html =
+    '<div style="font-family:sans-serif;color:#111;font-size:11px">' +
+    '<div style="font-size:18px;font-weight:700;margin-bottom:4px">' + title + '</div>' +
+    '<div>Број: <strong>' + escHtml(invNum) + '</strong></div>' +
+    '<div>Датум: ' + (issueDate || '—') + '</div>' +
+    (dueDate ? '<div>Рок: ' + dueDate + '</div>' : '') +
+    (periodStart && periodEnd ? '<div>Период: ' + periodStart + ' – ' + periodEnd + '</div>' : '') +
+    '<hr style="margin:8px 0;border-color:#e5e7eb">' +
+    '<div style="display:flex;gap:16px;margin-bottom:8px">' +
+      '<div style="flex:1"><div style="font-weight:700;margin-bottom:2px">КLIJENT</div><div>' + escHtml(clientName) + '</div></div>' +
+    '</div>' +
+    (bankLines ? '<div style="margin-bottom:6px;padding:4px 6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:3px"><div style="font-weight:600;font-size:9px;color:#6b7280;margin-bottom:2px">РАЧУН ЗА УПЛАТУ</div>' + bankLines + '</div>' : '') +
+    '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:6px">' +
+      '<thead>' +
+        '<tr style="background:#f3f4f6;font-weight:600">' +
+          '<th style="padding:3px 4px;text-align:left">Опис</th>' +
+          '<th style="padding:3px 4px;text-align:right">Кол.</th>' +
+          '<th style="padding:3px 4px;text-align:right">Цена</th>' +
+          '<th style="padding:3px 4px;text-align:right">%</th>' +
+          '<th style="padding:3px 4px;text-align:right">Износ</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' + (itemsHtml || '<tr><td colspan="5" style="padding:4px;color:#9ca3af;text-align:center">—</td></tr>') + '</tbody>' +
+    '</table>' +
+    '<div style="text-align:right;font-weight:700;border-top:2px solid #374151;padding-top:4px">' + totalLine + '</div>' +
+    (notes ? '<div style="margin-top:8px;color:#374151"><em>Напомена: ' + escHtml(notes) + '</em></div>' : '') +
+    '<hr style="margin:8px 0;border-color:#e5e7eb">' +
+    '<div style="color:#6b7280;font-size:9px">' + footer + '</div>' +
+    '</div>';
+
+  document.getElementById('invoice-preview').innerHTML = html;
+  recalc();
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init with one empty item row and trigger initial preview.
+addItem();
+updatePreview();
+</script>
+{{end}}

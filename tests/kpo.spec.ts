@@ -18,14 +18,15 @@ test.beforeEach(async ({ page }) => {
 // ── 1. Current-year KPO is auto-created ────────────────────────────────────
 test('shows KPO section for the current year by default', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'КПО — Књига прихода' })).toBeVisible();
-  const yearTab = page.locator(`a[href*="year=${CURRENT_YEAR}"]`).first();
-  await expect(yearTab).toBeVisible();
-  await expect(yearTab).toHaveClass(/text-primary|border-primary/);
+  // Year is shown in a <select>, not anchor tabs.
+  const yearSelect = page.locator('#year-select');
+  await expect(yearSelect).toBeVisible();
+  await expect(yearSelect).toHaveValue(String(CURRENT_YEAR));
 });
 
 // ── 2. Adding an entry ──────────────────────────────────────────────────────
 test('can add a KPO entry', async ({ page }) => {
-  await page.fill('#kpo-date', `${CURRENT_YEAR}-03-15`);
+  await page.fill('#kpo-date', '15.03');
   await page.fill('#kpo-invoice', '2026/1');
   await page.fill('#kpo-product', '15000.00');
   await page.fill('#kpo-service', '5000.00');
@@ -48,7 +49,7 @@ test('live total updates in the new-entry row', async ({ page }) => {
 
 // ── 4. Enter key submits the new entry ─────────────────────────────────────
 test('pressing Enter on service revenue submits the new entry', async ({ page }) => {
-  await page.fill('#kpo-date', `${CURRENT_YEAR}-04-01`);
+  await page.fill('#kpo-date', '01.04');
   await page.fill('#kpo-invoice', 'Enter-test');
   await page.fill('#kpo-product', '1000');
   await page.locator('#kpo-service').fill('500');
@@ -59,7 +60,7 @@ test('pressing Enter on service revenue submits the new entry', async ({ page })
 
 // ── 5. Deleting an entry ────────────────────────────────────────────────────
 test('can delete a KPO entry', async ({ page }) => {
-  await page.fill('#kpo-date', `${CURRENT_YEAR}-05-01`);
+  await page.fill('#kpo-date', '01.05');
   await page.fill('#kpo-invoice', 'To-delete');
   await page.fill('#kpo-product', '100');
   await page.fill('#kpo-service', '0');
@@ -75,7 +76,7 @@ test('can delete a KPO entry', async ({ page }) => {
 
 // ── 6. Totals row shows column sums ────────────────────────────────────────
 test('totals row appears after entries are added', async ({ page }) => {
-  await page.fill('#kpo-date', `${CURRENT_YEAR}-06-01`);
+  await page.fill('#kpo-date', '01.06');
   await page.fill('#kpo-invoice', 'Sum-test');
   await page.fill('#kpo-product', '1000');
   await page.fill('#kpo-service', '500');
@@ -118,31 +119,32 @@ test('can unfinalize (откључати) a finalized year', async ({ page }) =>
 // ── 9. Add and navigate to a previous year ─────────────────────────────────
 test('can open a KPO for a previous year', async ({ page }) => {
   const prevYear = CURRENT_YEAR - 1;
+  // Reveal the hidden year form first.
+  await page.getByRole('button', { name: '+ Додај годину' }).click();
   await page.fill('input[name="year"]', String(prevYear));
-  await page.getByRole('button', { name: 'Отвори годину' }).click();
+  await page.getByRole('button', { name: 'Отвори' }).click();
   await page.waitForURL(new RegExp(`year=${prevYear}`));
 
-  const prevTab = page.locator(`a[href*="year=${prevYear}"]`).first();
-  await expect(prevTab).toHaveClass(/text-primary|border-primary/);
+  // Year select should show the previous year as selected.
+  await expect(page.locator('#year-select')).toHaveValue(String(prevYear));
   await expect(page.locator('#kpo-new-row')).toBeVisible();
 });
 
 // ── 10. Multiple years show as tabs ────────────────────────────────────────
 test('all opened years appear as tabs', async ({ page }) => {
   for (const y of [CURRENT_YEAR - 2, CURRENT_YEAR - 3]) {
+    await page.getByRole('button', { name: '+ Додај годину' }).click();
     await page.fill('input[name="year"]', String(y));
-    await page.getByRole('button', { name: 'Отвори годину' }).click();
+    await page.getByRole('button', { name: 'Отвори' }).click();
     await page.waitForURL(new RegExp(`year=${y}`));
   }
   await page.goto(entrepreneurUrl);
-  const tabs = page.locator('a[href*="?year="]');
-  expect(await tabs.count()).toBeGreaterThanOrEqual(3);
+  // At least 3 years should be available in the year select.
+  const options = page.locator('#year-select option');
+  expect(await options.count()).toBeGreaterThanOrEqual(3);
 });
 
 // ── 11. Keyboard tab navigation through the non-date entry fields ──────────
-// Note: type="date" in Chromium has internal sub-parts (day/month/year) that
-// consume Tab presses before leaving the input. We start from #kpo-invoice to
-// test the tab flow that actually matters for accountant keyboard entry.
 test('tab key moves focus through KPO numeric entry fields', async ({ page }) => {
   const freshYear = CURRENT_YEAR - 10;
   await page.goto(`${entrepreneurUrl}?year=${freshYear}`);

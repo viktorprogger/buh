@@ -1,0 +1,74 @@
+{{template "base" .}}
+
+{{define "title"}}{{if .IsNew}}Нови клијент{{else}}Измена клијента{{end}} — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings" class="hover:text-primary">← Подешавања</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden max-w-xl">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">{{if .IsNew}}Нови клијент{{else}}Измена клијента{{end}}</h2>
+  </div>
+
+  {{$action := printf "/entrepreneurs/%s/clients/new" (.Entrepreneur.ID.String)}}
+  {{if not .IsNew}}{{$action = printf "/entrepreneurs/%s/clients/%s" (.Entrepreneur.ID.String) (.Client.ID.String)}}{{end}}
+
+  <form method="POST" action="{{$action}}" class="px-6 py-4 space-y-4">
+    {{if .Error}}
+    <div class="rounded bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{.Error}}</div>
+    {{end}}
+
+    <div>
+      <label for="f-name" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+        Назив клијента <span class="text-red-500">*</span>
+      </label>
+      <input id="f-name" type="text" name="name" value="{{.Client.Name}}" autofocus
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="f-pib" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">ПИБ</label>
+        <input id="f-pib" type="text" name="pib" value="{{.Client.PIB}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label for="f-reg" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Матични број</label>
+        <input id="f-reg" type="text" name="registration_number" value="{{.Client.RegistrationNumber}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+    </div>
+
+    <div>
+      <label for="f-email" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Е-пошта</label>
+      <input id="f-email" type="email" name="email" value="{{.Client.Email}}"
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+    </div>
+
+    <div>
+      <label for="f-addr" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Адреса</label>
+      <input id="f-addr" type="text" name="address" value="{{.Client.Address}}"
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+    </div>
+
+    <div class="flex items-center gap-2">
+      <input id="f-foreign" type="checkbox" name="is_foreign" {{if .Client.IsForeign}}checked{{end}}
+             class="rounded border-gray-300 text-primary focus:ring-primary">
+      <label for="f-foreign" class="text-sm text-gray-700">Страни клијент (ван Србије)</label>
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        {{if .IsNew}}Додај клијента{{else}}Сачувај{{end}}
+      </button>
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings"
+         class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        Одустани
+      </a>
+    </div>
+  </form>
+</div>
+{{end}}

@@ -1,0 +1,127 @@
+{{template "base" .}}
+
+{{define "title"}}Фактура {{.Invoice.InvoiceNumber}} — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="/entrepreneurs/{{.Entrepreneur.ID}}" class="hover:text-primary">← Назад</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden max-w-2xl">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900">
+        {{if eq (printf "%s" .Invoice.InvoiceType) "advance"}}Авансна фактура{{else}}Фактура{{end}}
+        {{if .Invoice.InvoiceNumber}}<span class="font-mono ml-1">{{.Invoice.InvoiceNumber}}</span>{{end}}
+      </h2>
+      {{if .Invoice.ClientName}}
+      <div class="text-sm text-gray-500 mt-0.5">{{.Invoice.ClientName}}</div>
+      {{end}}
+    </div>
+    <a href="/entrepreneurs/{{.Entrepreneur.ID}}/invoices/{{.Invoice.ID}}/pdf"
+       class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+      ↓ Преузми PDF
+    </a>
+  </div>
+
+  <!-- Metadata -->
+  <div class="px-6 py-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm border-b border-gray-100">
+    <div>
+      <span class="text-gray-500">Датум издавања:</span>
+      <span class="ml-1 font-medium">{{.Invoice.IssueDate.Format "02.01.2006."}}</span>
+    </div>
+    {{if .Invoice.DueDate.Valid}}
+    <div>
+      <span class="text-gray-500">Рок плаћања:</span>
+      <span class="ml-1 font-medium">{{.Invoice.DueDate.Time.Format "02.01.2006."}}</span>
+    </div>
+    {{end}}
+    {{if .Invoice.PeriodStart.Valid}}
+    <div class="col-span-2">
+      <span class="text-gray-500">Период промета:</span>
+      <span class="ml-1 font-medium">
+        {{.Invoice.PeriodStart.Time.Format "02.01.2006."}} – {{.Invoice.PeriodEnd.Time.Format "02.01.2006."}}
+      </span>
+    </div>
+    {{end}}
+    <div>
+      <span class="text-gray-500">Валута:</span>
+      <span class="ml-1 font-medium font-mono">{{.Invoice.Currency}}</span>
+    </div>
+    {{if ne .Invoice.Currency "RSD"}}
+    <div>
+      <span class="text-gray-500">Износ у RSD:</span>
+      <span class="ml-1 font-medium font-mono">{{printf "%.2f" .Invoice.TotalRSD}} RSD</span>
+    </div>
+    {{end}}
+  </div>
+
+  <!-- Items table -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <th class="px-4 py-2 text-left">Опис</th>
+          <th class="px-4 py-2 text-right w-16">Кол.</th>
+          <th class="px-4 py-2 text-right w-24">Јед. цена</th>
+          <th class="px-4 py-2 text-right w-16">Попуст</th>
+          <th class="px-4 py-2 text-right w-24">Износ</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {{range .Items}}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 text-gray-900">
+            {{.Description}}
+            {{if .IsProduct}}<span class="ml-1 text-xs text-gray-400">(роба)</span>{{end}}
+          </td>
+          <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" .Quantity}}</td>
+          <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" .UnitPrice}}</td>
+          <td class="px-4 py-2 text-right text-gray-600">{{printf "%.0f" .DiscountPct}}%</td>
+          <td class="px-4 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .LineTotal}}</td>
+        </tr>
+        {{end}}
+        <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold">
+          <td colspan="4" class="px-4 py-2 text-right text-sm text-gray-600">За уплату:</td>
+          <td class="px-4 py-2 text-right font-mono text-gray-900">
+            {{printf "%.2f" .GrandTotal}} {{.Invoice.Currency}}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {{if .BankAccount}}
+  <div class="px-6 py-3 border-t border-gray-100 text-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Рачун за уплату</div>
+    <div class="text-gray-800">
+      {{if .BankAccount.BankName}}<span class="font-medium">{{.BankAccount.BankName}}</span>{{end}}
+      {{if eq (printf "%s" .BankAccount.AccountType) "foreign"}}
+        — IBAN: <span class="font-mono">{{.BankAccount.IBAN}}</span>
+        / SWIFT: <span class="font-mono">{{.BankAccount.SWIFT}}</span>
+      {{else}}
+        {{if .BankAccount.AccountNumber}}— <span class="font-mono">{{.BankAccount.AccountNumber}}</span>{{end}}
+      {{end}}
+    </div>
+    {{if .CorrespondentBank}}
+    <div class="mt-1 text-xs text-gray-500">
+      Кор. банка: <span class="font-medium">{{.CorrespondentBank.BankName}}</span>
+      {{if .CorrespondentBank.SWIFT}}/ SWIFT: <span class="font-mono">{{.CorrespondentBank.SWIFT}}</span>{{end}}
+      {{if .CorrespondentBank.BankAddress}}/ {{.CorrespondentBank.BankAddress}}{{end}}
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if .Invoice.Notes}}
+  <div class="px-6 py-3 border-t border-gray-100 text-sm text-gray-600">
+    <span class="font-medium">Напомена:</span> {{.Invoice.Notes}}
+  </div>
+  {{end}}
+
+  <div class="px-6 py-3 border-t border-gray-100 text-xs text-gray-400">
+    {{if .Invoice.DueDate.Valid}}Плаћање извршити у року до {{.Invoice.DueDate.Time.Format "02.01.2006."}}. {{end}}
+    Obveznik PDV-a nije u sistemu PDV-a — Paušalni preduzetnik.
+  </div>
+</div>
+{{end}}

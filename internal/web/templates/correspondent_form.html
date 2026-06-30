@@ -1,0 +1,56 @@
+{{template "base" .}}
+
+{{define "title"}}{{if .IsNew}}Нова кор. банка{{else}}Измена кор. банке{{end}} — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="/entrepreneurs/{{.Entrepreneur.ID}}/bank-accounts/{{.BankAccount.ID}}/edit" class="hover:text-primary">← Назад на рачун</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden max-w-xl">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">{{if .IsNew}}Нова коресподентна банка{{else}}Измена коресподентне банке{{end}}</h2>
+    <div class="text-sm text-gray-500 mt-0.5">за рачун {{.BankAccount.DisplayLabel}}</div>
+  </div>
+
+  {{$action := printf "/entrepreneurs/%s/bank-accounts/%s/correspondents/new" (.Entrepreneur.ID.String) (.BankAccount.ID.String)}}
+  {{if not .IsNew}}{{$action = printf "/entrepreneurs/%s/bank-accounts/%s/correspondents/%s" (.Entrepreneur.ID.String) (.BankAccount.ID.String) (.Correspondent.ID.String)}}{{end}}
+
+  <form method="POST" action="{{$action}}" class="px-6 py-4 space-y-4">
+    <div>
+      <label for="f-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+        Назив банке <span class="text-red-500">*</span>
+      </label>
+      <input id="f-bank" type="text" name="bank_name" value="{{.Correspondent.BankName}}" autofocus
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+    </div>
+
+    <div>
+      <label for="f-swift" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+        SWIFT / BIC <span class="text-red-500">*</span>
+      </label>
+      <input id="f-swift" type="text" name="swift" value="{{.Correspondent.SWIFT}}"
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+             placeholder="DEUTDEDB">
+    </div>
+
+    <div>
+      <label for="f-addr" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Адреса банке</label>
+      <input id="f-addr" type="text" name="bank_address" value="{{.Correspondent.BankAddress}}"
+             class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+             placeholder="Theodor-Heuss-Allee 2, Frankfurt">
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        {{if .IsNew}}Додај банку{{else}}Сачувај{{end}}
+      </button>
+      <a href="/entrepreneurs/{{.Entrepreneur.ID}}/bank-accounts/{{.BankAccount.ID}}/edit"
+         class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        Одустани
+      </a>
+    </div>
+  </form>
+</div>
+{{end}}
