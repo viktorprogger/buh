@@ -24,7 +24,9 @@ import (
 	"buh/internal/bankaccount"
 	"buh/internal/client"
 	"buh/internal/entrepreneur"
+	"buh/internal/entrepreneuruser"
 	"buh/internal/importer"
+	"buh/internal/invitation"
 	"buh/internal/invoice"
 	"buh/internal/ips"
 	"buh/internal/kpo"
@@ -82,6 +84,17 @@ type templates struct {
 	correspondentForm *template.Template
 	invoiceNew        *template.Template
 	invoiceDetail     *template.Template
+	// Entrepreneur-side templates
+	entrepreneurRegister     *template.Template
+	entrepreneurDashboard    *template.Template
+	inviteToken              *template.Template
+	inviteAccept             *template.Template
+	entrepreneurInviteAcc    *template.Template
+	kpoMerge                 *template.Template
+	entrepreneurKPO          *template.Template
+	entrepreneurClients      *template.Template
+	entrepreneurBankAccounts *template.Template
+	entrepreneurInvoices     *template.Template
 }
 
 // mustPageTmpl parses base.html + a page template (and optional extras) into a single template set.
@@ -103,21 +116,32 @@ func parseTemplates() templates {
 		},
 	}
 	return templates{
-		login:           template.Must(template.New("login.html").ParseFS(templateFS, "templates/login.html")),
-		index:           mustPageTmpl("index.html", nil),
-		entrepreneur:    mustPageTmpl("entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html"),
-		entrepreneurNew: mustPageTmpl("entrepreneur_new.html", nil),
-		results:         mustPageTmpl("results.html", nil),
-		slip:            mustPageTmpl("slip.html", nil, slipExtra...),
-		slipNew:         mustPageTmpl("slip_new.html", nil, slipExtra...),
-		placeholder:     mustPageTmpl("placeholder.html", nil),
-		errPage:         mustPageTmpl("error.html", nil),
+		login:             template.Must(template.New("login.html").ParseFS(templateFS, "templates/login.html")),
+		index:             mustPageTmpl("index.html", nil),
+		entrepreneur:      mustPageTmpl("entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html"),
+		entrepreneurNew:   mustPageTmpl("entrepreneur_new.html", nil),
+		results:           mustPageTmpl("results.html", nil),
+		slip:              mustPageTmpl("slip.html", nil, slipExtra...),
+		slipNew:           mustPageTmpl("slip_new.html", nil, slipExtra...),
+		placeholder:       mustPageTmpl("placeholder.html", nil),
+		errPage:           mustPageTmpl("error.html", nil),
 		settings:          mustPageTmpl("settings.html", nil),
 		clientForm:        mustPageTmpl("client_form.html", nil),
 		bankAccountForm:   mustPageTmpl("bank_account_form.html", nil),
 		correspondentForm: mustPageTmpl("correspondent_form.html", nil),
 		invoiceNew:        mustPageTmpl("invoice_new.html", nil),
 		invoiceDetail:     mustPageTmpl("invoice.html", nil),
+		// Entrepreneur-side templates
+		entrepreneurRegister:     template.Must(template.New("entrepreneur_register.html").ParseFS(templateFS, "templates/entrepreneur_register.html")),
+		entrepreneurDashboard:    mustPageTmpl("entrepreneur_dashboard.html", nil),
+		inviteToken:              mustPageTmpl("invite_token.html", nil),
+		inviteAccept:             mustPageTmpl("invite_accept.html", nil),
+		entrepreneurInviteAcc:    mustPageTmpl("entrepreneur_invite_accountant.html", nil),
+		kpoMerge:                 mustPageTmpl("kpo_merge.html", template.FuncMap{"add": func(a, b int) int { return a + b }}),
+		entrepreneurKPO:          mustPageTmpl("entrepreneur_kpo.html", nil),
+		entrepreneurClients:      mustPageTmpl("entrepreneur_clients.html", nil),
+		entrepreneurBankAccounts: mustPageTmpl("entrepreneur_bank_accounts.html", nil),
+		entrepreneurInvoices:     mustPageTmpl("entrepreneur_invoices.html", nil),
 	}
 }
 
@@ -140,16 +164,18 @@ type kpoRow struct {
 }
 
 type handler struct {
-	accountants   *accountant.Repo
-	sessions      *auth.SessionManager
-	entrepreneurs *entrepreneur.Repo
-	slips         *sliprecord.Repo
-	kpoBooks      *kpo.Repo
-	clients       *client.Repo
-	invoices      *invoice.Repo
-	bankAccounts  *bankaccount.Repo
-	importer      *importer.Importer
-	tmpl          templates
+	accountants       *accountant.Repo
+	sessions          *auth.SessionManager
+	entrepreneurs     *entrepreneur.Repo
+	slips             *sliprecord.Repo
+	kpoBooks          *kpo.Repo
+	clients           *client.Repo
+	invoices          *invoice.Repo
+	bankAccounts      *bankaccount.Repo
+	importer          *importer.Importer
+	entrepreneurUsers *entrepreneuruser.Repo
+	invitations       *invitation.Repo
+	tmpl              templates
 }
 
 func (h *handler) renderError(w http.ResponseWriter, code int) {
@@ -172,24 +198,27 @@ func (h *handler) renderError(w http.ResponseWriter, code int) {
 }
 
 // NewHandler returns an HTTP handler for the web UI.
-func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
+func NewHandler(accountants *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
 	entrepreneurs := entrepreneur.NewRepo(db)
 	slips := sliprecord.NewRepo(db)
 	kpoBooks := kpo.NewRepo(db)
 	clients := client.NewRepo(db)
 	invoices := invoice.NewRepo(db)
 	bankAccounts := bankaccount.NewRepo(db)
+	invitations := invitation.NewRepo(db)
 	h := &handler{
-		accountants:   accountants,
-		sessions:      sessions,
-		entrepreneurs: entrepreneurs,
-		slips:         slips,
-		kpoBooks:      kpoBooks,
-		clients:       clients,
-		invoices:      invoices,
-		bankAccounts:  bankAccounts,
-		importer:      importer.New(entrepreneurs, slips),
-		tmpl:          parseTemplates(),
+		accountants:       accountants,
+		sessions:          sessions,
+		entrepreneurs:     entrepreneurs,
+		slips:             slips,
+		kpoBooks:          kpoBooks,
+		clients:           clients,
+		invoices:          invoices,
+		bankAccounts:      bankAccounts,
+		importer:          importer.New(entrepreneurs, slips),
+		entrepreneurUsers: entrepreneurUsers,
+		invitations:       invitations,
+		tmpl:              parseTemplates(),
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
@@ -198,79 +227,141 @@ func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db 
 	mux.HandleFunc("/privacy", h.handlePrivacy)
 	mux.HandleFunc("/terms", h.handleTerms)
 
-	protected := http.NewServeMux()
-	protected.HandleFunc("POST /process", h.handleProcess)
-	protected.HandleFunc("GET /entrepreneurs/new", h.handleEntrepreneurNewForm)
-	protected.HandleFunc("POST /entrepreneurs/new", h.handleEntrepreneurNewSubmit)
-	protected.HandleFunc("GET /entrepreneurs/{id}", h.handleEntrepreneur)
-	protected.HandleFunc("POST /entrepreneurs/{id}", h.handleEntrepreneurUpdate)
-	protected.HandleFunc("GET /entrepreneurs/{id}/settings", h.handleSettings)
-	protected.HandleFunc("POST /entrepreneurs/{id}/settings", h.handleSettingsUpdate)
-	protected.HandleFunc("GET /entrepreneurs/{id}/clients/search", h.handleClientSearch)
-	protected.HandleFunc("GET /entrepreneurs/{id}/clients/new", h.handleClientNewForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/clients/new", h.handleClientNewSubmit)
-	protected.HandleFunc("GET /entrepreneurs/{id}/clients/{cid}/edit", h.handleClientEditForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/clients/{cid}", h.handleClientUpdate)
-	protected.HandleFunc("POST /entrepreneurs/{id}/clients/{cid}/delete", h.handleClientDelete)
-	protected.HandleFunc("GET /entrepreneurs/{id}/bank-accounts/new", h.handleBankAccountNewForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/bank-accounts/new", h.handleBankAccountCreate)
-	protected.HandleFunc("GET /entrepreneurs/{id}/bank-accounts/{aid}/edit", h.handleBankAccountEditForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/bank-accounts/{aid}", h.handleBankAccountUpdate)
-	protected.HandleFunc("POST /entrepreneurs/{id}/bank-accounts/{aid}/delete", h.handleBankAccountDelete)
-	protected.HandleFunc("GET /entrepreneurs/{id}/bank-accounts/{aid}/correspondents/new", h.handleCorrespondentNewForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/bank-accounts/{aid}/correspondents/new", h.handleCorrespondentCreate)
-	protected.HandleFunc("GET /entrepreneurs/{id}/bank-accounts/{aid}/correspondents/{cid}/edit", h.handleCorrespondentEditForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/bank-accounts/{aid}/correspondents/{cid}", h.handleCorrespondentUpdate)
-	protected.HandleFunc("POST /entrepreneurs/{id}/bank-accounts/{aid}/correspondents/{cid}/delete", h.handleCorrespondentDelete)
-	protected.HandleFunc("GET /entrepreneurs/{id}/bank-accounts/{aid}/correspondents", h.handleCorrespondentsByAccount)
-	protected.HandleFunc("GET /entrepreneurs/{id}/invoices/new", h.handleInvoiceNewForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/invoices", h.handleInvoiceCreate)
-	protected.HandleFunc("GET /entrepreneurs/{id}/invoices/{iid}", h.handleInvoice)
-	protected.HandleFunc("GET /entrepreneurs/{id}/invoices/{iid}/pdf", h.handleInvoicePDF)
-	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries", h.handleKPOAddEntry)
-	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/reorder", h.handleKPOReorderEntries)
-	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/update", h.handleKPOUpdateEntry)
-	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/delete", h.handleKPODeleteEntry)
-	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/finalize", h.handleKPOFinalize)
-	protected.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/unfinalize", h.handleKPOUnfinalize)
-	protected.HandleFunc("GET /entrepreneurs/{id}/slips/new", h.handleSlipNewForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/slips/new", h.handleSlipNewSubmit)
-	protected.HandleFunc("GET /slips/{id}", h.handleSlip)
-	protected.HandleFunc("POST /slips/{id}/save", h.handleSlipSave)
-	protected.HandleFunc("POST /slips/{id}/download", h.handleSlipDownload)
-	protected.HandleFunc("POST /slips/{id}/delete", h.handleSlipDelete)
-	protected.HandleFunc("GET /slips/{id}/pdf", h.handleSlipPDF)
-	protected.HandleFunc("/", h.handleIndex)
+	// Public routes for entrepreneur registration and invite acceptance.
+	mux.HandleFunc("GET /e/register", h.handleEntrepreneurRegisterForm)
+	mux.HandleFunc("POST /e/register", h.handleEntrepreneurRegisterSubmit)
+	mux.HandleFunc("GET /invite/{token}", h.handleInviteToken)
+	mux.HandleFunc("POST /invite/{token}/accept", h.handleInviteAccept)
 
-	mux.Handle("/", middleware.RequireAuth(sessions, protected))
+	// Accountant-protected routes under /a/.
+	aMux := http.NewServeMux()
+	aMux.HandleFunc("POST /process", h.handleProcess)
+	aMux.HandleFunc("GET /entrepreneurs/new", h.handleEntrepreneurNewForm)
+	aMux.HandleFunc("POST /entrepreneurs/new", h.handleEntrepreneurNewSubmit)
+	aMux.HandleFunc("GET /entrepreneurs/{id}", h.handleEntrepreneur)
+	aMux.HandleFunc("POST /entrepreneurs/{id}", h.handleEntrepreneurUpdate)
+	aMux.HandleFunc("GET /entrepreneurs/{id}/settings", h.handleSettings)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/settings", h.handleSettingsUpdate)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries", h.handleKPOAddEntry)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/reorder", h.handleKPOReorderEntries)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/update", h.handleKPOUpdateEntry)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/entries/{entryID}/delete", h.handleKPODeleteEntry)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/finalize", h.handleKPOFinalize)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/unfinalize", h.handleKPOUnfinalize)
+	aMux.HandleFunc("GET /entrepreneurs/{id}/kpo/{year}/merge", h.handleKPOMergeView)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/merge/copy/{eid}", h.handleKPOMergeCopyEntry)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/merge/done", h.handleKPOMergeMarkDone)
+	aMux.HandleFunc("GET /entrepreneurs/{id}/slips/new", h.handleSlipNewForm)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/slips/new", h.handleSlipNewSubmit)
+	aMux.HandleFunc("POST /entrepreneurs/{id}/invite", h.handleAccountantInviteEntrepreneur)
+	aMux.HandleFunc("GET /slips/{id}", h.handleSlip)
+	aMux.HandleFunc("POST /slips/{id}/save", h.handleSlipSave)
+	aMux.HandleFunc("POST /slips/{id}/download", h.handleSlipDownload)
+	aMux.HandleFunc("POST /slips/{id}/delete", h.handleSlipDelete)
+	aMux.HandleFunc("GET /slips/{id}/pdf", h.handleSlipPDF)
+	aMux.HandleFunc("/", h.handleAccountantIndex)
+	mux.Handle("/a/", http.StripPrefix("/a", middleware.RequireAccountant(sessions, aMux)))
+
+	// Entrepreneur-protected routes under /e/.
+	eMux := http.NewServeMux()
+	eMux.HandleFunc("/", h.handleEntrepreneurDashboard)
+	eMux.HandleFunc("GET /invite-accountant", h.handleEntrepreneurInviteForm)
+	eMux.HandleFunc("POST /invite-accountant", h.handleEntrepreneurSendInvite)
+	eMux.HandleFunc("GET /clients", h.handleEClientList)
+	eMux.HandleFunc("GET /clients/search", h.handleEClientSearch)
+	eMux.HandleFunc("GET /clients/new", h.handleEClientNewForm)
+	eMux.HandleFunc("POST /clients/new", h.handleEClientNewSubmit)
+	eMux.HandleFunc("GET /clients/{cid}/edit", h.handleEClientEditForm)
+	eMux.HandleFunc("POST /clients/{cid}", h.handleEClientUpdate)
+	eMux.HandleFunc("POST /clients/{cid}/delete", h.handleEClientDelete)
+	eMux.HandleFunc("GET /bank-accounts", h.handleEBankAccountList)
+	eMux.HandleFunc("GET /bank-accounts/new", h.handleEBankAccountNewForm)
+	eMux.HandleFunc("POST /bank-accounts/new", h.handleEBankAccountCreate)
+	eMux.HandleFunc("GET /bank-accounts/{aid}/edit", h.handleEBankAccountEditForm)
+	eMux.HandleFunc("POST /bank-accounts/{aid}", h.handleEBankAccountUpdate)
+	eMux.HandleFunc("POST /bank-accounts/{aid}/delete", h.handleEBankAccountDelete)
+	eMux.HandleFunc("GET /bank-accounts/{aid}/correspondents/new", h.handleECorrespondentNewForm)
+	eMux.HandleFunc("POST /bank-accounts/{aid}/correspondents/new", h.handleECorrespondentCreate)
+	eMux.HandleFunc("GET /bank-accounts/{aid}/correspondents/{cid}/edit", h.handleECorrespondentEditForm)
+	eMux.HandleFunc("POST /bank-accounts/{aid}/correspondents/{cid}", h.handleECorrespondentUpdate)
+	eMux.HandleFunc("POST /bank-accounts/{aid}/correspondents/{cid}/delete", h.handleECorrespondentDelete)
+	eMux.HandleFunc("GET /bank-accounts/{aid}/correspondents", h.handleECorrespondentsByAccount)
+	eMux.HandleFunc("GET /invoices", h.handleEInvoiceList)
+	eMux.HandleFunc("GET /invoices/new", h.handleEInvoiceNewForm)
+	eMux.HandleFunc("POST /invoices", h.handleEInvoiceCreate)
+	eMux.HandleFunc("GET /invoices/{iid}", h.handleEInvoice)
+	eMux.HandleFunc("GET /invoices/{iid}/pdf", h.handleEInvoicePDF)
+	eMux.HandleFunc("GET /kpo/{year}", h.handleEKPO)
+	eMux.HandleFunc("POST /kpo/{year}/entries", h.handleEKPOAddEntry)
+	eMux.HandleFunc("POST /kpo/{year}/entries/reorder", h.handleEKPOReorderEntries)
+	eMux.HandleFunc("POST /kpo/{year}/entries/{entryID}/update", h.handleEKPOUpdateEntry)
+	eMux.HandleFunc("POST /kpo/{year}/entries/{entryID}/delete", h.handleEKPODeleteEntry)
+	eMux.HandleFunc("POST /kpo/{year}/finalize", h.handleEKPOFinalize)
+	eMux.HandleFunc("POST /kpo/{year}/unfinalize", h.handleEKPOUnfinalize)
+	mux.Handle("/e/", http.StripPrefix("/e", middleware.RequireEntrepreneur(sessions, eMux)))
+
+	// Legacy redirect: bare / goes to login (or could detect session and redirect).
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			h.renderError(w, http.StatusNotFound)
+			return
+		}
+		http.Redirect(w, r, "/login", http.StatusFound)
+	})
 	return mux
 }
 
-// handleLogin GET → login form, POST → check email+password.
+// handleLogin GET → login form, POST → try accountant then entrepreneur credentials.
 func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		email := strings.TrimSpace(r.FormValue("email"))
 		password := r.FormValue("password")
+		userType := r.FormValue("user_type") // "accountant" or "entrepreneur"
 
+		renderErr := func() {
+			renderTemplate(w, h.tmpl.login, map[string]any{"Error": "Погрешна е-пошта или лозинка.", "UserType": userType})
+		}
+
+		if userType == "entrepreneur" {
+			u, err := h.entrepreneurUsers.FindByEmail(r.Context(), email)
+			if err == nil {
+				err = entrepreneuruser.CheckPassword(u, password)
+			}
+			if errors.Is(err, entrepreneuruser.ErrNotFound) || errors.Is(err, entrepreneuruser.ErrInvalidCredentials) {
+				renderErr()
+				return
+			}
+			if err != nil {
+				http.Error(w, "Грешка при пријави", http.StatusInternalServerError)
+				return
+			}
+			if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeEntrepreneur, UserID: u.ID.String()}); err != nil {
+				http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
+				return
+			}
+			http.Redirect(w, r, "/e/", http.StatusFound)
+			return
+		}
+
+		// Default: accountant login.
 		a, err := h.accountants.FindByEmail(context.Background(), email)
 		if err == nil {
 			err = accountant.CheckPassword(a, password)
 		}
 		if errors.Is(err, accountant.ErrNotFound) || errors.Is(err, accountant.ErrInvalidCredentials) {
-			renderTemplate(w, h.tmpl.login, map[string]any{"Error": "Погрешна е-пошта или лозинка."})
+			renderErr()
 			return
 		}
 		if err != nil {
 			http.Error(w, "Грешка при пријави", http.StatusInternalServerError)
 			return
 		}
-
-		if err := h.sessions.Set(w, a.ID); err != nil {
+		if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeAccountant, UserID: a.ID}); err != nil {
 			http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/a/", http.StatusFound)
 		return
 	}
 	renderTemplate(w, h.tmpl.login, nil)
@@ -282,10 +373,23 @@ func (h *handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
-// accountantFromSession returns the accountant UUID stored in the current session.
+// accountantFromSession returns the accountant UUID from the current session.
 func (h *handler) accountantFromSession(r *http.Request) (uuid.UUID, bool) {
-	s, _ := h.sessions.Get(r)
-	id, err := uuid.Parse(s)
+	sess, ok := h.sessions.Get(r)
+	if !ok || sess.UserType != auth.UserTypeAccountant {
+		return uuid.Nil, false
+	}
+	id, err := uuid.Parse(sess.UserID)
+	return id, err == nil
+}
+
+// entrepreneurUserFromSession returns the entrepreneur_user UUID from the current session.
+func (h *handler) entrepreneurUserFromSession(r *http.Request) (uuid.UUID, bool) {
+	sess, ok := h.sessions.Get(r)
+	if !ok || sess.UserType != auth.UserTypeEntrepreneur {
+		return uuid.Nil, false
+	}
+	id, err := uuid.Parse(sess.UserID)
 	return id, err == nil
 }
 
@@ -331,22 +435,25 @@ func (h *handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.
 		return sliprecord.SlipRecord{}, false
 	}
 	e, err := h.entrepreneurs.FindByID(r.Context(), s.EntrepreneurID)
-	if err != nil || e.AccountantID != accountantID {
+	if err != nil {
+		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
+		return sliprecord.SlipRecord{}, false
+	}
+	if e.AccountantID != accountantID {
 		h.renderError(w, http.StatusForbidden)
 		return sliprecord.SlipRecord{}, false
 	}
 	return s, true
 }
 
-// handleIndex lists all entrepreneurs for the logged-in accountant.
-func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
+// handleAccountantIndex lists all managed entrepreneurs for the logged-in accountant.
+func (h *handler) handleAccountantIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		h.renderError(w, http.StatusNotFound)
 		return
 	}
-	accountantIDStr, _ := h.sessions.Get(r)
-	accountantID, err := uuid.Parse(accountantIDStr)
-	if err != nil {
+	accountantID, ok := h.accountantFromSession(r)
+	if !ok {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
@@ -385,28 +492,35 @@ func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	currentBook, err := h.kpoBooks.FindOrCreate(r.Context(), id, selectedYear)
-	if err != nil {
+	currentBook, err := h.kpoBooks.FindByYear(r.Context(), id, selectedYear)
+	if err != nil && !errors.Is(err, kpo.ErrNotFound) {
 		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
 		return
 	}
 
-	entries, err := h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
-		return
+	var entries []kpo.Entry
+	if currentBook.ID != (uuid.UUID{}) {
+		entries, err = h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
+		if err != nil {
+			http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	books, err := h.kpoBooks.ListByEntrepreneur(r.Context(), id)
+	books, err := h.kpoBooks.ListByManagedEntrepreneur(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Грешка при учитавању КПО књига", http.StatusInternalServerError)
 		return
 	}
 
-	advanceInvoices, err := h.invoices.ListAdvanceByEntrepreneurYear(r.Context(), id, selectedYear)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању авансних фактура", http.StatusInternalServerError)
-		return
+	// Advance invoices come from the paired entrepreneur_user (if any).
+	var advanceInvoices []invoice.Invoice
+	if e.EntrepreneurUserID != nil {
+		advanceInvoices, err = h.invoices.ListAdvanceByEntrepreneurUserYear(r.Context(), *e.EntrepreneurUserID, selectedYear)
+		if err != nil {
+			http.Error(w, "Грешка при учитавању авансних фактура", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Build unified KPO display rows (regular entries + advance invoices), sorted by date.
@@ -470,22 +584,22 @@ func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, h.tmpl.entrepreneur, map[string]any{
-		"Entrepreneur":      e,
-		"KPOBooks":          books,
-		"CurrentBook":       currentBook,
-		"KPOEntries":        entries,
-		"KPORows":           kpoRows,
-		"SelectedYear":      selectedYear,
-		"TotalProduct":      totalProduct,
-		"TotalService":      totalService,
-		"TotalAll":          totalProduct + totalService,
-		"LatestSlipYear":    latestSlipYear,
-		"PrevSlipYears":     prevSlipYears,
-		"PausalalYear":      currentYear,
-		"PausalalHasData":   pausalalHasData,
-		"PausalalTotalFmt":  formatIntWithSpaces(int64(math.Round(pausalalTotal))),
-		"PausalalLimitFmt":  formatIntWithSpaces(pausalalLimit),
-		"PausalalPercent":   pausalalPercent,
+		"Entrepreneur":     e,
+		"KPOBooks":         books,
+		"CurrentBook":      currentBook,
+		"KPOEntries":       entries,
+		"KPORows":          kpoRows,
+		"SelectedYear":     selectedYear,
+		"TotalProduct":     totalProduct,
+		"TotalService":     totalService,
+		"TotalAll":         totalProduct + totalService,
+		"LatestSlipYear":   latestSlipYear,
+		"PrevSlipYears":    prevSlipYears,
+		"PausalalYear":     currentYear,
+		"PausalalHasData":  pausalalHasData,
+		"PausalalTotalFmt": formatIntWithSpaces(int64(math.Round(pausalalTotal))),
+		"PausalalLimitFmt": formatIntWithSpaces(pausalalLimit),
+		"PausalalPercent":  pausalalPercent,
 	})
 }
 
@@ -512,7 +626,7 @@ func (h *handler) kpoBookFromPath(r *http.Request) (entrepreneur.Entrepreneur, k
 	if err != nil || year < 2000 || year > 2100 {
 		return entrepreneur.Entrepreneur{}, kpo.Book{}, 0, errors.New("bad year")
 	}
-	book, err := h.kpoBooks.FindOrCreate(r.Context(), id, year)
+	book, err := h.kpoBooks.FindOrCreateForAccountant(r.Context(), id, year)
 	return e, book, year, err
 }
 
@@ -553,7 +667,7 @@ func (h *handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d#kpo-new", r.PathValue("id"), year), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo-new", r.PathValue("id"), year), http.StatusFound)
 }
 
 func (h *handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
@@ -584,6 +698,7 @@ func (h *handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 
 	if err = h.kpoBooks.UpdateEntry(r.Context(), kpo.Entry{
 		ID:             entryID,
+		KPOBookID:      book.ID,
 		CollectionDate: collectionDate,
 		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
 		ProductRevenue: productRev,
@@ -593,7 +708,7 @@ func (h *handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d#kpo", r.PathValue("id"), year), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo", r.PathValue("id"), year), http.StatusFound)
 }
 
 func (h *handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request) {
@@ -645,11 +760,11 @@ func (h *handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, http.StatusNotFound)
 		return
 	}
-	if err := h.kpoBooks.DeleteEntry(r.Context(), entryID); err != nil {
+	if err := h.kpoBooks.DeleteEntry(r.Context(), book.ID, entryID); err != nil {
 		http.Error(w, "Грешка при брисању ставке", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
 }
 
 func (h *handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
@@ -662,7 +777,7 @@ func (h *handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при укњижавању", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
 }
 
 func (h *handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
@@ -675,7 +790,7 @@ func (h *handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при откључавању", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
 }
 
 // handleEntrepreneurNewForm renders the manual entrepreneur creation form.
@@ -693,14 +808,13 @@ func (h *handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 		renderTemplate(w, h.tmpl.entrepreneurNew, map[string]any{
 			"Error": "Оба поља су обавезна.",
 			"Name":  name,
-			"PIB":  pib,
+			"PIB":   pib,
 		})
 		return
 	}
 
-	accountantIDStr, _ := h.sessions.Get(r)
-	accountantID, err := uuid.Parse(accountantIDStr)
-	if err != nil {
+	accountantID, ok := h.accountantFromSession(r)
+	if !ok {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
@@ -711,7 +825,7 @@ func (h *handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	http.Redirect(w, r, "/entrepreneurs/"+e.ID.String(), http.StatusFound)
+	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String(), http.StatusFound)
 }
 
 // handleSlip shows a saved slip's details and a re-download button.
@@ -775,7 +889,7 @@ func (h *handler) handleSlipSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/slips/"+idStr+"?saved=1", http.StatusFound)
+	http.Redirect(w, r, "/a/slips/"+idStr+"?saved=1", http.StatusFound)
 }
 
 // handleSlipDownload saves editable field values, then redirects to slip detail with ?saved=1&download=1.
@@ -799,7 +913,7 @@ func (h *handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/slips/"+idStr+"?saved=1&download=1", http.StatusFound)
+	http.Redirect(w, r, "/a/slips/"+idStr+"?saved=1&download=1", http.StatusFound)
 }
 
 // handleSlipDelete deletes a slip record and redirects to the entrepreneur page.
@@ -821,7 +935,7 @@ func (h *handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при брисању уплатнице", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/entrepreneurs/"+entrepreneurID.String(), http.StatusFound)
+	http.Redirect(w, r, "/a/entrepreneurs/"+entrepreneurID.String(), http.StatusFound)
 }
 
 // handleSlipPDF generates the PDF from the current SlipRecord fields and streams it as an attachment.
@@ -1020,7 +1134,7 @@ func (h *handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/slips/"+saved.ID.String(), http.StatusFound)
+	http.Redirect(w, r, "/a/slips/"+saved.ID.String(), http.StatusFound)
 }
 
 // ── Settings ─────────────────────────────────────────────────────────────────
@@ -1035,29 +1149,8 @@ func (h *handler) handleSettings(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	clients, err := h.clients.ListByEntrepreneur(r.Context(), id)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању клијената", http.StatusInternalServerError)
-		return
-	}
-	accounts, err := h.bankAccounts.ListByEntrepreneur(r.Context(), id)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
-		return
-	}
-	// Load correspondent banks for each account.
-	for i, a := range accounts {
-		cbs, err := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), a.ID)
-		if err != nil {
-			http.Error(w, "Грешка при учитавању кор. банака", http.StatusInternalServerError)
-			return
-		}
-		accounts[i].CorrespondentBanks = cbs
-	}
 	renderTemplate(w, h.tmpl.settings, map[string]any{
 		"Entrepreneur": e,
-		"Clients":      clients,
-		"BankAccounts": accounts,
 		"Saved":        r.URL.Query().Get("saved") == "1",
 	})
 }
@@ -1080,869 +1173,7 @@ func (h *handler) handleSettingsUpdate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при чувању", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings?saved=1", http.StatusFound)
-}
-
-// ── Client CRUD ───────────────────────────────────────────────────────────────
-
-func (h *handler) handleClientSearch(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	q := strings.TrimSpace(r.URL.Query().Get("q"))
-	results, err := h.clients.Search(r.Context(), id, q)
-	if err != nil {
-		http.Error(w, "Грешка при претрази", http.StatusInternalServerError)
-		return
-	}
-	type item struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	}
-	out := make([]item, len(results))
-	for i, c := range results {
-		out[i] = item{ID: c.ID.String(), Name: c.Name}
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(out)
-}
-
-func (h *handler) handleClientNewForm(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	renderTemplate(w, h.tmpl.clientForm, map[string]any{
-		"Entrepreneur": e,
-		"Client":       client.Client{},
-		"IsNew":        true,
-	})
-}
-
-func (h *handler) handleClientNewSubmit(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	r.ParseForm()
-	name := strings.TrimSpace(r.FormValue("name"))
-	if name == "" {
-		renderTemplate(w, h.tmpl.clientForm, map[string]any{
-			"Entrepreneur": e,
-			"Client":       buildClientFromForm(r, id),
-			"IsNew":        true,
-			"Error":        "Назив клијента је обавезан.",
-		})
-		return
-	}
-	c := buildClientFromForm(r, id)
-	if _, err := h.clients.Create(r.Context(), c); err != nil {
-		http.Error(w, "Грешка при чувању клијента", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings", http.StatusFound)
-}
-
-func (h *handler) handleClientEditForm(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	cid, err := uuid.Parse(r.PathValue("cid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	c, err := h.clients.FindByID(r.Context(), cid)
-	if errors.Is(err, client.ErrNotFound) || c.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању клијента", http.StatusInternalServerError)
-		return
-	}
-	renderTemplate(w, h.tmpl.clientForm, map[string]any{
-		"Entrepreneur": e,
-		"Client":       c,
-		"IsNew":        false,
-	})
-}
-
-func (h *handler) handleClientUpdate(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	cid, err := uuid.Parse(r.PathValue("cid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	existing, err := h.clients.FindByID(r.Context(), cid)
-	if errors.Is(err, client.ErrNotFound) || existing.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању", http.StatusInternalServerError)
-		return
-	}
-	r.ParseForm()
-	updated := buildClientFromForm(r, id)
-	updated.ID = cid
-	if updated.Name == "" {
-		renderTemplate(w, h.tmpl.clientForm, map[string]any{
-			"Entrepreneur": e,
-			"Client":       updated,
-			"IsNew":        false,
-			"Error":        "Назив клијента је обавезан.",
-		})
-		return
-	}
-	if err := h.clients.Update(r.Context(), updated); err != nil {
-		http.Error(w, "Грешка при чувању клијента", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings", http.StatusFound)
-}
-
-func (h *handler) handleClientDelete(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	cid, err := uuid.Parse(r.PathValue("cid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	existing, err := h.clients.FindByID(r.Context(), cid)
-	if errors.Is(err, client.ErrNotFound) || existing.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err := h.clients.Delete(r.Context(), cid); err != nil {
-		http.Error(w, "Грешка при брисању клијента", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings", http.StatusFound)
-}
-
-func buildClientFromForm(r *http.Request, entrepreneurID uuid.UUID) client.Client {
-	return client.Client{
-		EntrepreneurID:     entrepreneurID,
-		Name:               strings.TrimSpace(r.FormValue("name")),
-		PIB:                strings.TrimSpace(r.FormValue("pib")),
-		RegistrationNumber: strings.TrimSpace(r.FormValue("registration_number")),
-		Email:              strings.TrimSpace(r.FormValue("email")),
-		Address:            strings.TrimSpace(r.FormValue("address")),
-		IsForeign:          r.FormValue("is_foreign") == "on",
-	}
-}
-
-// ── Bank account handlers ─────────────────────────────────────────────────────
-
-func (h *handler) handleBankAccountNewForm(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	renderTemplate(w, h.tmpl.bankAccountForm, map[string]any{
-		"Entrepreneur": e,
-		"IsNew":        true,
-		"Account":      bankaccount.BankAccount{},
-	})
-}
-
-func (h *handler) handleBankAccountCreate(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
-		return
-	}
-	a := bankAccountFromForm(r, id)
-	if _, err := h.bankAccounts.Create(r.Context(), a); err != nil {
-		http.Error(w, "Грешка при чувању рачуна", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings", http.StatusFound)
-}
-
-func (h *handler) handleBankAccountEditForm(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
-		return
-	}
-	cbs, _ := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), aid)
-	a.CorrespondentBanks = cbs
-	renderTemplate(w, h.tmpl.bankAccountForm, map[string]any{
-		"Entrepreneur": e,
-		"IsNew":        false,
-		"Account":      a,
-	})
-}
-
-func (h *handler) handleBankAccountUpdate(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || existing.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
-		return
-	}
-	a := bankAccountFromForm(r, id)
-	a.ID = aid
-	if err := h.bankAccounts.Update(r.Context(), a); err != nil {
-		http.Error(w, "Грешка при чувању рачуна", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings", http.StatusFound)
-}
-
-func (h *handler) handleBankAccountDelete(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || existing.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err := h.bankAccounts.Delete(r.Context(), aid); err != nil {
-		http.Error(w, "Грешка при брисању рачуна", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/settings", http.StatusFound)
-}
-
-func (h *handler) handleCorrespondentNewForm(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	renderTemplate(w, h.tmpl.correspondentForm, map[string]any{
-		"Entrepreneur": e,
-		"BankAccount":  a,
-		"IsNew":        true,
-		"Correspondent": bankaccount.CorrespondentBank{},
-	})
-}
-
-func (h *handler) handleCorrespondentCreate(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
-		return
-	}
-	cb := bankaccount.CorrespondentBank{
-		BankAccountID: aid,
-		BankName:      strings.TrimSpace(r.FormValue("bank_name")),
-		SWIFT:         strings.TrimSpace(r.FormValue("swift")),
-		BankAddress:   strings.TrimSpace(r.FormValue("bank_address")),
-	}
-	if _, err := h.bankAccounts.CreateCorrespondent(r.Context(), cb); err != nil {
-		http.Error(w, "Грешка при чувању кор. банке", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/bank-accounts/"+aid.String()+"/edit", http.StatusFound)
-}
-
-func (h *handler) handleCorrespondentEditForm(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	cid, err := uuid.Parse(r.PathValue("cid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
-	if errors.Is(err, bankaccount.ErrNotFound) || cb.BankAccountID != aid {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	renderTemplate(w, h.tmpl.correspondentForm, map[string]any{
-		"Entrepreneur":  e,
-		"BankAccount":   a,
-		"IsNew":         false,
-		"Correspondent": cb,
-	})
-}
-
-func (h *handler) handleCorrespondentUpdate(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	cid, err := uuid.Parse(r.PathValue("cid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	existing, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
-	if errors.Is(err, bankaccount.ErrNotFound) || existing.BankAccountID != aid {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
-		return
-	}
-	cb := bankaccount.CorrespondentBank{
-		ID:          cid,
-		BankName:    strings.TrimSpace(r.FormValue("bank_name")),
-		SWIFT:       strings.TrimSpace(r.FormValue("swift")),
-		BankAddress: strings.TrimSpace(r.FormValue("bank_address")),
-	}
-	if err := h.bankAccounts.UpdateCorrespondent(r.Context(), cb); err != nil {
-		http.Error(w, "Грешка при чувању кор. банке", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/bank-accounts/"+aid.String()+"/edit", http.StatusFound)
-}
-
-func (h *handler) handleCorrespondentDelete(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	cid, err := uuid.Parse(r.PathValue("cid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	existing, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
-	if errors.Is(err, bankaccount.ErrNotFound) || existing.BankAccountID != aid {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err := h.bankAccounts.DeleteCorrespondent(r.Context(), cid); err != nil {
-		http.Error(w, "Грешка при брисању кор. банке", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/entrepreneurs/"+idStr+"/bank-accounts/"+aid.String()+"/edit", http.StatusFound)
-}
-
-// handleCorrespondentsByAccount returns JSON list of correspondents for a bank account (for invoice form AJAX).
-func (h *handler) handleCorrespondentsByAccount(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	aid, err := uuid.Parse(r.PathValue("aid"))
-	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
-	a, err := h.bankAccounts.FindByID(r.Context(), aid)
-	if errors.Is(err, bankaccount.ErrNotFound) || a.EntrepreneurID != id {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
-	cbs, err := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), aid)
-	if err != nil {
-		http.Error(w, "error", http.StatusInternalServerError)
-		return
-	}
-	type cbItem struct {
-		ID          string `json:"id"`
-		BankName    string `json:"bank_name"`
-		SWIFT       string `json:"swift"`
-		BankAddress string `json:"bank_address"`
-	}
-	out := make([]cbItem, len(cbs))
-	for i, cb := range cbs {
-		out[i] = cbItem{cb.ID.String(), cb.BankName, cb.SWIFT, cb.BankAddress}
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(out)
-}
-
-func bankAccountFromForm(r *http.Request, entrepreneurID uuid.UUID) bankaccount.BankAccount {
-	at := bankaccount.TypeLocal
-	if r.FormValue("account_type") == "foreign" {
-		at = bankaccount.TypeForeign
-	}
-	return bankaccount.BankAccount{
-		EntrepreneurID: entrepreneurID,
-		AccountType:    at,
-		BankName:       strings.TrimSpace(r.FormValue("bank_name")),
-		AccountNumber:  strings.TrimSpace(r.FormValue("account_number")),
-		IBAN:           strings.TrimSpace(r.FormValue("iban")),
-		SWIFT:          strings.TrimSpace(r.FormValue("swift")),
-	}
-}
-
-// ── Invoice handlers ──────────────────────────────────────────────────────────
-
-func (h *handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	accounts, err := h.bankAccounts.ListByEntrepreneur(r.Context(), id)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
-		return
-	}
-	for i, a := range accounts {
-		cbs, err := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), a.ID)
-		if err != nil {
-			http.Error(w, "Грешка при учитавању кор. банака", http.StatusInternalServerError)
-			return
-		}
-		accounts[i].CorrespondentBanks = cbs
-	}
-	renderTemplate(w, h.tmpl.invoiceNew, map[string]any{
-		"Entrepreneur":    e,
-		"ProfileComplete": e.ProfileComplete(),
-		"Today":           time.Now().Format("2006-01-02"),
-		"Currencies":      []string{"RSD", "EUR", "USD", "CHF", "GBP"},
-		"FXRates":         invoice.FXRates,
-		"BankAccounts":    accounts,
-	})
-}
-
-func (h *handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if _, ok := h.findOwnedEntrepreneur(w, r, id); !ok {
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
-		return
-	}
-
-	invType := invoice.TypeStandard
-	if r.FormValue("invoice_type") == "advance" {
-		invType = invoice.TypeAdvance
-	}
-
-	issueDate, err := time.Parse("2006-01-02", r.FormValue("issue_date"))
-	if err != nil {
-		http.Error(w, "Неисправан датум издавања", http.StatusBadRequest)
-		return
-	}
-
-	var clientID *uuid.UUID
-	if cidStr := strings.TrimSpace(r.FormValue("client_id")); cidStr != "" {
-		if cid, err := uuid.Parse(cidStr); err == nil {
-			clientID = &cid
-		}
-	}
-	clientName := strings.TrimSpace(r.FormValue("client_name"))
-
-	currency := r.FormValue("currency")
-	if _, ok := invoice.FXRates[currency]; !ok {
-		currency = "RSD"
-	}
-
-	var bankAccountID *uuid.UUID
-	if baidStr := strings.TrimSpace(r.FormValue("bank_account_id")); baidStr != "" {
-		if baid, err := uuid.Parse(baidStr); err == nil {
-			bankAccountID = &baid
-		}
-	}
-	var correspondentBankID *uuid.UUID
-	if cbidStr := strings.TrimSpace(r.FormValue("correspondent_bank_id")); cbidStr != "" {
-		if cbid, err := uuid.Parse(cbidStr); err == nil {
-			correspondentBankID = &cbid
-		}
-	}
-
-	inv := invoice.Invoice{
-		EntrepreneurID:      id,
-		ClientID:            clientID,
-		ClientName:          clientName,
-		InvoiceType:         invType,
-		InvoiceNumber:       strings.TrimSpace(r.FormValue("invoice_number")),
-		IssueDate:           issueDate,
-		PeriodStart:         parseNullDate(r.FormValue("period_start")),
-		PeriodEnd:           parseNullDate(r.FormValue("period_end")),
-		DueDate:             parseNullDate(r.FormValue("due_date")),
-		Currency:            currency,
-		Notes:               strings.TrimSpace(r.FormValue("notes")),
-		BankAccountID:       bankAccountID,
-		CorrespondentBankID: correspondentBankID,
-	}
-
-	// Parse line items.
-	descriptions := r.Form["item_description[]"]
-	quantities := r.Form["item_quantity[]"]
-	unitPrices := r.Form["item_unit_price[]"]
-	discountPcts := r.Form["item_discount[]"]
-	isProducts := r.Form["item_is_product[]"]
-
-	var items []invoice.Item
-	var totalProduct, totalService float64
-	for i := range descriptions {
-		desc := strings.TrimSpace(descriptions[i])
-		if desc == "" {
-			continue
-		}
-		qty := parseAmount(safeIndex(quantities, i))
-		if qty <= 0 {
-			qty = 1
-		}
-		price := parseAmount(safeIndex(unitPrices, i))
-		disc := parseAmount(safeIndex(discountPcts, i))
-		isProd := safeIndex(isProducts, i) == "on"
-		it := invoice.Item{
-			Description: desc,
-			Quantity:    qty,
-			UnitPrice:   price,
-			DiscountPct: disc,
-			IsProduct:   isProd,
-			Position:    i + 1,
-		}
-		lineTotal := it.LineTotal()
-		if isProd {
-			totalProduct += lineTotal
-		} else {
-			totalService += lineTotal
-		}
-		items = append(items, it)
-	}
-
-	grandTotal := totalProduct + totalService
-	inv.TotalRSD = round2(invoice.ToRSD(grandTotal, currency))
-
-	saved, err := h.invoices.Create(r.Context(), inv, items)
-	if err != nil {
-		http.Error(w, "Грешка при чувању фактуре", http.StatusInternalServerError)
-		return
-	}
-
-	// Auto-create KPO entry for standard invoices.
-	if invType == invoice.TypeStandard {
-		book, err := h.kpoBooks.FindOrCreate(r.Context(), id, issueDate.Year())
-		if err != nil {
-			log.Printf("kpo FindOrCreate: %v", err)
-		} else if !book.IsFinalized() {
-			prodRSD := round2(invoice.ToRSD(totalProduct, currency))
-			svcRSD := round2(invoice.ToRSD(totalService, currency))
-			_, err = h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
-				KPOBookID:      book.ID,
-				CollectionDate: issueDate,
-				InvoiceNumber:  saved.InvoiceNumber,
-				ProductRevenue: prodRSD,
-				ServiceRevenue: svcRSD,
-			})
-			if err != nil {
-				log.Printf("kpo AddEntry: %v", err)
-			}
-		}
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/entrepreneurs/%s/invoices/%s", idStr, saved.ID), http.StatusFound)
-}
-
-func (h *handler) handleInvoice(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	iid, err := uuid.Parse(r.PathValue("iid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	inv, items, err := h.invoices.FindByID(r.Context(), iid)
-	if errors.Is(err, invoice.ErrNotFound) || inv.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању фактуре", http.StatusInternalServerError)
-		return
-	}
-
-	var grandTotal float64
-	for _, it := range items {
-		grandTotal += it.LineTotal()
-	}
-
-	var bankAcc *bankaccount.BankAccount
-	var corrBank *bankaccount.CorrespondentBank
-	if inv.BankAccountID != nil {
-		a, err := h.bankAccounts.FindByID(r.Context(), *inv.BankAccountID)
-		if err == nil {
-			bankAcc = &a
-		}
-	}
-	if inv.CorrespondentBankID != nil {
-		cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), *inv.CorrespondentBankID)
-		if err == nil {
-			corrBank = &cb
-		}
-	}
-
-	renderTemplate(w, h.tmpl.invoiceDetail, map[string]any{
-		"Entrepreneur":    e,
-		"Invoice":         inv,
-		"Items":           items,
-		"GrandTotal":      grandTotal,
-		"BankAccount":     bankAcc,
-		"CorrespondentBank": corrBank,
-	})
-}
-
-func (h *handler) handleInvoicePDF(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	e, ok := h.findOwnedEntrepreneur(w, r, id)
-	if !ok {
-		return
-	}
-	iid, err := uuid.Parse(r.PathValue("iid"))
-	if err != nil {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	inv, items, err := h.invoices.FindByID(r.Context(), iid)
-	if errors.Is(err, invoice.ErrNotFound) || inv.EntrepreneurID != id {
-		h.renderError(w, http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању фактуре", http.StatusInternalServerError)
-		return
-	}
-
-	issuer := invoice.IssuerInfo{
-		Name:        e.Name,
-		PIB:         e.PIB,
-		Address:     e.Address,
-		BankAccount: e.BankAccount,
-	}
-	var bankAccInfo *invoice.BankAccountInfo
-	if inv.BankAccountID != nil {
-		a, err := h.bankAccounts.FindByID(r.Context(), *inv.BankAccountID)
-		if err == nil {
-			info := invoice.BankAccountInfo{
-				AccountType:   string(a.AccountType),
-				BankName:      a.BankName,
-				AccountNumber: a.AccountNumber,
-				IBAN:          a.IBAN,
-				SWIFT:         a.SWIFT,
-			}
-			if inv.CorrespondentBankID != nil {
-				cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), *inv.CorrespondentBankID)
-				if err == nil {
-					info.CorrespondentBankName = cb.BankName
-					info.CorrespondentBankSWIFT = cb.SWIFT
-					info.CorrespondentBankAddress = cb.BankAddress
-				}
-			}
-			bankAccInfo = &info
-		}
-	}
-	pdfBytes, err := invoice.GeneratePDF(inv, items, issuer, bankAccInfo)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Грешка при генерисању PDF: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	filename := fmt.Sprintf("faktura-%s.pdf", sanitizeFilename(inv.InvoiceNumber))
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	w.Write(pdfBytes)
+	http.Redirect(w, r, "/a/entrepreneurs/"+idStr+"/settings?saved=1", http.StatusFound)
 }
 
 func parseNullDate(s string) sql.NullTime {
@@ -1984,7 +1215,7 @@ func (h *handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 	title := strings.TrimSpace(r.FormValue("title"))
 
 	if name == "" || pib == "" {
-		http.Redirect(w, r, "/entrepreneurs/"+idStr, http.StatusFound)
+		http.Redirect(w, r, "/a/entrepreneurs/"+idStr, http.StatusFound)
 		return
 	}
 
@@ -1997,7 +1228,7 @@ func (h *handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	http.Redirect(w, r, "/entrepreneurs/"+idStr, http.StatusFound)
+	http.Redirect(w, r, "/a/entrepreneurs/"+idStr, http.StatusFound)
 }
 
 // handlePrivacy renders the privacy policy placeholder.
@@ -2022,8 +1253,7 @@ func (h *handler) handleProcess(w http.ResponseWriter, r *http.Request) {
 		files = files[:maxUploadFiles]
 	}
 
-	accountantIDStr, _ := h.sessions.Get(r)
-	accountantID, _ := uuid.Parse(accountantIDStr)
+	accountantID, _ := h.accountantFromSession(r)
 
 	result := h.importer.ProcessFiles(r.Context(), accountantID, files)
 	renderTemplate(w, h.tmpl.results, result)
@@ -2053,7 +1283,6 @@ func sanitizeFilename(s string) string {
 	}
 	return s
 }
-
 
 func renderTemplate(w http.ResponseWriter, tmpl *template.Template, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -2109,4 +1338,1350 @@ func groupSlipsByYear(slips []sliprecord.SlipRecord) (latest slipYearGroup, prev
 		}
 	}
 	return
+}
+
+// ── KPO merge ─────────────────────────────────────────────────────────────────
+// The accountant copies entries from the entrepreneur's own KPO book into the
+// managed_entrepreneur's KPO book, then marks the entrepreneur's book merged.
+
+func (h *handler) handleKPOMergeView(w http.ResponseWriter, r *http.Request) {
+	e, accBook, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+
+	// Load accountant-side entries already in the book.
+	accEntries, err := h.kpoBooks.ListEntries(r.Context(), accBook.ID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
+		return
+	}
+
+	// Find the paired entrepreneur's book for the same year (if any).
+	var eBook kpo.Book
+	var eEntries []kpo.Entry
+	if e.EntrepreneurUserID != nil {
+		eBook, err = h.kpoBooks.FindEntrepreneurBook(r.Context(), *e.EntrepreneurUserID, year)
+		if err == nil {
+			eEntries, _ = h.kpoBooks.ListEntries(r.Context(), eBook.ID)
+		}
+	}
+
+	renderTemplate(w, h.tmpl.kpoMerge, map[string]any{
+		"Entrepreneur": e,
+		"Year":         year,
+		"AccBook":      accBook,
+		"AccEntries":   accEntries,
+		"EBook":        eBook,
+		"EEntries":     eEntries,
+		"HasEBook":     e.EntrepreneurUserID != nil && eBook.ID != uuid.Nil,
+	})
+}
+
+func (h *handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request) {
+	e, accBook, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if accBook.IsFinalized() {
+		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		return
+	}
+
+	eid, err := uuid.Parse(r.PathValue("eid"))
+	if err != nil {
+		h.renderError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Verify the source entry belongs to the paired entrepreneur's book.
+	if e.EntrepreneurUserID == nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	eBook, err := h.kpoBooks.FindEntrepreneurBook(r.Context(), *e.EntrepreneurUserID, year)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	eEntries, err := h.kpoBooks.ListEntries(r.Context(), eBook.ID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању", http.StatusInternalServerError)
+		return
+	}
+	var src *kpo.Entry
+	for i := range eEntries {
+		if eEntries[i].ID == eid {
+			src = &eEntries[i]
+			break
+		}
+	}
+	if src == nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+
+	if _, err := h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
+		KPOBookID:      accBook.ID,
+		CollectionDate: src.CollectionDate,
+		InvoiceNumber:  src.InvoiceNumber,
+		ProductRevenue: src.ProductRevenue,
+		ServiceRevenue: src.ServiceRevenue,
+	}); err != nil {
+		http.Error(w, "Грешка при копирању ставке", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String()+"/kpo/"+strconv.Itoa(year)+"/merge", http.StatusFound)
+}
+
+func (h *handler) handleKPOMergeMarkDone(w http.ResponseWriter, r *http.Request) {
+	e, _, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if e.EntrepreneurUserID == nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	eBook, err := h.kpoBooks.FindEntrepreneurBook(r.Context(), *e.EntrepreneurUserID, year)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.kpoBooks.MarkMerged(r.Context(), eBook.ID); err != nil {
+		http.Error(w, "Грешка при обележавању", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String()+"/kpo/"+strconv.Itoa(year)+"/merge", http.StatusFound)
+}
+
+// ── Entrepreneur registration ─────────────────────────────────────────────────
+
+func (h *handler) handleEntrepreneurRegisterForm(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, h.tmpl.entrepreneurRegister, nil)
+}
+
+func (h *handler) handleEntrepreneurRegisterSubmit(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	email := strings.TrimSpace(r.FormValue("email"))
+	password := r.FormValue("password")
+	confirm := r.FormValue("confirm_password")
+
+	renderErr := func(msg string) {
+		renderTemplate(w, h.tmpl.entrepreneurRegister, map[string]any{"Error": msg, "Email": email})
+	}
+	if email == "" || password == "" {
+		renderErr("Е-пошта и лозинка су обавезни.")
+		return
+	}
+	if password != confirm {
+		renderErr("Лозинке се не подударају.")
+		return
+	}
+	u, err := h.entrepreneurUsers.Create(r.Context(), email, password)
+	if err != nil {
+		renderErr("Та е-пошта је већ у употреби.")
+		return
+	}
+	if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeEntrepreneur, UserID: u.ID.String()}); err != nil {
+		http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/", http.StatusFound)
+}
+
+// ── Entrepreneur dashboard ────────────────────────────────────────────────────
+
+func (h *handler) handleEntrepreneurDashboard(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	// Load paired managed entrepreneur if any.
+	paired, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
+	renderTemplate(w, h.tmpl.entrepreneurDashboard, map[string]any{
+		"Paired":      paired.ID != uuid.Nil,
+		"Managed":     paired,
+		"CurrentYear": time.Now().Year(),
+	})
+}
+
+// ── Invite flow ───────────────────────────────────────────────────────────────
+
+// handleAccountantInviteEntrepreneur creates an invitation for the entrepreneur to accept.
+func (h *handler) handleAccountantInviteEntrepreneur(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	e, ok := h.findOwnedEntrepreneur(w, r, id)
+	if !ok {
+		return
+	}
+	if e.IsPaired() {
+		h.renderError(w, http.StatusForbidden) // already paired
+		return
+	}
+	accountantID, _ := h.accountantFromSession(r)
+	inv, err := h.invitations.Create(r.Context(), invitation.Invitation{
+		InviterType:           invitation.InviterTypeAccountant,
+		InviterID:             accountantID,
+		ManagedEntrepreneurID: &id,
+	})
+	if err != nil {
+		http.Error(w, "Грешка при креирању позивнице", http.StatusInternalServerError)
+		return
+	}
+	renderTemplate(w, h.tmpl.inviteToken, map[string]any{
+		"Token":        inv.Token,
+		"Entrepreneur": e,
+		"InviterType":  "accountant",
+	})
+}
+
+// handleEntrepreneurInviteForm shows the entrepreneur's invite-accountant form.
+func (h *handler) handleEntrepreneurInviteForm(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	paired, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
+	if paired.ID != uuid.Nil {
+		http.Redirect(w, r, "/e/", http.StatusFound) // already paired
+		return
+	}
+	renderTemplate(w, h.tmpl.entrepreneurInviteAcc, nil)
+}
+
+// handleEntrepreneurSendInvite creates an invitation from entrepreneur to accountant.
+func (h *handler) handleEntrepreneurSendInvite(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	inv, err := h.invitations.Create(r.Context(), invitation.Invitation{
+		InviterType: invitation.InviterTypeEntrepreneur,
+		InviterID:   userID,
+	})
+	if err != nil {
+		http.Error(w, "Грешка при креирању позивнице", http.StatusInternalServerError)
+		return
+	}
+	renderTemplate(w, h.tmpl.inviteToken, map[string]any{
+		"Token":       inv.Token,
+		"InviterType": "entrepreneur",
+	})
+}
+
+// handleInviteToken shows details about an invite; the visitor decides whether to accept.
+func (h *handler) handleInviteToken(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	inv, err := h.invitations.FindByToken(r.Context(), token)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := inv.Validate(); err != nil {
+		renderTemplate(w, h.tmpl.inviteAccept, map[string]any{"Error": "Позивница је истекла или је већ искоришћена."})
+		return
+	}
+
+	data := map[string]any{
+		"Invitation": inv,
+		"Token":      token,
+	}
+	// Load managed entrepreneur if set (accountant-initiated).
+	if inv.ManagedEntrepreneurID != nil {
+		me, err := h.entrepreneurs.FindByID(r.Context(), *inv.ManagedEntrepreneurID)
+		if err == nil {
+			data["ManagedEntrepreneur"] = me
+		}
+	}
+	renderTemplate(w, h.tmpl.inviteAccept, data)
+}
+
+// handleInviteAccept processes the acceptance of an invite.
+// Accountant-initiated: entrepreneur must be logged in → links managed_entrepreneur to user.
+// Entrepreneur-initiated: accountant must be logged in → accountant selects which managed entrepreneur.
+func (h *handler) handleInviteAccept(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	inv, err := h.invitations.FindByToken(r.Context(), token)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := inv.Validate(); err != nil {
+		renderTemplate(w, h.tmpl.inviteAccept, map[string]any{"Error": "Позивница је истекла или је већ искоришћена."})
+		return
+	}
+
+	sess, ok := h.sessions.Get(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	if inv.InviterType == invitation.InviterTypeAccountant {
+		// Entrepreneur accepts: must be logged in as entrepreneur.
+		if sess.UserType != auth.UserTypeEntrepreneur {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		entrepreneurUserID, _ := uuid.Parse(sess.UserID)
+		managedID := *inv.ManagedEntrepreneurID
+
+		// Check not already paired.
+		if existing, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), entrepreneurUserID); existing.ID != uuid.Nil {
+			renderTemplate(w, h.tmpl.inviteAccept, map[string]any{"Error": "Већ сте повезани са рачуновођом."})
+			return
+		}
+		if err := h.entrepreneurs.Pair(r.Context(), managedID, entrepreneurUserID); err != nil {
+			http.Error(w, "Грешка при повезивању", http.StatusInternalServerError)
+			return
+		}
+		h.invitations.Accept(r.Context(), inv.ID)
+		http.Redirect(w, r, "/e/", http.StatusFound)
+		return
+	}
+
+	// Entrepreneur-initiated: accountant accepts.
+	if sess.UserType != auth.UserTypeAccountant {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	r.ParseForm()
+	managedIDStr := strings.TrimSpace(r.FormValue("managed_entrepreneur_id"))
+
+	accountantID, _ := uuid.Parse(sess.UserID)
+	entrepreneurUserID := inv.InviterID
+
+	var managedID uuid.UUID
+	if managedIDStr == "" || managedIDStr == "new" {
+		// Create a stub managed entrepreneur for this accountant.
+		u, err := h.entrepreneurUsers.FindByID(r.Context(), entrepreneurUserID)
+		name := "Предузетник"
+		if err == nil && u.Email != "" {
+			name = u.Email
+		}
+		e, _, err := h.entrepreneurs.FindOrCreate(r.Context(), accountantID, "0000000000", name)
+		if err != nil {
+			http.Error(w, "Грешка при креирању предузетника", http.StatusInternalServerError)
+			return
+		}
+		managedID = e.ID
+	} else {
+		if managedID, err = uuid.Parse(managedIDStr); err != nil {
+			h.renderError(w, http.StatusBadRequest)
+			return
+		}
+	}
+	if err := h.entrepreneurs.Pair(r.Context(), managedID, entrepreneurUserID); err != nil {
+		http.Error(w, "Грешка при повезивању", http.StatusInternalServerError)
+		return
+	}
+	h.invitations.Accept(r.Context(), inv.ID)
+	http.Redirect(w, r, "/a/entrepreneurs/"+managedID.String(), http.StatusFound)
+}
+
+// ── Entrepreneur: list pages ──────────────────────────────────────────────────
+
+func (h *handler) handleEClientList(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	clients, err := h.clients.ListByEntrepreneurUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању клијената", http.StatusInternalServerError)
+		return
+	}
+	renderTemplate(w, h.tmpl.entrepreneurClients, map[string]any{"Clients": clients})
+}
+
+func (h *handler) handleEBankAccountList(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	accounts, err := h.bankAccounts.ListByEntrepreneurUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		return
+	}
+	renderTemplate(w, h.tmpl.entrepreneurBankAccounts, map[string]any{"Accounts": accounts})
+}
+
+func (h *handler) handleEInvoiceList(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	invoices, err := h.invoices.ListByEntrepreneurUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању фактура", http.StatusInternalServerError)
+		return
+	}
+	renderTemplate(w, h.tmpl.entrepreneurInvoices, map[string]any{"Invoices": invoices})
+}
+
+// ── Entrepreneur: client CRUD ─────────────────────────────────────────────────
+
+func (h *handler) handleEClientSearch(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	results, err := h.clients.Search(r.Context(), userID, q)
+	if err != nil {
+		http.Error(w, "Грешка при претрази", http.StatusInternalServerError)
+		return
+	}
+	type item struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	out := make([]item, len(results))
+	for i, c := range results {
+		out[i] = item{ID: c.ID.String(), Name: c.Name}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
+}
+
+func (h *handler) handleEClientNewForm(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.entrepreneurUserFromSession(r); !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	renderTemplate(w, h.tmpl.clientForm, map[string]any{
+		"Client":    client.Client{},
+		"IsNew":     true,
+		"ActionURL": "/e/clients/new",
+		"BackURL":   "/e/",
+	})
+}
+
+func (h *handler) handleEClientNewSubmit(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	r.ParseForm()
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		renderTemplate(w, h.tmpl.clientForm, map[string]any{
+			"Client":    eClientFromForm(r, userID),
+			"IsNew":     true,
+			"Error":     "Назив клијента је обавезан.",
+			"ActionURL": "/e/clients/new",
+			"BackURL":   "/e/",
+		})
+		return
+	}
+	if _, err := h.clients.Create(r.Context(), eClientFromForm(r, userID)); err != nil {
+		http.Error(w, "Грешка при чувању клијента", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/", http.StatusFound)
+}
+
+func (h *handler) handleEClientEditForm(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	cid, err := uuid.Parse(r.PathValue("cid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	c, err := h.clients.FindByID(r.Context(), cid)
+	if err != nil || c.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	renderTemplate(w, h.tmpl.clientForm, map[string]any{
+		"Client":    c,
+		"IsNew":     false,
+		"ActionURL": "/e/clients/" + cid.String(),
+		"BackURL":   "/e/",
+	})
+}
+
+func (h *handler) handleEClientUpdate(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	cid, err := uuid.Parse(r.PathValue("cid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	existing, err := h.clients.FindByID(r.Context(), cid)
+	if err != nil && !errors.Is(err, client.ErrNotFound) {
+		http.Error(w, "Грешка при учитавању клијента", http.StatusInternalServerError)
+		return
+	}
+	if err != nil || existing.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	updated := eClientFromForm(r, userID)
+	updated.ID = cid
+	if updated.Name == "" {
+		renderTemplate(w, h.tmpl.clientForm, map[string]any{
+			"Client":    updated,
+			"IsNew":     false,
+			"Error":     "Назив клијента је обавезан.",
+			"ActionURL": "/e/clients/" + cid.String(),
+			"BackURL":   "/e/",
+		})
+		return
+	}
+	if err := h.clients.Update(r.Context(), updated); err != nil {
+		http.Error(w, "Грешка при чувању клијента", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/", http.StatusFound)
+}
+
+func (h *handler) handleEClientDelete(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	cid, err := uuid.Parse(r.PathValue("cid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	existing, err := h.clients.FindByID(r.Context(), cid)
+	if err != nil && !errors.Is(err, client.ErrNotFound) {
+		http.Error(w, "Грешка при учитавању клијента", http.StatusInternalServerError)
+		return
+	}
+	if err != nil || existing.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.clients.Delete(r.Context(), cid); err != nil {
+		http.Error(w, "Грешка при брисању клијента", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/", http.StatusFound)
+}
+
+func eClientFromForm(r *http.Request, userID uuid.UUID) client.Client {
+	return client.Client{
+		EntrepreneurUserID: userID,
+		Name:               strings.TrimSpace(r.FormValue("name")),
+		PIB:                strings.TrimSpace(r.FormValue("pib")),
+		RegistrationNumber: strings.TrimSpace(r.FormValue("registration_number")),
+		Email:              strings.TrimSpace(r.FormValue("email")),
+		Address:            strings.TrimSpace(r.FormValue("address")),
+		IsForeign:          r.FormValue("is_foreign") == "on",
+	}
+}
+
+// ── Entrepreneur: bank account CRUD ──────────────────────────────────────────
+
+func (h *handler) handleEBankAccountNewForm(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.entrepreneurUserFromSession(r); !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	renderTemplate(w, h.tmpl.bankAccountForm, map[string]any{
+		"IsNew":     true,
+		"Account":   bankaccount.BankAccount{},
+		"ActionURL": "/e/bank-accounts/new",
+		"BackURL":   "/e/",
+	})
+}
+
+func (h *handler) handleEBankAccountCreate(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		return
+	}
+	a := eBankAccountFromForm(r, userID)
+	if _, err := h.bankAccounts.Create(r.Context(), a); err != nil {
+		http.Error(w, "Грешка при чувању рачуна", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/", http.StatusFound)
+}
+
+func (h *handler) handleEBankAccountEditForm(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	aid, err := uuid.Parse(r.PathValue("aid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	a, err := h.bankAccounts.FindByID(r.Context(), aid)
+	if err != nil && !errors.Is(err, bankaccount.ErrNotFound) {
+		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		return
+	}
+	if err != nil || a.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	cbs, _ := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), aid)
+	a.CorrespondentBanks = cbs
+	renderTemplate(w, h.tmpl.bankAccountForm, map[string]any{
+		"IsNew":                false,
+		"Account":              a,
+		"ActionURL":            "/e/bank-accounts/" + aid.String(),
+		"BackURL":              "/e/",
+		"CorrespondentBaseURL": "/e/bank-accounts/" + aid.String() + "/correspondents",
+	})
+}
+
+func (h *handler) handleEBankAccountUpdate(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	aid, err := uuid.Parse(r.PathValue("aid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
+	if err != nil && !errors.Is(err, bankaccount.ErrNotFound) {
+		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		return
+	}
+	if err != nil || existing.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		return
+	}
+	a := eBankAccountFromForm(r, userID)
+	a.ID = aid
+	if err := h.bankAccounts.Update(r.Context(), a); err != nil {
+		http.Error(w, "Грешка при чувању рачуна", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/bank-accounts/"+aid.String()+"/edit", http.StatusFound)
+}
+
+func (h *handler) handleEBankAccountDelete(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	aid, err := uuid.Parse(r.PathValue("aid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
+	if err != nil && !errors.Is(err, bankaccount.ErrNotFound) {
+		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		return
+	}
+	if err != nil || existing.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.bankAccounts.Delete(r.Context(), aid); err != nil {
+		http.Error(w, "Грешка при брисању рачуна", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/", http.StatusFound)
+}
+
+func eBankAccountFromForm(r *http.Request, userID uuid.UUID) bankaccount.BankAccount {
+	at := bankaccount.TypeLocal
+	if r.FormValue("account_type") == "foreign" {
+		at = bankaccount.TypeForeign
+	}
+	return bankaccount.BankAccount{
+		EntrepreneurUserID: userID,
+		AccountType:        at,
+		BankName:           strings.TrimSpace(r.FormValue("bank_name")),
+		AccountNumber:      strings.TrimSpace(r.FormValue("account_number")),
+		IBAN:               strings.TrimSpace(r.FormValue("iban")),
+		SWIFT:              strings.TrimSpace(r.FormValue("swift")),
+	}
+}
+
+// ── Entrepreneur: correspondent bank CRUD ────────────────────────────────────
+
+func (h *handler) eOwnedBankAccount(w http.ResponseWriter, r *http.Request, userID uuid.UUID) (bankaccount.BankAccount, bool) {
+	aid, err := uuid.Parse(r.PathValue("aid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return bankaccount.BankAccount{}, false
+	}
+	a, err := h.bankAccounts.FindByID(r.Context(), aid)
+	if err != nil || a.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return bankaccount.BankAccount{}, false
+	}
+	return a, true
+}
+
+func (h *handler) handleECorrespondentNewForm(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	a, ok := h.eOwnedBankAccount(w, r, userID)
+	if !ok {
+		return
+	}
+	renderTemplate(w, h.tmpl.correspondentForm, map[string]any{
+		"BankAccount":   a,
+		"IsNew":         true,
+		"Correspondent": bankaccount.CorrespondentBank{},
+		"ActionURL":     "/e/bank-accounts/" + a.ID.String() + "/correspondents/new",
+		"BackURL":       "/e/bank-accounts/" + a.ID.String() + "/edit",
+	})
+}
+
+func (h *handler) handleECorrespondentCreate(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	a, ok := h.eOwnedBankAccount(w, r, userID)
+	if !ok {
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		return
+	}
+	cb := bankaccount.CorrespondentBank{
+		BankAccountID: a.ID,
+		BankName:      strings.TrimSpace(r.FormValue("bank_name")),
+		SWIFT:         strings.TrimSpace(r.FormValue("swift")),
+		BankAddress:   strings.TrimSpace(r.FormValue("bank_address")),
+	}
+	if _, err := h.bankAccounts.CreateCorrespondent(r.Context(), cb); err != nil {
+		http.Error(w, "Грешка при чувању кор. банке", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/bank-accounts/"+a.ID.String()+"/edit", http.StatusFound)
+}
+
+func (h *handler) handleECorrespondentEditForm(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	a, ok := h.eOwnedBankAccount(w, r, userID)
+	if !ok {
+		return
+	}
+	cid, err := uuid.Parse(r.PathValue("cid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
+	if err != nil || cb.BankAccountID != a.ID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	renderTemplate(w, h.tmpl.correspondentForm, map[string]any{
+		"BankAccount":   a,
+		"IsNew":         false,
+		"Correspondent": cb,
+		"ActionURL":     "/e/bank-accounts/" + a.ID.String() + "/correspondents/" + cid.String(),
+		"BackURL":       "/e/bank-accounts/" + a.ID.String() + "/edit",
+	})
+}
+
+func (h *handler) handleECorrespondentUpdate(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	a, ok := h.eOwnedBankAccount(w, r, userID)
+	if !ok {
+		return
+	}
+	cid, err := uuid.Parse(r.PathValue("cid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	existing, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
+	if err != nil || existing.BankAccountID != a.ID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		return
+	}
+	cb := bankaccount.CorrespondentBank{
+		ID:          cid,
+		BankName:    strings.TrimSpace(r.FormValue("bank_name")),
+		SWIFT:       strings.TrimSpace(r.FormValue("swift")),
+		BankAddress: strings.TrimSpace(r.FormValue("bank_address")),
+	}
+	if err := h.bankAccounts.UpdateCorrespondent(r.Context(), cb); err != nil {
+		http.Error(w, "Грешка при чувању кор. банке", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/bank-accounts/"+a.ID.String()+"/edit", http.StatusFound)
+}
+
+func (h *handler) handleECorrespondentDelete(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	a, ok := h.eOwnedBankAccount(w, r, userID)
+	if !ok {
+		return
+	}
+	cid, err := uuid.Parse(r.PathValue("cid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	existing, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
+	if err != nil || existing.BankAccountID != a.ID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.bankAccounts.DeleteCorrespondent(r.Context(), cid); err != nil {
+		http.Error(w, "Грешка при брисању кор. банке", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/bank-accounts/"+a.ID.String()+"/edit", http.StatusFound)
+}
+
+func (h *handler) handleECorrespondentsByAccount(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	a, ok := h.eOwnedBankAccount(w, r, userID)
+	if !ok {
+		return
+	}
+	cbs, err := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), a.ID)
+	if err != nil {
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
+	type cbItem struct {
+		ID          string `json:"id"`
+		BankName    string `json:"bank_name"`
+		SWIFT       string `json:"swift"`
+		BankAddress string `json:"bank_address"`
+	}
+	out := make([]cbItem, len(cbs))
+	for i, cb := range cbs {
+		out[i] = cbItem{cb.ID.String(), cb.BankName, cb.SWIFT, cb.BankAddress}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
+}
+
+// ── Entrepreneur: invoices ────────────────────────────────────────────────────
+
+func (h *handler) handleEInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	accounts, _ := h.bankAccounts.ListByEntrepreneurUser(r.Context(), userID)
+	// Load correspondents into each account
+	for i, a := range accounts {
+		cbs, _ := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), a.ID)
+		accounts[i].CorrespondentBanks = cbs
+	}
+	renderTemplate(w, h.tmpl.invoiceNew, map[string]any{
+		"BackURL":         "/e/",
+		"ActionURL":       "/e/invoices",
+		"SettingsURL":     "/e/",
+		"ClientSearchURL": "/e/clients/search",
+		"Today":           time.Now().Format("2006-01-02"),
+		"BankAccounts":    accounts,
+		"Currencies":      []string{"RSD", "EUR", "USD", "CHF", "GBP"},
+		"FXRates":         invoice.FXRates,
+		"ProfileComplete": true,
+	})
+}
+
+func (h *handler) handleEInvoiceCreate(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		return
+	}
+
+	invType := invoice.TypeStandard
+	if r.FormValue("invoice_type") == "advance" {
+		invType = invoice.TypeAdvance
+	}
+
+	issueDate, err := time.Parse("2006-01-02", r.FormValue("issue_date"))
+	if err != nil {
+		issueDate = time.Now()
+	}
+
+	currency := r.FormValue("currency")
+	if _, ok := invoice.FXRates[currency]; !ok {
+		http.Error(w, "Непозната валута", http.StatusBadRequest)
+		return
+	}
+
+	inv := invoice.Invoice{
+		EntrepreneurUserID: userID,
+		InvoiceType:        invType,
+		InvoiceNumber:      strings.TrimSpace(r.FormValue("invoice_number")),
+		IssueDate:          issueDate,
+		Currency:           currency,
+		Notes:              strings.TrimSpace(r.FormValue("notes")),
+	}
+
+	if cid, err := uuid.Parse(r.FormValue("client_id")); err == nil {
+		inv.ClientID = &cid
+	}
+	inv.ClientName = strings.TrimSpace(r.FormValue("client_name"))
+
+	if aid, err := uuid.Parse(r.FormValue("bank_account_id")); err == nil {
+		inv.BankAccountID = &aid
+	}
+	if cbid, err := uuid.Parse(r.FormValue("correspondent_bank_id")); err == nil {
+		inv.CorrespondentBankID = &cbid
+	}
+
+	if dd, err := time.Parse("2006-01-02", r.FormValue("due_date")); err == nil {
+		inv.DueDate = sql.NullTime{Time: dd, Valid: true}
+	}
+	if ps, err := time.Parse("2006-01-02", r.FormValue("period_start")); err == nil {
+		if pe, err := time.Parse("2006-01-02", r.FormValue("period_end")); err == nil {
+			inv.PeriodStart = sql.NullTime{Time: ps, Valid: true}
+			inv.PeriodEnd = sql.NullTime{Time: pe, Valid: true}
+		}
+	}
+
+	descs := r.Form["item_description[]"]
+	qtys := r.Form["item_quantity[]"]
+	prices := r.Form["item_unit_price[]"]
+	discounts := r.Form["item_discount[]"]
+	isProducts := r.Form["item_is_product[]"]
+	var items []invoice.Item
+	for i, d := range descs {
+		d = strings.TrimSpace(d)
+		if d == "" {
+			continue
+		}
+		qty, _ := strconv.ParseFloat(strings.ReplaceAll(safeIndex(qtys, i), ",", "."), 64)
+		price, _ := strconv.ParseFloat(strings.ReplaceAll(safeIndex(prices, i), ",", "."), 64)
+		disc, _ := strconv.ParseFloat(strings.ReplaceAll(safeIndex(discounts, i), ",", "."), 64)
+		isProd := safeIndex(isProducts, i) == "on"
+		items = append(items, invoice.Item{
+			Description: d,
+			Quantity:    qty,
+			UnitPrice:   price,
+			DiscountPct: disc,
+			IsProduct:   isProd,
+		})
+	}
+
+	var total float64
+	for _, it := range items {
+		total += it.LineTotal()
+	}
+	inv.TotalRSD = invoice.ToRSD(total, inv.Currency)
+
+	created, err := h.invoices.Create(r.Context(), inv, items)
+	if err != nil {
+		http.Error(w, "Грешка при чувању фактуре", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/invoices/"+created.ID.String(), http.StatusFound)
+}
+
+func (h *handler) handleEInvoice(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	iid, err := uuid.Parse(r.PathValue("iid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	inv, items, err := h.invoices.FindByID(r.Context(), iid)
+	if err != nil || inv.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+
+	var grandTotal float64
+	for _, it := range items {
+		grandTotal += it.LineTotal()
+	}
+
+	data := map[string]any{
+		"Invoice":    inv,
+		"Items":      items,
+		"GrandTotal": grandTotal,
+		"BackURL":    "/e/",
+		"PDFUrl":     "/e/invoices/" + iid.String() + "/pdf",
+	}
+
+	if inv.BankAccountID != nil {
+		if ba, err := h.bankAccounts.FindByID(r.Context(), *inv.BankAccountID); err == nil {
+			data["BankAccount"] = ba
+		}
+	}
+	if inv.CorrespondentBankID != nil {
+		if cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), *inv.CorrespondentBankID); err == nil {
+			data["CorrespondentBank"] = cb
+		}
+	}
+
+	renderTemplate(w, h.tmpl.invoiceDetail, data)
+}
+
+func (h *handler) handleEInvoicePDF(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	iid, err := uuid.Parse(r.PathValue("iid"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	inv, items, err := h.invoices.FindByID(r.Context(), iid)
+	if err != nil || inv.EntrepreneurUserID != userID {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+
+	var grandTotal float64
+	for _, it := range items {
+		grandTotal += it.LineTotal()
+	}
+
+	data := map[string]any{
+		"Invoice":    inv,
+		"Items":      items,
+		"GrandTotal": grandTotal,
+		"BackURL":    "/e/invoices/" + iid.String(),
+		"PDFUrl":     "#",
+	}
+	if inv.BankAccountID != nil {
+		if ba, err := h.bankAccounts.FindByID(r.Context(), *inv.BankAccountID); err == nil {
+			data["BankAccount"] = ba
+		}
+	}
+	if inv.CorrespondentBankID != nil {
+		if cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), *inv.CorrespondentBankID); err == nil {
+			data["CorrespondentBank"] = cb
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Disposition", `inline; filename="faktura.html"`)
+	if err := h.tmpl.invoiceDetail.Execute(w, data); err != nil {
+		log.Printf("invoice pdf template error: %v", err)
+	}
+}
+
+// ── Entrepreneur: KPO ────────────────────────────────────────────────────────
+
+// eKPOBookFromPath resolves the year from the path and returns the book for the logged-in entrepreneur.
+func (h *handler) eKPOBookFromPath(r *http.Request) (uuid.UUID, kpo.Book, int, error) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		return uuid.Nil, kpo.Book{}, 0, errors.New("forbidden")
+	}
+	year, err := strconv.Atoi(r.PathValue("year"))
+	if err != nil || year < 2000 || year > 2100 {
+		return uuid.Nil, kpo.Book{}, 0, errors.New("bad year")
+	}
+	book, err := h.kpoBooks.FindOrCreateForEntrepreneur(r.Context(), userID, year)
+	return userID, book, year, err
+}
+
+func (h *handler) handleEKPO(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	selectedYear := time.Now().Year()
+	if ys := r.URL.Query().Get("year"); ys != "" {
+		if y, err := strconv.Atoi(ys); err == nil && y >= 2000 && y <= 2100 {
+			selectedYear = y
+		}
+	}
+	// year path value takes precedence when coming from eMux route
+	if ys := r.PathValue("year"); ys != "" {
+		if y, err := strconv.Atoi(ys); err == nil && y >= 2000 && y <= 2100 {
+			selectedYear = y
+		}
+	}
+
+	currentBook, err := h.kpoBooks.FindOrCreateForEntrepreneur(r.Context(), userID, selectedYear)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
+		return
+	}
+
+	entries, err := h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		return
+	}
+
+	books, err := h.kpoBooks.ListByEntrepreneurUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО књига", http.StatusInternalServerError)
+		return
+	}
+
+	advanceInvoices, err := h.invoices.ListAdvanceByEntrepreneurUserYear(r.Context(), userID, selectedYear)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању авансних фактура", http.StatusInternalServerError)
+		return
+	}
+
+	var kpoRows []kpoRow
+	for i, e := range entries {
+		kpoRows = append(kpoRows, kpoRow{
+			IsAdvanceInvoice: false,
+			Date:             e.CollectionDate,
+			InvoiceNum:       e.InvoiceNumber,
+			EntryID:          e.ID,
+			OrdinalNumber:    i + 1,
+			ProductRevenue:   e.ProductRevenue,
+			ServiceRevenue:   e.ServiceRevenue,
+			EntryTotal:       e.Total(),
+		})
+	}
+	for _, inv := range advanceInvoices {
+		kpoRows = append(kpoRows, kpoRow{
+			IsAdvanceInvoice: true,
+			Date:             inv.IssueDate,
+			InvoiceNum:       inv.InvoiceNumber,
+			InvoiceID:        inv.ID,
+			ClientName:       inv.ClientName,
+			TotalRSD:         inv.TotalRSD,
+		})
+	}
+	sort.Slice(kpoRows, func(i, j int) bool {
+		return kpoRows[i].Date.Before(kpoRows[j].Date)
+	})
+
+	var totalProduct, totalService float64
+	for _, en := range entries {
+		totalProduct += en.ProductRevenue
+		totalService += en.ServiceRevenue
+	}
+
+	renderTemplate(w, h.tmpl.entrepreneurKPO, map[string]any{
+		"CurrentBook":  currentBook,
+		"KPOBooks":     books,
+		"KPOEntries":   entries,
+		"KPORows":      kpoRows,
+		"SelectedYear": selectedYear,
+		"TotalProduct": totalProduct,
+		"TotalService": totalService,
+		"TotalAll":     totalProduct + totalService,
+	})
+}
+
+func (h *handler) handleEKPOAddEntry(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		return
+	}
+	r.ParseForm()
+	date, err := parseDayMonth(r.FormValue("collection_date"), year)
+	if err != nil {
+		http.Error(w, "Неисправан датум", http.StatusBadRequest)
+		return
+	}
+	prodRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
+	svcRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("service_revenue"), ",", "."), 64)
+	if _, err := h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
+		KPOBookID:      book.ID,
+		CollectionDate: date,
+		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
+		ProductRevenue: prodRev,
+		ServiceRevenue: svcRev,
+	}); err != nil {
+		http.Error(w, "Грешка при уносу", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
+}
+
+func (h *handler) handleEKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		return
+	}
+	entryID, err := uuid.Parse(r.PathValue("entryID"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	r.ParseForm()
+	date, err := parseDayMonth(r.FormValue("collection_date"), year)
+	if err != nil {
+		http.Error(w, "Неисправан датум", http.StatusBadRequest)
+		return
+	}
+	prodRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
+	svcRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("service_revenue"), ",", "."), 64)
+	if err := h.kpoBooks.UpdateEntry(r.Context(), kpo.Entry{
+		ID:             entryID,
+		KPOBookID:      book.ID,
+		CollectionDate: date,
+		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
+		ProductRevenue: prodRev,
+		ServiceRevenue: svcRev,
+	}); err != nil {
+		http.Error(w, "Грешка при чувању", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
+}
+
+func (h *handler) handleEKPOReorderEntries(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		return
+	}
+	r.ParseForm()
+	rawIDs := r.Form["ids[]"]
+	ids := make([]uuid.UUID, 0, len(rawIDs))
+	for _, s := range rawIDs {
+		if id, err := uuid.Parse(s); err == nil {
+			ids = append(ids, id)
+		}
+	}
+	if err := h.kpoBooks.ReorderEntries(r.Context(), book.ID, ids); err != nil {
+		http.Error(w, "Грешка при промени редоследа", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	_ = year
+}
+
+func (h *handler) handleEKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if book.IsFinalized() {
+		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		return
+	}
+	entryID, err := uuid.Parse(r.PathValue("entryID"))
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.kpoBooks.DeleteEntry(r.Context(), book.ID, entryID); err != nil {
+		http.Error(w, "Грешка при брисању", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
+}
+
+func (h *handler) handleEKPOFinalize(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
+		http.Error(w, "Грешка при финализацији", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
+}
+
+func (h *handler) handleEKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
+	_, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	if err := h.kpoBooks.Unfinalize(r.Context(), book.ID); err != nil {
+		http.Error(w, "Грешка при поништавању финализације", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
 }

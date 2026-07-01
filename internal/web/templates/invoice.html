@@ -1,10 +1,10 @@
 {{template "base" .}}
 
-{{define "title"}}Фактура {{.Invoice.InvoiceNumber}} — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+{{define "title"}}Фактура {{.Invoice.InvoiceNumber}}{{end}}
 
 {{define "content"}}
 <div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
-  <a href="/entrepreneurs/{{.Entrepreneur.ID}}" class="hover:text-primary">← Назад</a>
+  <a href="{{.BackURL}}" class="hover:text-primary">← Назад</a>
 </div>
 
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden max-w-2xl">
@@ -18,7 +18,7 @@
       <div class="text-sm text-gray-500 mt-0.5">{{.Invoice.ClientName}}</div>
       {{end}}
     </div>
-    <a href="/entrepreneurs/{{.Entrepreneur.ID}}/invoices/{{.Invoice.ID}}/pdf"
+    <a href="{{.PDFUrl}}"
        class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
       ↓ Преузми PDF
     </a>

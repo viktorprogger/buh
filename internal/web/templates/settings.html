@@ -4,7 +4,7 @@
 
 {{define "content"}}
 <div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
-  <a href="/entrepreneurs/{{.Entrepreneur.ID}}" class="hover:text-primary">← Назад</a>
+  <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}" class="hover:text-primary">← Назад</a>
 </div>
 
 {{if .Saved}}
@@ -17,9 +17,9 @@
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-lg font-semibold text-gray-900">Профил предузетника</h2>
-    <p class="text-sm text-gray-500 mt-1">Ови подаци се исписују на фактурама (PDF).</p>
+    <p class="text-sm text-gray-500 mt-1">Адреса и жиро рачун приказани у КПО.</p>
   </div>
-  <form method="POST" action="/entrepreneurs/{{.Entrepreneur.ID}}/settings" class="px-6 py-4">
+  <form method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}/settings" class="px-6 py-4">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Назив (кратко)</label>
@@ -43,7 +43,7 @@
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div class="sm:col-span-2">
-        <label for="f-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Број рачуна (жиро рачун)</label>
+        <label for="f-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Жиро рачун (за КПО)</label>
         <input id="f-bank" type="text" name="bank_account" value="{{.Entrepreneur.BankAccount}}"
                placeholder="нпр. 265-1234567890123-56"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
@@ -58,107 +58,14 @@
   </form>
 </div>
 
-<!-- Bank accounts card -->
-<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
-  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-900">Банковни рачуни</h2>
-    <a href="/entrepreneurs/{{.Entrepreneur.ID}}/bank-accounts/new"
-       class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-      + Нови рачун
-    </a>
-  </div>
-
-  {{if .BankAccounts}}
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        <th class="px-4 py-2 text-left">Назив банке</th>
-        <th class="px-4 py-2 text-left">Рачун / IBAN</th>
-        <th class="px-4 py-2 text-left">Тип</th>
-        <th class="px-4 py-2 text-left">Кор. банке</th>
-        <th class="w-24"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {{range .BankAccounts}}
-      <tr class="hover:bg-gray-50">
-        <td class="px-4 py-2 font-medium text-gray-900">{{.BankName}}</td>
-        <td class="px-4 py-2 font-mono text-gray-600">
-          {{if eq (printf "%s" .AccountType) "foreign"}}{{.IBAN}}{{else}}{{.AccountNumber}}{{end}}
-        </td>
-        <td class="px-4 py-2 text-gray-600">
-          {{if eq (printf "%s" .AccountType) "foreign"}}Девизни{{else}}Домаћи{{end}}
-        </td>
-        <td class="px-4 py-2 text-gray-600">
-          {{if .CorrespondentBanks}}{{len .CorrespondentBanks}}{{end}}
-        </td>
-        <td class="px-4 py-2 text-right">
-          <div class="flex gap-2 justify-end">
-            <a href="/entrepreneurs/{{$.Entrepreneur.ID}}/bank-accounts/{{.ID}}/edit"
-               class="text-xs text-gray-500 hover:text-primary">Измени</a>
-            <form method="POST" action="/entrepreneurs/{{$.Entrepreneur.ID}}/bank-accounts/{{.ID}}/delete"
-                  onsubmit="return confirm('Обрисати рачун?')">
-              <button type="submit" class="text-xs text-red-500 hover:text-red-700">Обриши</button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
-  {{else}}
-  <div class="px-6 py-8 text-sm text-gray-500 text-center">
-    Нема сачуваних банковних рачуна.
-  </div>
-  {{end}}
-</div>
-
-<!-- Clients card -->
+{{if .Entrepreneur.IsPaired}}
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
-  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-900">Клијенти</h2>
-    <a href="/entrepreneurs/{{.Entrepreneur.ID}}/clients/new"
-       class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-      + Нови клијент
-    </a>
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">Повезани предузетник</h2>
   </div>
-
-  {{if .Clients}}
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        <th class="px-4 py-2 text-left">Назив</th>
-        <th class="px-4 py-2 text-left">ПИБ</th>
-        <th class="px-4 py-2 text-left">Е-пошта</th>
-        <th class="px-4 py-2 text-left">Страни</th>
-        <th class="w-24"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {{range .Clients}}
-      <tr class="hover:bg-gray-50">
-        <td class="px-4 py-2 font-medium text-gray-900">{{.Name}}</td>
-        <td class="px-4 py-2 font-mono text-gray-600">{{.PIB}}</td>
-        <td class="px-4 py-2 text-gray-600">{{.Email}}</td>
-        <td class="px-4 py-2 text-gray-600">{{if .IsForeign}}Да{{end}}</td>
-        <td class="px-4 py-2 text-right">
-          <div class="flex gap-2 justify-end">
-            <a href="/entrepreneurs/{{$.Entrepreneur.ID}}/clients/{{.ID}}/edit"
-               class="text-xs text-gray-500 hover:text-primary">Измени</a>
-            <form method="POST" action="/entrepreneurs/{{$.Entrepreneur.ID}}/clients/{{.ID}}/delete"
-                  onsubmit="return confirm('Обрисати клијента?')">
-              <button type="submit" class="text-xs text-red-500 hover:text-red-700">Обриши</button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
-  {{else}}
-  <div class="px-6 py-8 text-sm text-gray-500 text-center">
-    Нема сачуваних клијената.
+  <div class="px-6 py-4 text-sm text-gray-600">
+    Клијенти, банковни рачуни и фактуре се управљају преко налога предузетника.
   </div>
-  {{end}}
 </div>
+{{end}}
 {{end}}

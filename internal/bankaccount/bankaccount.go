@@ -19,14 +19,14 @@ const (
 )
 
 type BankAccount struct {
-	ID             uuid.UUID
-	EntrepreneurID uuid.UUID
-	AccountType    Type
-	BankName       string
-	AccountNumber  string
-	IBAN           string
-	SWIFT          string
-	CreatedAt      time.Time
+	ID                 uuid.UUID
+	EntrepreneurUserID uuid.UUID
+	AccountType        Type
+	BankName           string
+	AccountNumber      string
+	IBAN               string
+	SWIFT              string
+	CreatedAt          time.Time
 
 	CorrespondentBanks []CorrespondentBank
 }
@@ -63,9 +63,9 @@ func (r *Repo) Create(ctx context.Context, a BankAccount) (BankAccount, error) {
 	a.ID = uuid.New()
 	a.CreatedAt = time.Now()
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO bank_accounts (id, entrepreneur_id, account_type, bank_name, account_number, iban, swift, created_at)
+		`INSERT INTO bank_accounts (id, entrepreneur_user_id, account_type, bank_name, account_number, iban, swift, created_at)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-		a.ID, a.EntrepreneurID, string(a.AccountType), a.BankName, a.AccountNumber, a.IBAN, a.SWIFT, a.CreatedAt,
+		a.ID, a.EntrepreneurUserID, string(a.AccountType), a.BankName, a.AccountNumber, a.IBAN, a.SWIFT, a.CreatedAt,
 	)
 	return a, err
 }
@@ -87,9 +87,9 @@ func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (BankAccount, error) 
 	var a BankAccount
 	var at string
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, entrepreneur_id, account_type, bank_name, account_number, iban, swift, created_at
+		`SELECT id, entrepreneur_user_id, account_type, bank_name, account_number, iban, swift, created_at
 		 FROM bank_accounts WHERE id=$1`, id,
-	).Scan(&a.ID, &a.EntrepreneurID, &at, &a.BankName, &a.AccountNumber, &a.IBAN, &a.SWIFT, &a.CreatedAt)
+	).Scan(&a.ID, &a.EntrepreneurUserID, &at, &a.BankName, &a.AccountNumber, &a.IBAN, &a.SWIFT, &a.CreatedAt)
 	if err == sql.ErrNoRows {
 		return a, ErrNotFound
 	}
@@ -97,10 +97,10 @@ func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (BankAccount, error) 
 	return a, err
 }
 
-func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID) ([]BankAccount, error) {
+func (r *Repo) ListByEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID) ([]BankAccount, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, entrepreneur_id, account_type, bank_name, account_number, iban, swift, created_at
-		 FROM bank_accounts WHERE entrepreneur_id=$1 ORDER BY created_at`, entrepreneurID,
+		`SELECT id, entrepreneur_user_id, account_type, bank_name, account_number, iban, swift, created_at
+		 FROM bank_accounts WHERE entrepreneur_user_id=$1 ORDER BY created_at`, entrepreneurUserID,
 	)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID)
 	for rows.Next() {
 		var a BankAccount
 		var at string
-		if err := rows.Scan(&a.ID, &a.EntrepreneurID, &at, &a.BankName, &a.AccountNumber, &a.IBAN, &a.SWIFT, &a.CreatedAt); err != nil {
+		if err := rows.Scan(&a.ID, &a.EntrepreneurUserID, &at, &a.BankName, &a.AccountNumber, &a.IBAN, &a.SWIFT, &a.CreatedAt); err != nil {
 			return nil, err
 		}
 		a.AccountType = Type(at)

@@ -12,10 +12,27 @@
     <h1 class="text-2xl font-bold text-gray-900">Паушалне уплатнице</h1>
     <p class="text-gray-500 mt-1 text-sm">Пријавите се да бисте наставили</p>
   </div>
+
+  {{$userType := .UserType}}
+
+  <!-- Tabs -->
+  <div class="flex mb-6 rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
+    <button type="button" onclick="switchTab('accountant')" id="tab-accountant"
+            class="flex-1 py-2 text-center {{if ne $userType "entrepreneur"}}bg-primary text-white{{else}}bg-white text-gray-600 hover:bg-gray-50{{end}}">
+      Рачуновођа
+    </button>
+    <button type="button" onclick="switchTab('entrepreneur')" id="tab-entrepreneur"
+            class="flex-1 py-2 text-center {{if eq $userType "entrepreneur"}}bg-primary text-white{{else}}bg-white text-gray-600 hover:bg-gray-50{{end}}">
+      Предузетник
+    </button>
+  </div>
+
   {{if .Error}}
   <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">{{.Error}}</div>
   {{end}}
-  <form method="POST" action="/login" class="space-y-4">
+
+  <form method="POST" action="/login" class="space-y-4" id="login-form">
+    <input type="hidden" name="user_type" id="user-type-field" value="{{if eq $userType "entrepreneur"}}entrepreneur{{else}}accountant{{end}}">
     <div>
       <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Е-пошта</label>
       <input type="email" id="email" name="email" autofocus autocomplete="username" required
@@ -31,6 +48,30 @@
       Пријави се
     </button>
   </form>
+
+  <p class="mt-4 text-center text-xs text-gray-500" id="register-link" style="{{if ne $userType "entrepreneur"}}display:none{{end}}">
+    Немате налог?
+    <a href="/e/register" class="text-primary hover:underline">Региструјте се</a>
+  </p>
 </div>
+<script>
+function switchTab(type) {
+  document.getElementById('user-type-field').value = type;
+  const isAcc = type === 'accountant';
+  const tabAcc = document.getElementById('tab-accountant');
+  const tabEnt = document.getElementById('tab-entrepreneur');
+  tabAcc.className = tabAcc.className.replace(/bg-\S+\s+text-\S+/g, '').trim();
+  tabEnt.className = tabEnt.className.replace(/bg-\S+\s+text-\S+/g, '').trim();
+  if (isAcc) {
+    tabAcc.classList.add('bg-primary', 'text-white');
+    tabEnt.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-50');
+    document.getElementById('register-link').style.display = 'none';
+  } else {
+    tabEnt.classList.add('bg-primary', 'text-white');
+    tabAcc.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-50');
+    document.getElementById('register-link').style.display = '';
+  }
+}
+</script>
 </body>
 </html>

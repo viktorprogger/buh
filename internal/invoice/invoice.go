@@ -36,22 +36,22 @@ func ToRSD(amount float64, currency string) float64 {
 }
 
 type Invoice struct {
-	ID                  uuid.UUID
-	EntrepreneurID      uuid.UUID
-	ClientID            *uuid.UUID
-	ClientName          string
-	InvoiceType         Type
-	InvoiceNumber       string
-	IssueDate           time.Time
-	PeriodStart         sql.NullTime
-	PeriodEnd           sql.NullTime
-	DueDate             sql.NullTime
-	Currency            string
-	Notes               string
-	TotalRSD            float64
-	BankAccountID       *uuid.UUID
-	CorrespondentBankID *uuid.UUID
-	CreatedAt           time.Time
+	ID                   uuid.UUID
+	EntrepreneurUserID   uuid.UUID
+	ClientID             *uuid.UUID
+	ClientName           string
+	InvoiceType          Type
+	InvoiceNumber        string
+	IssueDate            time.Time
+	PeriodStart          sql.NullTime
+	PeriodEnd            sql.NullTime
+	DueDate              sql.NullTime
+	Currency             string
+	Notes                string
+	TotalRSD             float64
+	BankAccountID        *uuid.UUID
+	CorrespondentBankID  *uuid.UUID
+	CreatedAt            time.Time
 }
 
 type Item struct {
@@ -74,7 +74,7 @@ type Repo struct{ db *sql.DB }
 
 func NewRepo(db *sql.DB) *Repo { return &Repo{db: db} }
 
-const invCols = `id, entrepreneur_id, client_id, client_name, invoice_type, invoice_number,
+const invCols = `id, entrepreneur_user_id, client_id, client_name, invoice_type, invoice_number,
 	issue_date, period_start, period_end, due_date, currency, notes, total_rsd,
 	bank_account_id, correspondent_bank_id, created_at`
 
@@ -83,7 +83,7 @@ func scanInv(row interface{ Scan(...any) error }, inv *Invoice) error {
 	var bankAccountID sql.NullString
 	var correspondentBankID sql.NullString
 	err := row.Scan(
-		&inv.ID, &inv.EntrepreneurID, &clientID, &inv.ClientName,
+		&inv.ID, &inv.EntrepreneurUserID, &clientID, &inv.ClientName,
 		&inv.InvoiceType, &inv.InvoiceNumber,
 		&inv.IssueDate, &inv.PeriodStart, &inv.PeriodEnd, &inv.DueDate,
 		&inv.Currency, &inv.Notes, &inv.TotalRSD,
@@ -135,12 +135,12 @@ func (r *Repo) Create(ctx context.Context, inv Invoice, items []Item) (Invoice, 
 	}
 
 	err = scanInv(tx.QueryRowContext(ctx,
-		`INSERT INTO invoices (entrepreneur_id, client_id, client_name, invoice_type, invoice_number,
+		`INSERT INTO invoices (entrepreneur_user_id, client_id, client_name, invoice_type, invoice_number,
 		 issue_date, period_start, period_end, due_date, currency, notes, total_rsd,
 		 bank_account_id, correspondent_bank_id)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
 		 RETURNING `+invCols,
-		inv.EntrepreneurID, clientID, inv.ClientName, string(inv.InvoiceType), inv.InvoiceNumber,
+		inv.EntrepreneurUserID, clientID, inv.ClientName, string(inv.InvoiceType), inv.InvoiceNumber,
 		inv.IssueDate, nullTime(inv.PeriodStart), nullTime(inv.PeriodEnd), nullTime(inv.DueDate),
 		inv.Currency, inv.Notes, inv.TotalRSD,
 		bankAccountID, correspondentBankID,
@@ -178,10 +178,10 @@ func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (Invoice, []Item, err
 	return inv, items, err
 }
 
-func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID) ([]Invoice, error) {
+func (r *Repo) ListByEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID) ([]Invoice, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT `+invCols+` FROM invoices WHERE entrepreneur_id=$1 ORDER BY issue_date DESC, created_at DESC`,
-		entrepreneurID,
+		`SELECT `+invCols+` FROM invoices WHERE entrepreneur_user_id=$1 ORDER BY issue_date DESC, created_at DESC`,
+		entrepreneurUserID,
 	)
 	if err != nil {
 		return nil, err
@@ -198,12 +198,12 @@ func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID)
 	return out, rows.Err()
 }
 
-func (r *Repo) ListAdvanceByEntrepreneurYear(ctx context.Context, entrepreneurID uuid.UUID, year int) ([]Invoice, error) {
+func (r *Repo) ListAdvanceByEntrepreneurUserYear(ctx context.Context, entrepreneurUserID uuid.UUID, year int) ([]Invoice, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT `+invCols+` FROM invoices
-		 WHERE entrepreneur_id=$1 AND invoice_type='advance' AND EXTRACT(YEAR FROM issue_date)=$2
+		 WHERE entrepreneur_user_id=$1 AND invoice_type='advance' AND EXTRACT(YEAR FROM issue_date)=$2
 		 ORDER BY issue_date`,
-		entrepreneurID, year,
+		entrepreneurUserID, year,
 	)
 	if err != nil {
 		return nil, err

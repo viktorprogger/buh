@@ -10,6 +10,18 @@ import (
 const cookieName = "buh_session"
 const sessionTTL = 24 * time.Hour
 
+type UserType string
+
+const (
+	UserTypeAccountant   UserType = "accountant"
+	UserTypeEntrepreneur UserType = "entrepreneur"
+)
+
+type Session struct {
+	UserType UserType
+	UserID   string
+}
+
 // SessionManager manages secure, encrypted session cookies.
 type SessionManager struct {
 	sc *securecookie.SecureCookie
@@ -30,9 +42,12 @@ func NewSessionManager(hashKey, blockKey []byte) *SessionManager {
 	}
 }
 
-// Set writes a session cookie containing the accountant ID.
-func (s *SessionManager) Set(w http.ResponseWriter, accountantID string) error {
-	value := map[string]string{"accountant_id": accountantID}
+// Set writes a session cookie containing the typed session.
+func (s *SessionManager) Set(w http.ResponseWriter, sess Session) error {
+	value := map[string]string{
+		"user_type": string(sess.UserType),
+		"user_id":   sess.UserID,
+	}
 	encoded, err := s.sc.Encode(cookieName, value)
 	if err != nil {
 		return err
@@ -48,19 +63,23 @@ func (s *SessionManager) Set(w http.ResponseWriter, accountantID string) error {
 	return nil
 }
 
-// Get retrieves the accountant ID from the session cookie.
-// Returns ("", false) if there is no valid session.
-func (s *SessionManager) Get(r *http.Request) (string, bool) {
+// Get retrieves the session from the cookie.
+// Returns zero Session and false if there is no valid session.
+func (s *SessionManager) Get(r *http.Request) (Session, bool) {
 	c, err := r.Cookie(cookieName)
 	if err != nil {
-		return "", false
+		return Session{}, false
 	}
 	value := map[string]string{}
 	if err := s.sc.Decode(cookieName, c.Value, &value); err != nil {
-		return "", false
+		return Session{}, false
 	}
-	id, ok := value["accountant_id"]
-	return id, ok
+	userType, ok1 := value["user_type"]
+	userID, ok2 := value["user_id"]
+	if !ok1 || !ok2 || userID == "" {
+		return Session{}, false
+	}
+	return Session{UserType: UserType(userType), UserID: userID}, true
 }
 
 // Clear expires the session cookie.

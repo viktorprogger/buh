@@ -12,34 +12,34 @@ import (
 var ErrNotFound = errors.New("client: not found")
 
 type Client struct {
-	ID                 uuid.UUID
-	EntrepreneurID     uuid.UUID
-	Name               string
-	PIB                string
-	RegistrationNumber string
-	Email              string
-	Address            string
-	IsForeign          bool
-	CreatedAt          time.Time
+	ID                   uuid.UUID
+	EntrepreneurUserID   uuid.UUID
+	Name                 string
+	PIB                  string
+	RegistrationNumber   string
+	Email                string
+	Address              string
+	IsForeign            bool
+	CreatedAt            time.Time
 }
 
 type Repo struct{ db *sql.DB }
 
 func NewRepo(db *sql.DB) *Repo { return &Repo{db: db} }
 
-const selectCols = `id, entrepreneur_id, name, pib, registration_number, email, address, is_foreign, created_at`
+const selectCols = `id, entrepreneur_user_id, name, pib, registration_number, email, address, is_foreign, created_at`
 
 func scan(row interface{ Scan(...any) error }, c *Client) error {
-	return row.Scan(&c.ID, &c.EntrepreneurID, &c.Name, &c.PIB,
+	return row.Scan(&c.ID, &c.EntrepreneurUserID, &c.Name, &c.PIB,
 		&c.RegistrationNumber, &c.Email, &c.Address, &c.IsForeign, &c.CreatedAt)
 }
 
 func (r *Repo) Create(ctx context.Context, c Client) (Client, error) {
 	err := scan(r.db.QueryRowContext(ctx,
-		`INSERT INTO clients (entrepreneur_id, name, pib, registration_number, email, address, is_foreign)
+		`INSERT INTO clients (entrepreneur_user_id, name, pib, registration_number, email, address, is_foreign)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7)
 		 RETURNING `+selectCols,
-		c.EntrepreneurID, c.Name, c.PIB, c.RegistrationNumber, c.Email, c.Address, c.IsForeign,
+		c.EntrepreneurUserID, c.Name, c.PIB, c.RegistrationNumber, c.Email, c.Address, c.IsForeign,
 	), &c)
 	return c, err
 }
@@ -83,9 +83,9 @@ func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (Client, error) {
 	return c, err
 }
 
-func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID) ([]Client, error) {
+func (r *Repo) ListByEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID) ([]Client, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT `+selectCols+` FROM clients WHERE entrepreneur_id=$1 ORDER BY name`, entrepreneurID,
+		`SELECT `+selectCols+` FROM clients WHERE entrepreneur_user_id=$1 ORDER BY name`, entrepreneurUserID,
 	)
 	if err != nil {
 		return nil, err
@@ -102,12 +102,12 @@ func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID)
 	return out, rows.Err()
 }
 
-func (r *Repo) Search(ctx context.Context, entrepreneurID uuid.UUID, q string) ([]Client, error) {
+func (r *Repo) Search(ctx context.Context, entrepreneurUserID uuid.UUID, q string) ([]Client, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT `+selectCols+` FROM clients
-		 WHERE entrepreneur_id=$1 AND name ILIKE '%'||$2||'%'
+		 WHERE entrepreneur_user_id=$1 AND name ILIKE '%'||$2||'%'
 		 ORDER BY name LIMIT 20`,
-		entrepreneurID, q,
+		entrepreneurUserID, q,
 	)
 	if err != nil {
 		return nil, err

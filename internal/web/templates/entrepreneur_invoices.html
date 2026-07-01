@@ -1,0 +1,53 @@
+{{template "base" .}}
+
+{{define "title"}}Фактуре{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center justify-between">
+  <div class="text-sm text-gray-500"><a href="/e/" class="hover:text-primary">← Почетна</a></div>
+  <a href="/e/invoices/new"
+     class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+    + Нова фактура
+  </a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">Фактуре</h2>
+  </div>
+  {{if .Invoices}}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+        <th class="px-4 py-2 text-left">Број</th>
+        <th class="px-4 py-2 text-left">Клијент</th>
+        <th class="px-4 py-2 text-left">Тип</th>
+        <th class="px-4 py-2 text-left">Датум</th>
+        <th class="px-4 py-2 text-right">Износ (RSD)</th>
+        <th class="px-4 py-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Invoices}}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 font-mono text-gray-700">{{if .InvoiceNumber}}{{.InvoiceNumber}}{{else}}<span class="text-gray-400">—</span>{{end}}</td>
+        <td class="px-4 py-2 text-gray-900">{{if .ClientName}}{{.ClientName}}{{else}}<span class="text-gray-400">—</span>{{end}}</td>
+        <td class="px-4 py-2">
+          {{if eq (printf "%s" .InvoiceType) "advance"}}<span class="text-xs text-amber-600">Аванс</span>{{else}}<span class="text-xs text-gray-600">Стандард</span>{{end}}
+        </td>
+        <td class="px-4 py-2 text-gray-600">{{.IssueDate.Format "02.01.2006."}}</td>
+        <td class="px-4 py-2 text-right font-mono">{{printf "%.2f" .TotalRSD}}</td>
+        <td class="px-4 py-2 text-right">
+          <a href="/e/invoices/{{.ID}}" class="text-xs text-primary hover:underline">Прегледај</a>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <div class="px-6 py-8 text-center text-gray-400 text-sm">
+    Нема фактура. <a href="/e/invoices/new" class="text-primary hover:underline">Креирај прву фактуру</a>.
+  </div>
+  {{end}}
+</div>
+{{end}}

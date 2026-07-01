@@ -22,7 +22,7 @@
 {{end}}
 
 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-xs slip-card">
-  <form method="POST" action="/entrepreneurs/{{.Entrepreneur.ID}}/slips/new">
+  <form method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}/slips/new">
     <div class="slip">
       <div class="slip-left">
         <div class="slip-header">Налог за уплату / Nalog za uplatu</div>
@@ -93,7 +93,7 @@
     </div>
 
     <div class="slip-actions slip-actions--between mt-4">
-      <a href="/entrepreneurs/{{.Entrepreneur.ID}}"
+      <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}"
          class="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
         Одустани
       </a>

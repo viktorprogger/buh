@@ -15,6 +15,7 @@ import (
 	"buh/internal/accountant"
 	"buh/internal/auth"
 	"buh/internal/config"
+	"buh/internal/entrepreneuruser"
 	"buh/internal/web"
 )
 
@@ -81,7 +82,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 
 	sessions := auth.NewSessionManager(hashKey, blockKey)
-	handler := web.NewHandler(accountantRepo, sessions, db)
+	entrepreneurUserRepo := entrepreneuruser.NewRepo(db)
+	handler := web.NewHandler(accountantRepo, entrepreneurUserRepo, sessions, db)
 
 	log.Printf("Server running at http://localhost%s", cfg.Addr)
 	return http.ListenAndServe(cfg.Addr, handler)
@@ -257,6 +259,101 @@ CREATE TABLE IF NOT EXISTS correspondent_banks (
 			name: "015_add_bank_account_to_invoices",
 			sql: `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_account_id UUID REFERENCES bank_accounts(id) ON DELETE SET NULL;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS correspondent_bank_id UUID REFERENCES correspondent_banks(id) ON DELETE SET NULL;`,
+		},
+		{
+			name: "016_create_entrepreneur_users",
+			sql: `CREATE TABLE IF NOT EXISTS entrepreneur_users (
+    id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    email         TEXT        UNIQUE,
+    password_hash TEXT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);`,
+		},
+		{
+			name: "017_add_entrepreneur_user_id_to_managed",
+			sql: `ALTER TABLE entrepreneurs
+    ADD COLUMN IF NOT EXISTS entrepreneur_user_id UUID
+    REFERENCES entrepreneur_users(id) ON DELETE RESTRICT;`,
+		},
+		{
+			name: "018_repoint_clients_to_entrepreneur_users",
+			sql: `DELETE FROM clients;
+ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_entrepreneur_id_fkey;
+ALTER TABLE clients DROP COLUMN IF EXISTS entrepreneur_id;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS entrepreneur_user_id UUID NOT NULL
+    REFERENCES entrepreneur_users(id) ON DELETE CASCADE;`,
+		},
+		{
+			name: "019_repoint_bank_accounts_to_entrepreneur_users",
+			sql: `DELETE FROM bank_accounts;
+ALTER TABLE bank_accounts DROP CONSTRAINT IF EXISTS bank_accounts_entrepreneur_id_fkey;
+ALTER TABLE bank_accounts DROP COLUMN IF EXISTS entrepreneur_id;
+ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS entrepreneur_user_id UUID NOT NULL
+    REFERENCES entrepreneur_users(id) ON DELETE CASCADE;`,
+		},
+		{
+			name: "020_repoint_invoices_to_entrepreneur_users",
+			sql: `DELETE FROM invoices;
+ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_entrepreneur_id_fkey;
+ALTER TABLE invoices DROP COLUMN IF EXISTS entrepreneur_id;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS entrepreneur_user_id UUID NOT NULL
+    REFERENCES entrepreneur_users(id) ON DELETE CASCADE;`,
+		},
+		{
+			name: "021_rebuild_indexes_for_entrepreneur_users",
+			sql: `DROP INDEX IF EXISTS clients_entrepreneur_id_idx;
+DROP INDEX IF EXISTS bank_accounts_entrepreneur_id_idx;
+CREATE INDEX IF NOT EXISTS clients_entrepreneur_user_id_idx ON clients(entrepreneur_user_id);
+CREATE INDEX IF NOT EXISTS bank_accounts_entrepreneur_user_id_idx ON bank_accounts(entrepreneur_user_id);
+CREATE INDEX IF NOT EXISTS invoices_entrepreneur_user_id_idx ON invoices(entrepreneur_user_id);`,
+		},
+		{
+			name: "022_rename_entrepreneurs_to_managed_entrepreneurs",
+			sql:  `ALTER TABLE entrepreneurs RENAME TO managed_entrepreneurs;`,
+		},
+		{
+			name: "023_add_paired_at_to_managed_entrepreneurs",
+			sql:  `ALTER TABLE managed_entrepreneurs ADD COLUMN IF NOT EXISTS paired_at TIMESTAMPTZ;`,
+		},
+		{
+			name: "024_create_invitations",
+			sql: `CREATE TABLE IF NOT EXISTS invitations (
+    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    token                   TEXT        NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+    inviter_type            TEXT        NOT NULL CHECK (inviter_type IN ('accountant','entrepreneur')),
+    inviter_id              UUID        NOT NULL,
+    invitee_email           TEXT,
+    managed_entrepreneur_id UUID        REFERENCES managed_entrepreneurs(id) ON DELETE CASCADE,
+    accepted_at             TIMESTAMPTZ,
+    expires_at              TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '7 days',
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS invitations_token_idx ON invitations(token);`,
+		},
+		{
+			name: "025_split_kpo_books_owner",
+			sql: `ALTER TABLE kpo_books
+    ADD COLUMN IF NOT EXISTS managed_entrepreneur_id UUID REFERENCES managed_entrepreneurs(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS entrepreneur_user_id    UUID REFERENCES entrepreneur_users(id)    ON DELETE CASCADE;
+
+UPDATE kpo_books SET managed_entrepreneur_id = entrepreneur_id WHERE managed_entrepreneur_id IS NULL;
+
+ALTER TABLE kpo_books ADD CONSTRAINT kpo_books_owner_xor CHECK (
+    (managed_entrepreneur_id IS NOT NULL AND entrepreneur_user_id IS NULL) OR
+    (managed_entrepreneur_id IS NULL     AND entrepreneur_user_id IS NOT NULL)
+);
+
+ALTER TABLE kpo_books DROP CONSTRAINT IF EXISTS kpo_books_entrepreneur_id_year_key;
+ALTER TABLE kpo_books DROP COLUMN IF EXISTS entrepreneur_id;
+
+CREATE UNIQUE INDEX IF NOT EXISTS kpo_books_managed_year ON kpo_books(managed_entrepreneur_id, year)
+    WHERE managed_entrepreneur_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS kpo_books_user_year ON kpo_books(entrepreneur_user_id, year)
+    WHERE entrepreneur_user_id IS NOT NULL;`,
+		},
+		{
+			name: "026_add_merged_at_to_kpo_books",
+			sql:  `ALTER TABLE kpo_books ADD COLUMN IF NOT EXISTS merged_at TIMESTAMPTZ;`,
 		},
 	}
 

@@ -9,7 +9,7 @@
 </div>
 
 <div class="mb-4">
-  <a href="/entrepreneurs/new"
+  <a href="/a/entrepreneurs/new"
      class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
     + Нови предузетник
   </a>
@@ -26,7 +26,7 @@
     </thead>
     <tbody class="divide-y divide-gray-100">
       {{range .Entrepreneurs}}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/entrepreneurs/{{.ID}}'">
+      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/a/entrepreneurs/{{.ID}}'">
         <td class="px-4 py-3 font-medium text-gray-900">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}</td>
         <td class="px-4 py-3 font-mono text-gray-600 text-xs">{{.PIB}}</td>
       </tr>

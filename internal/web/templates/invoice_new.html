@@ -1,17 +1,17 @@
 {{template "base" .}}
 
-{{define "title"}}Нова фактура — {{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}}{{end}}
+{{define "title"}}Нова фактура{{end}}
 
 {{define "content"}}
 <div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
-  <a href="/entrepreneurs/{{.Entrepreneur.ID}}" class="hover:text-primary">← Назад</a>
+  <a href="{{.BackURL}}" class="hover:text-primary">← Назад</a>
 </div>
 
 {{if not .ProfileComplete}}
 <div class="mb-4 rounded bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
   <strong>Профил није завршен.</strong>
   Следећа поља ће бити празна на фактури (PDF): ПИБ, адреса, жиро рачун.
-  Попуните их у <a href="/entrepreneurs/{{.Entrepreneur.ID}}/settings" class="underline hover:text-amber-900">Подешавањима</a>
+  Попуните их у <a href="{{.SettingsURL}}" class="underline hover:text-amber-900">Подешавањима</a>
   или наставите и креирајте фактуру без тих поља.
 </div>
 {{end}}
@@ -24,7 +24,7 @@
         <h2 class="text-base font-semibold text-gray-900">Нова фактура</h2>
       </div>
 
-      <form id="invoice-form" method="POST" action="/entrepreneurs/{{.Entrepreneur.ID}}/invoices" class="px-5 py-4 space-y-4">
+      <form id="invoice-form" method="POST" action="{{.ActionURL}}" class="px-5 py-4 space-y-4">
 
         <!-- Invoice type -->
         <div>
@@ -185,7 +185,7 @@
                   class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
             Креирај фактуру и генериши PDF
           </button>
-          <a href="/entrepreneurs/{{.Entrepreneur.ID}}"
+          <a href="{{.BackURL}}"
              class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
             Одустани
           </a>
@@ -208,7 +208,7 @@
 </div>
 
 <script>
-var ENTREPRENEUR_ID = '{{.Entrepreneur.ID}}';
+var CLIENT_SEARCH_URL = '{{.ClientSearchURL}}';
 var FX_RATES = {
   {{range $k, $v := .FXRates}}'{{$k}}': {{$v}},{{end}}
 };
@@ -340,7 +340,7 @@ document.getElementById('client-search').addEventListener('input', function() {
     return;
   }
   searchTimeout = setTimeout(function() {
-    fetch('/entrepreneurs/' + ENTREPRENEUR_ID + '/clients/search?q=' + encodeURIComponent(q))
+    fetch(CLIENT_SEARCH_URL + '?q=' + encodeURIComponent(q))
       .then(function(r) { return r.json(); })
       .then(function(items) {
         var ul = document.getElementById('client-dropdown');
