@@ -3,6 +3,7 @@ package accountant
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -294,6 +295,40 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 		return
 	}
 	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String()+"/kpo/"+strconv.Itoa(year)+"/merge", http.StatusFound)
+}
+
+func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
+	e, book, year, err := h.kpoBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	entries, err := h.kpoBooks.ListEntries(r.Context(), book.ID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		return
+	}
+
+	info := kpo.EntrepreneurInfo{
+		Name:    e.Name,
+		PIB:     e.PIB,
+		MB:      e.MB,
+		Address: e.Address,
+	}
+
+	pdfBytes, err := kpo.GeneratePDF(book, entries, info)
+	if err != nil {
+		log.Printf("kpo pdf generation error: %v", err)
+		http.Error(w, "PDF generation failed", http.StatusInternalServerError)
+		return
+	}
+
+	filename := "kpo-" + strconv.Itoa(year) + ".pdf"
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	if _, err := w.Write(pdfBytes); err != nil {
+		log.Printf("kpo pdf write error: %v", err)
+	}
 }
 
 func (h *Handler) handleKPOMergeMarkDone(w http.ResponseWriter, r *http.Request) {

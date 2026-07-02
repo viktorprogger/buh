@@ -2,6 +2,7 @@ package entrepreneur
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -281,5 +282,42 @@ func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
+}
+
+func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
+	userID, book, year, err := h.eKPOBookFromPath(r)
+	if err != nil {
+		h.renderError(w, http.StatusNotFound)
+		return
+	}
+	entries, err := h.kpoBooks.ListEntries(r.Context(), book.ID)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		return
+	}
+
+	info := kpo.EntrepreneurInfo{}
+	if ent, err := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID); err == nil {
+		info = kpo.EntrepreneurInfo{
+			Name:    ent.Name,
+			PIB:     ent.PIB,
+			MB:      ent.MB,
+			Address: ent.Address,
+		}
+	}
+
+	pdfBytes, err := kpo.GeneratePDF(book, entries, info)
+	if err != nil {
+		log.Printf("kpo pdf generation error: %v", err)
+		http.Error(w, "PDF generation failed", http.StatusInternalServerError)
+		return
+	}
+
+	filename := "kpo-" + strconv.Itoa(year) + ".pdf"
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	if _, err := w.Write(pdfBytes); err != nil {
+		log.Printf("kpo pdf write error: %v", err)
+	}
 }
 

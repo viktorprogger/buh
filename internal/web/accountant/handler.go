@@ -79,6 +79,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /entrepreneurs/{id}/kpo/open-year", h.handleKPOOpenYear)
 	mux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/finalize", h.handleKPOFinalize)
 	mux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/unfinalize", h.handleKPOUnfinalize)
+	mux.HandleFunc("GET /entrepreneurs/{id}/kpo/{year}/pdf", h.handleKPOPDF)
 	mux.HandleFunc("GET /entrepreneurs/{id}/kpo/{year}/merge", h.handleKPOMergeView)
 	mux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/merge/copy/{eid}", h.handleKPOMergeCopyEntry)
 	mux.HandleFunc("POST /entrepreneurs/{id}/kpo/{year}/merge/done", h.handleKPOMergeMarkDone)

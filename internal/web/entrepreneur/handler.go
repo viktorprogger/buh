@@ -95,6 +95,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /invoices/{iid}", h.handleInvoice)
 	mux.HandleFunc("GET /invoices/{iid}/pdf", h.handleInvoicePDF)
 	mux.HandleFunc("GET /kpo/{year}", h.handleKPO)
+	mux.HandleFunc("GET /kpo/{year}/pdf", h.handleKPOPDF)
 	mux.HandleFunc("POST /kpo/{year}/entries", h.handleKPOAddEntry)
 	mux.HandleFunc("POST /kpo/{year}/entries/reorder", h.handleKPOReorderEntries)
 	mux.HandleFunc("POST /kpo/{year}/entries/{entryID}/update", h.handleKPOUpdateEntry)
