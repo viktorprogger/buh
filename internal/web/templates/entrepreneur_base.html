@@ -1,0 +1,81 @@
+{{define "entrepreneur_base"}}<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{block "title" .}}Паушалне уплатнице{{end}}</title>
+<link rel="stylesheet" href="/static/app.css">
+<style>{{block "style" .}}{{end}}</style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+<div class="flex h-screen overflow-hidden">
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-56 bg-slate-800 text-white flex flex-col -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0">
+    <div class="px-4 py-4 border-b border-slate-700 flex items-center justify-between">
+      <a href="/e/" class="font-semibold text-white hover:text-slate-200 text-sm">Паушалне уплатнице</a>
+      <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white lg:hidden" aria-label="Затвори мени">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <nav class="flex-1 py-2 overflow-y-auto">
+      <a href="/e/" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        Контролна табла
+      </a>
+      <a href="/e/clients" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        Клијенти
+      </a>
+      <a href="/e/bank-accounts" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        Банковни рачуни
+      </a>
+      <a href="/e/invoices" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        Фактуре
+      </a>
+      <a href="/e/kpo/{{currentYear}}" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        КПО књига
+      </a>
+      <a href="/e/invite-accountant" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        Позови рачуновођу
+      </a>
+    </nav>
+    <div class="px-4 py-3 border-t border-slate-700">
+      <a href="/logout" class="text-sm text-slate-400 hover:text-white">Одјава</a>
+    </div>
+  </aside>
+
+  <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+    <header class="bg-slate-800 text-white px-4 py-3 flex items-center lg:hidden shrink-0">
+      <button onclick="toggleSidebar()" class="text-slate-300 hover:text-white mr-3" aria-label="Мени">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-semibold text-sm">Паушалне уплатнице</span>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6 lg:px-6">
+      {{block "content" .}}{{end}}
+    </main>
+    <footer class="border-t border-gray-200 bg-white shrink-0">
+      <div class="px-4 py-3 text-sm text-gray-500">
+        <a href="/privacy" class="hover:text-gray-700">Политика приватности</a>
+        &middot;
+        <a href="/terms" class="hover:text-gray-700">Услови коришћења</a>
+      </div>
+    </footer>
+  </div>
+</div>
+<script>
+function toggleSidebar() {
+  var s = document.getElementById('sidebar');
+  var o = document.getElementById('sidebar-overlay');
+  var open = s.classList.contains('-translate-x-full');
+  s.classList.toggle('-translate-x-full', !open);
+  o.classList.toggle('hidden', !open);
+}
+</script>
+</body>
+</html>
+{{end}}

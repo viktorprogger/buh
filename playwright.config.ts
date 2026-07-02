@@ -7,6 +7,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   globalSetup: './tests/global-setup.ts',
+  timeout: 10000,
 
   use: {
     baseURL: 'http://localhost:8081',

@@ -1,4 +1,4 @@
-{{template "base" .}}
+{{template "entrepreneur_base" .}}
 
 {{define "title"}}КПО {{.SelectedYear}}{{end}}
 
@@ -71,7 +71,7 @@
         {{range .KPORows}}
         {{if .IsAdvanceInvoice}}
         <tr class="opacity-50 hover:opacity-70"
-            title="Авансна фактура — не улази у КПО укупно">
+            title="Ова фактура се не узима у обзир у КПО">
           <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">А</td>
           <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
           <td class="px-3 py-2 text-gray-500">

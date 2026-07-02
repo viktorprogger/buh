@@ -48,11 +48,6 @@
       Пријави се
     </button>
   </form>
-
-  <p class="mt-4 text-center text-xs text-gray-500" id="register-link" style="{{if ne $userType "entrepreneur"}}display:none{{end}}">
-    Немате налог?
-    <a href="/e/register" class="text-primary hover:underline">Региструјте се</a>
-  </p>
 </div>
 <script>
 function switchTab(type) {
@@ -65,11 +60,9 @@ function switchTab(type) {
   if (isAcc) {
     tabAcc.classList.add('bg-primary', 'text-white');
     tabEnt.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-50');
-    document.getElementById('register-link').style.display = 'none';
   } else {
     tabEnt.classList.add('bg-primary', 'text-white');
     tabAcc.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-50');
-    document.getElementById('register-link').style.display = '';
   }
 }
 </script>
