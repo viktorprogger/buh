@@ -21,6 +21,11 @@ var (
 	rePIB = regexp.MustCompile(`ПИБ:\s*\n?\s*(\d+)`)
 	// reBusinessName matches "ПОСЛОВНО СЕДИШТЕ:" and captures the firm name on the same line.
 	reBusinessName = regexp.MustCompile(`ПОСЛОВНО СЕДИШТЕ:\s*(.+)`)
+
+	// reTextAccount matches Serbian bank account in dash format: "840-711122843-32".
+	reTextAccount = regexp.MustCompile(`\b(\d{3}-\d{9}-\d{2})\b`)
+	// reTextAmount matches "износи 10.512,42 динара" and captures the amount.
+	reTextAmount = regexp.MustCompile(`износи\s+([\d.]+,\d{2})\s+динара`)
 )
 
 // EntrepreneurInfo holds the entrepreneur's firm name and PIB extracted from a PDF.
@@ -145,4 +150,58 @@ func scanQR(imagePath string) ([]string, error) {
 		out[i] = r.GetText()
 	}
 	return out, nil
+}
+
+// ExtractAmountsByAccount parses the text of a Serbian Tax Authority PAUS decision PDF and
+// returns a map of 18-digit account number → IPS amount string (e.g. "RSD10512,42").
+// It works by finding each bank account in the text and looking backward up to 400 characters
+// for the nearest "износи X,XX динара" pattern, which is the monthly payment amount for that account.
+// Returns nil (no error) when no accounts are found.
+func ExtractAmountsByAccount(pdfPath string) (map[string]string, error) {
+	out, err := exec.Command("pdftotext", pdfPath, "-").Output()
+	if err != nil {
+		return nil, fmt.Errorf("pdftotext: %w", err)
+	}
+	text := string(out)
+
+	accountLocs := reTextAccount.FindAllStringIndex(text, -1)
+	if len(accountLocs) == 0 {
+		return nil, nil
+	}
+
+	result := make(map[string]string)
+	for _, loc := range accountLocs {
+		account := text[loc[0]:loc[1]]
+		normalized := normalizeAccount(account)
+		if _, exists := result[normalized]; exists {
+			continue // first match wins (body text precedes payment slip templates)
+		}
+
+		start := loc[0] - 1500
+		if start < 0 {
+			start = 0
+		}
+		window := text[start:loc[0]]
+		amMatches := reTextAmount.FindAllStringSubmatch(window, -1)
+		if len(amMatches) == 0 {
+			continue
+		}
+		// last match is closest to the account
+		amountStr := amMatches[len(amMatches)-1][1]
+		// strip thousands-separator dots; IPS format uses comma as decimal separator
+		ipsAmount := "RSD" + strings.ReplaceAll(amountStr, ".", "")
+		result[normalized] = ipsAmount
+	}
+	return result, nil
+}
+
+// normalizeAccount converts a Serbian bank account from dash format ("840-711122843-32")
+// to the 18-digit format used in IPS NBS QR codes ("840000071112284332").
+func normalizeAccount(s string) string {
+	stripped := strings.ReplaceAll(s, "-", "")
+	if len(stripped) != 14 {
+		return stripped
+	}
+	// bank(3) + "0000" + account(9) + control(2) = 18 digits
+	return stripped[:3] + "0000" + stripped[3:]
 }

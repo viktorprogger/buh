@@ -128,6 +128,9 @@ func (imp *Importer) processFile(ctx context.Context, accountantID uuid.UUID, fh
 		return nil, EntrepreneurResult{}, fmt.Errorf("грешка при читању QR кода: %w", err)
 	}
 
+	// Extract amounts from text for accounts where QR codes carry I:RSD0,00.
+	amountByAccount, _ := extractor.ExtractAmountsByAccount(tmpPath)
+
 	// Parse all valid IPS payments from QR codes.
 	type parsedPayment struct {
 		pay         *ips.Payment
@@ -144,6 +147,11 @@ func (imp *Importer) processFile(ctx context.Context, accountantID uuid.UUID, fh
 		}
 		if pay.P == "" && info.Name != "" {
 			pay.P = info.Name
+		}
+		if (pay.I == "" || pay.I == "RSD0,00") && amountByAccount != nil {
+			if amt, ok := amountByAccount[pay.R]; ok {
+				pay.I = amt
+			}
 		}
 		payments = append(payments, parsedPayment{pay: pay, purposeYear: extractPurposeYear(pay.S)})
 	}
