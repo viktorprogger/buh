@@ -2,6 +2,8 @@ package entrepreneur
 
 import (
 	"database/sql"
+	"encoding/json"
+	htmltemplate "html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -47,21 +49,45 @@ func (h *Handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
 		issuerPIB = ent.PIB
 		issuerAddress = ent.Address
 	}
+
+	now := time.Now()
+	currentYear := now.Year()
+	pausalLimit := shared.PausalalLimitForYear(currentYear)
+	pausalCurrentTotal, _, _ := h.kpoBooks.SumForEntrepreneurUser(r.Context(), userID, currentYear)
+	daysInYear := 365.0
+	if shared.IsLeapYear(currentYear) {
+		daysInYear = 366
+	}
+	pausalYearPct := float64(now.YearDay()) / daysInYear * 100
+
+	vatLimit := shared.VATLimitForDate(now)
+	vatDailyRevenue, _ := h.kpoBooks.DailyRevenueForEntrepreneurUser(r.Context(), userID, now.AddDate(0, 0, -730))
+	if vatDailyRevenue == nil {
+		vatDailyRevenue = map[string]float64{}
+	}
+	vatDailyJSON, _ := json.Marshal(vatDailyRevenue)
+
 	shared.RenderTemplate(w, h.tmpl.InvoiceNew, map[string]any{
-		"BackURL":         "/e/invoices",
-		"ActionURL":       "/e/invoices",
-		"SettingsURL":     "/e/",
-		"ClientSearchURL": "/e/clients/search",
-		"ClientNewURL":    "/e/clients/new?return_to=/e/invoices/new",
-		"Today":           time.Now().Format("2006-01-02"),
-		"BankAccounts":    accounts,
-		"Currencies":      []string{"RSD", "EUR", "USD", "CHF", "GBP"},
-		"FXRates":         invoice.FXRates,
-		"ProfileComplete": true,
-		"IssuerName":      issuerName,
-		"IssuerMB":        issuerMB,
-		"IssuerPIB":       issuerPIB,
-		"IssuerAddress":   issuerAddress,
+		"BackURL":             "/e/invoices",
+		"ActionURL":           "/e/invoices",
+		"SettingsURL":         "/e/",
+		"ClientSearchURL":     "/e/clients/search",
+		"ClientNewURL":        "/e/clients/new?return_to=/e/invoices/new",
+		"Today":               now.Format("2006-01-02"),
+		"BankAccounts":        accounts,
+		"Currencies":          []string{"RSD", "EUR", "USD", "CHF", "GBP"},
+		"FXRates":             invoice.FXRates,
+		"ProfileComplete":     true,
+		"IssuerName":          issuerName,
+		"IssuerMB":            issuerMB,
+		"IssuerPIB":           issuerPIB,
+		"IssuerAddress":       issuerAddress,
+		"PausalCurrentTotal":  pausalCurrentTotal,
+		"PausalLimit":         pausalLimit,
+		"PausalYear":          currentYear,
+		"PausalYearPct":       pausalYearPct,
+		"VATLimit":            vatLimit,
+		"VATDailyRevenue":     htmltemplate.JS(vatDailyJSON),
 	})
 }
 

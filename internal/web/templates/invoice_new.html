@@ -7,6 +7,9 @@
   <a href="{{.BackURL}}" class="hover:text-primary">← Назад</a>
 </div>
 
+<div id="pausal-alert-invoice" class="hidden mb-4 rounded border px-4 py-3 text-sm leading-snug"></div>
+<div id="vat-alert-invoice" class="hidden mb-4 rounded border px-4 py-3 text-sm leading-snug"></div>
+
 {{if not .ProfileComplete}}
 <div class="mb-4 rounded bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
   <strong>Профил није завршен.</strong>
@@ -288,6 +291,14 @@ var BANK_ACCOUNTS = {
     {{range .CorrespondentBanks}}{id:'{{.ID}}',name:'{{.BankName}}',swift:'{{.SWIFT}}',addr:'{{.BankAddress}}'},{{end}}
   ]},{{end}}
 };
+// Pausal limit alerting data
+var PAUSAL_CURRENT_TOTAL = {{.PausalCurrentTotal}};
+var PAUSAL_LIMIT = {{.PausalLimit}};
+var PAUSAL_YEAR = {{.PausalYear}};
+var PAUSAL_YEAR_PCT = {{.PausalYearPct}};
+// VAT limit alerting data
+var VAT_LIMIT = {{.VATLimit}};
+var VAT_DAILY = {{.VATDailyRevenue}};
 
 // ── Line items ────────────────────────────────────────────────────────────────
 var itemCount = 0;
@@ -348,6 +359,142 @@ function recalc() {
   var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
   document.getElementById('grand-total-label').textContent = total.toFixed(2).replace('.', ',');
   document.getElementById('grand-total-currency').textContent = cur;
+  updatePausalAlert();
+  updateVATAlert();
+}
+
+function fmtPausalRSD(n) {
+  var s = Math.round(n).toString();
+  var result = '';
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 === 0) result += ' ';
+    result += s[i];
+  }
+  return result;
+}
+
+function computePausalMilestone(projected, limit, yearPct) {
+  var pct = projected / limit * 100;
+  if (pct >= 90) return {severity: 'alert', milestone: 90, percent: pct};
+  if (pct >= 80) return {severity: 'high', milestone: 80, percent: pct};
+  if (pct >= 75) return {severity: 'minor', milestone: 75, percent: pct};
+  if (pct >= 70 && yearPct < 70) return {severity: 'minor', milestone: 70, percent: pct};
+  if (pct >= 50 && yearPct < 50) return {severity: 'minor', milestone: 50, percent: pct};
+  return null;
+}
+
+function updatePausalAlert() {
+  var alertEl = document.getElementById('pausal-alert-invoice');
+  if (!alertEl || PAUSAL_LIMIT <= 0) return;
+
+  var issueDate = document.getElementById('f-issue').value;
+  var issueYear = issueDate ? parseInt(issueDate.split('-')[0]) : PAUSAL_YEAR;
+  if (issueYear !== PAUSAL_YEAR) {
+    alertEl.className = 'hidden mb-4 rounded border px-4 py-3 text-sm leading-snug';
+    return;
+  }
+
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var invoiceTotal = 0;
+  rows.forEach(function(row) {
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    invoiceTotal += qty * price * (1 - disc / 100);
+  });
+  var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  var invoiceRSD = invoiceTotal * (FX_RATES[cur] || 1);
+  var projected = PAUSAL_CURRENT_TOTAL + invoiceRSD;
+
+  var hit = computePausalMilestone(projected, PAUSAL_LIMIT, PAUSAL_YEAR_PCT);
+  if (!hit) {
+    alertEl.className = 'hidden mb-4 rounded border px-4 py-3 text-sm leading-snug';
+    return;
+  }
+
+  var pctStr = hit.percent.toFixed(1);
+  var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(PAUSAL_LIMIT) + ' RSD';
+  var infoLink = ' <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
+  var msg = '';
+  if (hit.severity === 'alert') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
+    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> паушалног прага (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'high') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
+    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> паушалног прага (' + pctStr + '% — ' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+  } else {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
+    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> паушалног прага (' + pctStr + '% — ' + totalStr + ').' + infoLink;
+  }
+  alertEl.innerHTML = msg;
+}
+
+function isLeapYear(y) { return y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0); }
+
+function computeVATRolling(issueDateStr) {
+  if (!issueDateStr || VAT_LIMIT <= 0) return 0;
+  var to = new Date(issueDateStr);
+  var daysBack = isLeapYear(to.getFullYear()) ? 365 : 364;
+  var from = new Date(to);
+  from.setDate(from.getDate() - daysBack);
+  var total = 0;
+  for (var dateStr in VAT_DAILY) {
+    var d = new Date(dateStr);
+    if (d >= from && d <= to) total += VAT_DAILY[dateStr];
+  }
+  return total;
+}
+
+function computeVATMilestone(projected, limit) {
+  var pct = projected / limit * 100;
+  if (pct >= 90) return {severity: 'alert', milestone: 90, percent: pct};
+  if (pct >= 80) return {severity: 'high', milestone: 80, percent: pct};
+  if (pct >= 75) return {severity: 'minor', milestone: 75, percent: pct};
+  if (pct >= 70) return {severity: 'minor', milestone: 70, percent: pct};
+  if (pct >= 50) return {severity: 'minor', milestone: 50, percent: pct};
+  return null;
+}
+
+function updateVATAlert() {
+  var alertEl = document.getElementById('vat-alert-invoice');
+  if (!alertEl || VAT_LIMIT <= 0) return;
+
+  var issueDate = document.getElementById('f-issue').value;
+  var rollingTotal = computeVATRolling(issueDate);
+
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var invoiceTotal = 0;
+  rows.forEach(function(row) {
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    invoiceTotal += qty * price * (1 - disc / 100);
+  });
+  var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  var invoiceRSD = invoiceTotal * (FX_RATES[cur] || 1);
+  var projected = rollingTotal + invoiceRSD;
+
+  var hit = computeVATMilestone(projected, VAT_LIMIT);
+  if (!hit) {
+    alertEl.className = 'hidden mb-4 rounded border px-4 py-3 text-sm leading-snug';
+    return;
+  }
+
+  var pctStr = hit.percent.toFixed(1);
+  var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(VAT_LIMIT) + ' RSD у последњих 12 месеци';
+  var infoLink = ' <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
+  var msg = '';
+  if (hit.severity === 'alert') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
+    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> прага за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'high') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
+    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> прага за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+  } else {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
+    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> прага за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + ').' + infoLink;
+  }
+  alertEl.innerHTML = msg;
 }
 
 // ── Bank account selection ────────────────────────────────────────────────────
