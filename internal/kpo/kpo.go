@@ -402,6 +402,76 @@ func (r *Repo) MarkMerged(ctx context.Context, bookID uuid.UUID) error {
 	return err
 }
 
+// RollingSumForEntrepreneurUser returns total revenue for an entrepreneur_user in [from, to].
+func (r *Repo) RollingSumForEntrepreneurUser(ctx context.Context, userID uuid.UUID, from, to time.Time) (float64, error) {
+	var total float64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(ke.product_revenue + ke.service_revenue), 0)
+		FROM kpo_books kb
+		JOIN kpo_entries ke ON ke.kpo_book_id = kb.id
+		WHERE kb.entrepreneur_user_id = $1
+		  AND ke.collection_date >= $2 AND ke.collection_date <= $3`,
+		userID, from, to,
+	).Scan(&total)
+	return total, err
+}
+
+// RollingSumForManagedEntrepreneur returns total revenue for a managed entrepreneur in [from, to].
+func (r *Repo) RollingSumForManagedEntrepreneur(ctx context.Context, managedEntrepreneurID uuid.UUID, from, to time.Time) (float64, error) {
+	var total float64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(ke.product_revenue + ke.service_revenue), 0)
+		FROM kpo_books kb
+		JOIN kpo_entries ke ON ke.kpo_book_id = kb.id
+		WHERE kb.managed_entrepreneur_id = $1
+		  AND ke.collection_date >= $2 AND ke.collection_date <= $3`,
+		managedEntrepreneurID, from, to,
+	).Scan(&total)
+	return total, err
+}
+
+// DailyRevenueForEntrepreneurUser returns revenue grouped by collection date from [from] onwards,
+// keyed as "YYYY-MM-DD". Only dates with non-zero revenue are included.
+func (r *Repo) DailyRevenueForEntrepreneurUser(ctx context.Context, userID uuid.UUID, from time.Time) (map[string]float64, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT ke.collection_date::date, SUM(ke.product_revenue + ke.service_revenue)
+		FROM kpo_books kb
+		JOIN kpo_entries ke ON ke.kpo_book_id = kb.id
+		WHERE kb.entrepreneur_user_id = $1 AND ke.collection_date >= $2
+		GROUP BY ke.collection_date::date`,
+		userID, from,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]float64)
+	for rows.Next() {
+		var date time.Time
+		var total float64
+		if err := rows.Scan(&date, &total); err != nil {
+			return nil, err
+		}
+		result[date.Format("2006-01-02")] = total
+	}
+	return result, rows.Err()
+}
+
+// SumForEntrepreneurUser returns the total revenue for the given entrepreneur_user+year.
+// It does not create the book if it is absent.
+func (r *Repo) SumForEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID, year int) (total float64, hasEntries bool, err error) {
+	var count int
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(ke.id), COALESCE(SUM(ke.product_revenue + ke.service_revenue), 0)
+		FROM kpo_books kb
+		JOIN kpo_entries ke ON ke.kpo_book_id = kb.id
+		WHERE kb.entrepreneur_user_id = $1 AND kb.year = $2`,
+		entrepreneurUserID, year,
+	).Scan(&count, &total)
+	hasEntries = count > 0
+	return
+}
+
 // SumForYear returns the total revenue and whether any entries exist for the given
 // managed_entrepreneur+year. It does not create the book if it is absent.
 func (r *Repo) SumForYear(ctx context.Context, managedEntrepreneurID uuid.UUID, year int) (total float64, hasEntries bool, err error) {

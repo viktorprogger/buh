@@ -16,6 +16,12 @@ func PausalalLimitForYear(year int) int64 {
 	return 6_000_000
 }
 
+// VATLimitForDate returns the VAT registration threshold for the given date.
+// Measured over a rolling 365/366-day window.
+func VATLimitForDate(_ time.Time) int64 {
+	return 8_000_000
+}
+
 func FormatIntWithSpaces(n int64) string {
 	s := strconv.FormatInt(n, 10)
 	if len(s) <= 3 {

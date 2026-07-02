@@ -45,6 +45,8 @@ func TestPublicRoutes(t *testing.T) {
 		{"/logout", http.StatusFound},
 		{"/privacy", http.StatusOK},
 		{"/terms", http.StatusOK},
+		{"/info/pausal-limit", http.StatusOK},
+		{"/info/vat-limit", http.StatusOK},
 		{"/e/register", http.StatusOK},
 		// Root redirect
 		{"/", http.StatusFound},

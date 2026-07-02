@@ -178,6 +178,22 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		pausalalPercent = pausalalTotal / float64(pausalalLimit) * 100
 	}
 
+	pausalAlert := shared.ComputePausalAlert(pausalalTotal, pausalalLimit, time.Now())
+
+	vatNow := time.Now()
+	vatDays := 364
+	if shared.IsLeapYear(vatNow.Year()) {
+		vatDays = 365
+	}
+	vatFrom := vatNow.AddDate(0, 0, -vatDays)
+	vatLimit := shared.VATLimitForDate(vatNow)
+	vatTotal, err := h.kpoBooks.RollingSumForManagedEntrepreneur(r.Context(), id, vatFrom, vatNow)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању ПДВ прага", http.StatusInternalServerError)
+		return
+	}
+	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
+
 	shared.RenderTemplate(w, h.tmpl.Entrepreneur, map[string]any{
 		"Entrepreneur":     e,
 		"KPOBooks":         books,
@@ -195,6 +211,8 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		"PausalalTotalFmt": shared.FormatIntWithSpaces(int64(math.Round(pausalalTotal))),
 		"PausalalLimitFmt": shared.FormatIntWithSpaces(pausalalLimit),
 		"PausalalPercent":  pausalalPercent,
+		"PausalAlert":      pausalAlert,
+		"VATAlert":         vatAlert,
 	})
 }
 

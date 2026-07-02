@@ -96,6 +96,8 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 	mux.HandleFunc("/logout", h.handleLogout)
 	mux.HandleFunc("/privacy", h.handlePrivacy)
 	mux.HandleFunc("/terms", h.handleTerms)
+	mux.HandleFunc("/info/pausal-limit", h.handlePausalLimitInfo)
+	mux.HandleFunc("/info/vat-limit", h.handleVATLimitInfo)
 
 	// Public entrepreneur routes (no auth middleware).
 	mux.HandleFunc("GET /e/register", eH.HandleRegisterForm)
@@ -181,6 +183,14 @@ func (h *handler) handlePrivacy(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) handleTerms(w http.ResponseWriter, r *http.Request) {
 	shared.RenderTemplate(w, h.tmpl.Placeholder, map[string]any{"Title": "Услови коришћења"})
+}
+
+func (h *handler) handlePausalLimitInfo(w http.ResponseWriter, r *http.Request) {
+	shared.RenderTemplate(w, h.tmpl.PausalLimitInfo, nil)
+}
+
+func (h *handler) handleVATLimitInfo(w http.ResponseWriter, r *http.Request) {
+	shared.RenderTemplate(w, h.tmpl.VATLimitInfo, nil)
 }
 
 func (h *handler) handleInviteToken(w http.ResponseWriter, r *http.Request) {

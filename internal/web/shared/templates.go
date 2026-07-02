@@ -20,6 +20,8 @@ type Templates struct {
 	SlipNew           *template.Template
 	Placeholder       *template.Template
 	ErrPage           *template.Template
+	PausalLimitInfo   *template.Template
+	VATLimitInfo      *template.Template
 	ClientForm        *template.Template
 	BankAccountForm   *template.Template
 	CorrespondentForm *template.Template
@@ -67,13 +69,15 @@ func ParseTemplates(tfs fs.FS) Templates {
 	return Templates{
 		Login:           template.Must(template.New("login.html").ParseFS(tfs, "templates/login.html")),
 		Index:           mustPageTmpl(tfs, "index.html", nil),
-		Entrepreneur:    mustPageTmpl(tfs, "entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html"),
+		Entrepreneur:    mustPageTmpl(tfs, "entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html", "templates/pausal_alert.html", "templates/vat_alert.html"),
 		EntrepreneurNew: mustPageTmpl(tfs, "entrepreneur_new.html", nil),
 		Results:         mustPageTmpl(tfs, "results.html", nil),
 		Slip:            mustPageTmpl(tfs, "slip.html", nil, slipExtra...),
 		SlipNew:         mustPageTmpl(tfs, "slip_new.html", nil, slipExtra...),
 		Placeholder:     mustPageTmpl(tfs, "placeholder.html", nil),
 		ErrPage:         mustPageTmpl(tfs, "error.html", nil),
+		PausalLimitInfo: mustPageTmpl(tfs, "pausal_limit_info.html", nil),
+		VATLimitInfo:    mustPageTmpl(tfs, "vat_limit_info.html", nil),
 		ClientForm:      mustEntrepreneurPageTmpl(tfs, "client_form.html"),
 		BankAccountForm: mustEntrepreneurPageTmpl(tfs, "bank_account_form.html"),
 		CorrespondentForm:        mustEntrepreneurPageTmpl(tfs, "correspondent_form.html"),
@@ -85,7 +89,7 @@ func ParseTemplates(tfs fs.FS) Templates {
 		InviteAccept:             mustPageTmpl(tfs, "invite_accept.html", nil),
 		EntrepreneurInviteAcc:    mustEntrepreneurPageTmpl(tfs, "entrepreneur_invite_accountant.html"),
 		KpoMerge:                 mustPageTmpl(tfs, "kpo_merge.html", template.FuncMap{"add": func(a, b int) int { return a + b }}),
-		EntrepreneurKPO:          mustEntrepreneurPageTmpl(tfs, "entrepreneur_kpo.html"),
+		EntrepreneurKPO:          mustEntrepreneurPageTmpl(tfs, "entrepreneur_kpo.html", "templates/pausal_alert.html", "templates/vat_alert.html"),
 		EntrepreneurClients:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_clients.html"),
 		EntrepreneurBankAccounts: mustEntrepreneurPageTmpl(tfs, "entrepreneur_bank_accounts.html"),
 		EntrepreneurInvoices:     mustEntrepreneurPageTmpl(tfs, "entrepreneur_invoices.html"),

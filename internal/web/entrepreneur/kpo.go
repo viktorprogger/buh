@@ -100,6 +100,34 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 		totalService += en.ServiceRevenue
 	}
 
+	currentYear := time.Now().Year()
+	pausalLimit := shared.PausalalLimitForYear(currentYear)
+	var pausalTotal float64
+	if selectedYear == currentYear {
+		pausalTotal = totalProduct + totalService
+	} else {
+		pausalTotal, _, err = h.kpoBooks.SumForEntrepreneurUser(r.Context(), userID, currentYear)
+		if err != nil {
+			http.Error(w, "Грешка при учитавању паушалног прага", http.StatusInternalServerError)
+			return
+		}
+	}
+	pausalAlert := shared.ComputePausalAlert(pausalTotal, pausalLimit, time.Now())
+
+	vatNow := time.Now()
+	vatDays := 364
+	if shared.IsLeapYear(vatNow.Year()) {
+		vatDays = 365
+	}
+	vatFrom := vatNow.AddDate(0, 0, -vatDays)
+	vatLimit := shared.VATLimitForDate(vatNow)
+	vatTotal, err := h.kpoBooks.RollingSumForEntrepreneurUser(r.Context(), userID, vatFrom, vatNow)
+	if err != nil {
+		http.Error(w, "Грешка при учитавању ПДВ прага", http.StatusInternalServerError)
+		return
+	}
+	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
+
 	shared.RenderTemplate(w, h.tmpl.EntrepreneurKPO, map[string]any{
 		"CurrentBook":  currentBook,
 		"KPOBooks":     books,
@@ -109,6 +137,8 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 		"TotalProduct": totalProduct,
 		"TotalService": totalService,
 		"TotalAll":     totalProduct + totalService,
+		"PausalAlert":  pausalAlert,
+		"VATAlert":     vatAlert,
 	})
 }
 
