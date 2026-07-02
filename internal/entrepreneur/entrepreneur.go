@@ -17,6 +17,7 @@ type Entrepreneur struct {
 	ID                   uuid.UUID
 	Title                string // short display label chosen by the accountant; falls back to Name in lists
 	Name                 string
+	MB                   string // matični broj (registration number)
 	PIB                  string
 	Address              string
 	BankAccount          string
@@ -44,7 +45,7 @@ func NewRepo(db *sql.DB) *Repo {
 	return &Repo{db: db}
 }
 
-const selectCols = `id, name, pib, accountant_id, created_at, title, address, bank_account,
+const selectCols = `id, name, pib, accountant_id, created_at, title, address, bank_account, mb,
 	entrepreneur_user_id, paired_at`
 
 func scanRow(row interface{ Scan(...any) error }, e *Entrepreneur) error {
@@ -52,7 +53,7 @@ func scanRow(row interface{ Scan(...any) error }, e *Entrepreneur) error {
 	var pairedAt sql.NullTime
 	err := row.Scan(
 		&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt,
-		&e.Title, &e.Address, &e.BankAccount,
+		&e.Title, &e.Address, &e.BankAccount, &e.MB,
 		&entrepreneurUserID, &pairedAt,
 	)
 	if err != nil {
@@ -121,11 +122,11 @@ func (r *Repo) ListByAccountant(ctx context.Context, accountantID uuid.UUID) ([]
 	return out, rows.Err()
 }
 
-// Update saves Name, PIB, Title, Address, and BankAccount for the given entrepreneur.
+// Update saves Name, PIB, Title, Address, BankAccount, and MB for the given entrepreneur.
 func (r *Repo) Update(ctx context.Context, e Entrepreneur) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE managed_entrepreneurs SET name=$1, pib=$2, title=$3, address=$4, bank_account=$5 WHERE id=$6`,
-		e.Name, e.PIB, e.Title, e.Address, e.BankAccount, e.ID,
+		`UPDATE managed_entrepreneurs SET name=$1, pib=$2, title=$3, address=$4, bank_account=$5, mb=$6 WHERE id=$7`,
+		e.Name, e.PIB, e.Title, e.Address, e.BankAccount, e.MB, e.ID,
 	)
 	return err
 }

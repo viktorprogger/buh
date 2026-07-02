@@ -1,4 +1,4 @@
-{{template "base" .}}
+{{template "entrepreneur_base" .}}
 
 {{define "title"}}Нова фактура{{end}}
 
@@ -16,9 +16,9 @@
 </div>
 {{end}}
 
-<div class="flex gap-4 items-start" style="min-height: 600px">
+<div class="flex flex-col lg:flex-row gap-4 items-start" style="min-height: 600px">
   <!-- ── Left column: form (60%) ─────────────────────────────────────────── -->
-  <div class="flex-1" style="flex: 3">
+  <div class="w-full" style="flex: 3">
     <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-200">
         <h2 class="text-base font-semibold text-gray-900">Нова фактура</h2>
@@ -37,6 +37,25 @@
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="radio" name="invoice_type" value="advance" class="text-primary focus:ring-primary" onchange="updatePreview()">
               Авансна фактура
+            </label>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Језик / Language</div>
+          <div class="flex gap-2">
+            <label class="flex items-center">
+              <input type="radio" name="language" value="sr" checked class="sr-only peer" onchange="updatePreview()">
+              <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
+                           peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                           hover:bg-gray-50">Српски</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="language" value="en" class="sr-only peer" onchange="updatePreview()">
+              <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
+                           peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                           hover:bg-gray-50">English</span>
             </label>
           </div>
         </div>
@@ -179,6 +198,23 @@
                     oninput="updatePreview()"></textarea>
         </div>
 
+        <!-- Footer notes -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Напомене на фактури</div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" name="no_vat" id="no-vat" checked
+                     class="rounded border-gray-300 text-primary focus:ring-primary" onchange="updatePreview()">
+              Нисам у систему ПДВ-а (члан 12 ЗПДВ)
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" name="no_sign" id="no-sign" checked
+                     class="rounded border-gray-300 text-primary focus:ring-primary" onchange="updatePreview()">
+              Фактура је валидна без печата и потписа
+            </label>
+          </div>
+        </div>
+
         <!-- Footer actions -->
         <div class="flex gap-3 pt-2 border-t border-gray-200">
           <button type="submit"
@@ -195,8 +231,8 @@
   </div>
 
   <!-- ── Right column: live preview (40%) ───────────────────────────────── -->
-  <div style="flex: 2; min-width: 280px">
-    <div class="sticky top-4">
+  <div class="w-full" style="flex: 2; min-width: 280px">
+    <div class="lg:sticky lg:top-4">
       <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Преглед</div>
       <div id="invoice-preview"
            class="bg-white border border-gray-300 rounded shadow-sm p-6 text-xs font-sans leading-snug"
@@ -209,6 +245,40 @@
 
 <script>
 var CLIENT_SEARCH_URL = '{{.ClientSearchURL}}';
+var CLIENT_NEW_URL = '{{.ClientNewURL}}';
+var PREVIEW_LABELS = {
+  sr: {
+    invoice: 'FAKTURA', advance: 'AVANSNA FAKTURA',
+    number: 'Broj:', issueDate: 'Datum izdavanja:', dueDate: 'Rok placanja:', period: 'Period:',
+    issuer: 'IZDAVALAC', client: 'KLIJENT', corrBank: 'Kor. banka:',
+    description: 'Opis', qty: 'Kol.', unitPrice: 'Jed. cena', discount: 'Popust%', amount: 'Iznos',
+    totalDue: 'Za uplatu:', note: 'Napomena:',
+    paymentBy: 'Placanje izvrsiti u roku do',
+    account: 'Racun za uplatu',
+    noVatLine: 'Nije obveznik PDV-a na osnovu cl. 12 Zakona o PDV RS.',
+    noSignLine: 'Ovaj racun je generisan kompjuterski i vazecan je bez pecata i potpisa.',
+    mb: 'MB:', regNum: 'MB:', taxId: 'Tax ID / Reg. br.:',
+  },
+  en: {
+    invoice: 'INVOICE', advance: 'ADVANCE INVOICE',
+    number: 'Number:', issueDate: 'Date of Issue:', dueDate: 'Payment Due:', period: 'Period:',
+    issuer: 'FROM', client: 'TO', corrBank: 'Corr. Bank:',
+    description: 'Description', qty: 'Qty.', unitPrice: 'Unit Price', discount: 'Discount%', amount: 'Amount',
+    totalDue: 'Total Due:', note: 'Note:',
+    paymentBy: 'Payment due by',
+    account: 'Payment account',
+    noVatLine: 'Not subject to VAT according to Article 12 of the VAT Law of the Republic of Serbia.',
+    noSignLine: 'This invoice is computer-generated and valid without stamp or signature.',
+    mb: 'MB:', regNum: 'Reg. No.:', taxId: 'Tax ID / Reg. No.:',
+  },
+};
+var ISSUER = {
+  name: '{{.IssuerName}}',
+  mb: '{{.IssuerMB}}',
+  pib: '{{.IssuerPIB}}',
+  address: '{{.IssuerAddress}}',
+};
+var selectedClient = null;
 var FX_RATES = {
   {{range $k, $v := .FXRates}}'{{$k}}': {{$v}},{{end}}
 };
@@ -336,6 +406,7 @@ document.getElementById('client-search').addEventListener('input', function() {
     hideDropdown();
     document.getElementById('client-id-hidden').value = '';
     document.getElementById('client-name-hidden').value = '';
+    selectedClient = null;
     updatePreview();
     return;
   }
@@ -345,12 +416,21 @@ document.getElementById('client-search').addEventListener('input', function() {
       .then(function(items) {
         var ul = document.getElementById('client-dropdown');
         ul.innerHTML = '';
-        if (!items || items.length === 0) { hideDropdown(); return; }
+        if (!items || items.length === 0) {
+          ul.innerHTML = '';
+          var addLi = document.createElement('li');
+          addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">+ Додај клијента</a>';
+          addLi.className = 'px-3 py-2';
+          ul.appendChild(addLi);
+          ul.classList.remove('hidden');
+          return;
+        }
         items.forEach(function(item) {
           var li = document.createElement('li');
           li.textContent = item.name;
           li.className = 'px-3 py-2 cursor-pointer hover:bg-gray-100';
           li.addEventListener('click', function() {
+            selectedClient = item;
             document.getElementById('client-search').value = item.name;
             document.getElementById('client-id-hidden').value = item.id;
             document.getElementById('client-name-hidden').value = item.name;
@@ -359,6 +439,10 @@ document.getElementById('client-search').addEventListener('input', function() {
           });
           ul.appendChild(li);
         });
+        var addLi = document.createElement('li');
+        addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">+ Додај клијента</a>';
+        addLi.className = 'px-3 py-2 border-t border-gray-100';
+        ul.appendChild(addLi);
         ul.classList.remove('hidden');
       }).catch(function() { hideDropdown(); });
   }, 200);
@@ -372,6 +456,7 @@ document.getElementById('client-search').addEventListener('blur', function() {
     var typed = document.getElementById('client-search').value.trim();
     if (!document.getElementById('client-id-hidden').value && typed) {
       document.getElementById('client-name-hidden').value = typed;
+      selectedClient = null;
     }
     updatePreview();
   }, 200);
@@ -390,8 +475,11 @@ function fmtDate(iso) {
 }
 
 function updatePreview() {
+  var lang = document.querySelector('input[name="language"]:checked')?.value || 'sr';
+  var lbl = PREVIEW_LABELS[lang] || PREVIEW_LABELS.sr;
+
   var type = document.querySelector('input[name="invoice_type"]:checked')?.value || 'standard';
-  var title = type === 'advance' ? 'АВАНСНА ФАКТУРА' : 'ФАКТУРА';
+  var title = type === 'advance' ? lbl.advance : lbl.invoice;
   var invNum = document.getElementById('f-invnum').value || '—';
   var issueDate = fmtDate(document.getElementById('f-issue').value);
   var dueDate = fmtDate(document.getElementById('f-due').value);
@@ -427,42 +515,70 @@ function updatePreview() {
   });
 
   var totalRSD = grandTotal * (FX_RATES[currency] || 1);
-  var totalLine = 'За уплату: ' + grandTotal.toFixed(2) + ' ' + currency;
+  var totalLine = lbl.totalDue + ' ' + grandTotal.toFixed(2) + ' ' + currency;
   if (currency !== 'RSD') totalLine += ' (≈ ' + totalRSD.toFixed(2) + ' RSD)';
 
-  var footer = 'Obveznik PDV-a nije u sistemu PDV-a — Paušalni preduzetnik.';
-  if (dueDate) footer = 'Plaćanje izvršiti u roku do ' + dueDate + '. ' + footer;
+  // Issuer column
+  var issuerHtml = '<div style="font-size:9px;font-weight:600;color:#6b7280;margin-bottom:3px;text-transform:uppercase">' + lbl.issuer + '</div>';
+  if (ISSUER.name) issuerHtml += '<div style="font-weight:600">' + escHtml(ISSUER.name) + '</div>';
+  if (ISSUER.mb) issuerHtml += '<div>' + lbl.mb + ' <span style="font-family:monospace">' + escHtml(ISSUER.mb) + '</span></div>';
+  if (ISSUER.pib) issuerHtml += '<div>PIB: <span style="font-family:monospace">' + escHtml(ISSUER.pib) + '</span></div>';
+  if (ISSUER.address) issuerHtml += '<div>' + escHtml(ISSUER.address) + '</div>';
+
+  // Client column
+  var clientHtml = '<div style="font-size:9px;font-weight:600;color:#6b7280;margin-bottom:3px;text-transform:uppercase">' + lbl.client + '</div>';
+  if (selectedClient) {
+    clientHtml += '<div style="font-weight:600">' + escHtml(selectedClient.name) + '</div>';
+    if (selectedClient.is_foreign) {
+      if (selectedClient.registration_number) clientHtml += '<div>' + lbl.taxId + ' <span style="font-family:monospace">' + escHtml(selectedClient.registration_number) + '</span></div>';
+    } else {
+      if (selectedClient.pib) clientHtml += '<div>PIB: <span style="font-family:monospace">' + escHtml(selectedClient.pib) + '</span></div>';
+      if (selectedClient.registration_number) clientHtml += '<div>' + lbl.regNum + ' <span style="font-family:monospace">' + escHtml(selectedClient.registration_number) + '</span></div>';
+    }
+    if (selectedClient.address) clientHtml += '<div>' + escHtml(selectedClient.address) + '</div>';
+  } else {
+    clientHtml += '<div style="font-weight:600">' + escHtml(clientName) + '</div>';
+  }
 
   var bankLines = getBankAccountPreviewLines();
+
+  // Footer lines
+  var footerParts = [];
+  if (dueDate) footerParts.push(escHtml(lbl.paymentBy + ' ' + dueDate + '.'));
+  var noVat = document.getElementById('no-vat')?.checked;
+  var noSign = document.getElementById('no-sign')?.checked;
+  if (noVat) footerParts.push(escHtml(lbl.noVatLine));
+  if (noSign) footerParts.push(escHtml(lbl.noSignLine));
+  var footerHtml = footerParts.map(function(p) { return '<div style="margin-top:2px">' + p + '</div>'; }).join('');
 
   var html =
     '<div style="font-family:sans-serif;color:#111;font-size:11px">' +
     '<div style="font-size:18px;font-weight:700;margin-bottom:4px">' + title + '</div>' +
-    '<div>Број: <strong>' + escHtml(invNum) + '</strong></div>' +
-    '<div>Датум: ' + (issueDate || '—') + '</div>' +
-    (dueDate ? '<div>Рок: ' + dueDate + '</div>' : '') +
-    (periodStart && periodEnd ? '<div>Период: ' + periodStart + ' – ' + periodEnd + '</div>' : '') +
+    '<div>' + lbl.number + ' <strong>' + escHtml(invNum) + '</strong></div>' +
+    '<div>' + lbl.issueDate + ' ' + (issueDate || '—') + '</div>' +
+    (dueDate ? '<div>' + lbl.dueDate + ' ' + dueDate + '</div>' : '') +
+    (periodStart && periodEnd ? '<div>' + lbl.period + ' ' + periodStart + ' – ' + periodEnd + '</div>' : '') +
     '<hr style="margin:8px 0;border-color:#e5e7eb">' +
     '<div style="display:flex;gap:16px;margin-bottom:8px">' +
-      '<div style="flex:1"><div style="font-weight:700;margin-bottom:2px">КLIJENT</div><div>' + escHtml(clientName) + '</div></div>' +
+      '<div style="flex:1">' + issuerHtml + '</div>' +
+      '<div style="flex:1">' + clientHtml + '</div>' +
     '</div>' +
-    (bankLines ? '<div style="margin-bottom:6px;padding:4px 6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:3px"><div style="font-weight:600;font-size:9px;color:#6b7280;margin-bottom:2px">РАЧУН ЗА УПЛАТУ</div>' + bankLines + '</div>' : '') +
+    (bankLines ? '<div style="margin-bottom:6px;padding:4px 6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:3px"><div style="font-weight:600;font-size:9px;color:#6b7280;margin-bottom:2px">' + lbl.account.toUpperCase() + '</div>' + bankLines + '</div>' : '') +
     '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:6px">' +
       '<thead>' +
         '<tr style="background:#f3f4f6;font-weight:600">' +
-          '<th style="padding:3px 4px;text-align:left">Опис</th>' +
-          '<th style="padding:3px 4px;text-align:right">Кол.</th>' +
-          '<th style="padding:3px 4px;text-align:right">Цена</th>' +
+          '<th style="padding:3px 4px;text-align:left">' + lbl.description + '</th>' +
+          '<th style="padding:3px 4px;text-align:right">' + lbl.qty + '</th>' +
+          '<th style="padding:3px 4px;text-align:right">' + lbl.unitPrice + '</th>' +
           '<th style="padding:3px 4px;text-align:right">%</th>' +
-          '<th style="padding:3px 4px;text-align:right">Износ</th>' +
+          '<th style="padding:3px 4px;text-align:right">' + lbl.amount + '</th>' +
         '</tr>' +
       '</thead>' +
       '<tbody>' + (itemsHtml || '<tr><td colspan="5" style="padding:4px;color:#9ca3af;text-align:center">—</td></tr>') + '</tbody>' +
     '</table>' +
     '<div style="text-align:right;font-weight:700;border-top:2px solid #374151;padding-top:4px">' + totalLine + '</div>' +
-    (notes ? '<div style="margin-top:8px;color:#374151"><em>Напомена: ' + escHtml(notes) + '</em></div>' : '') +
-    '<hr style="margin:8px 0;border-color:#e5e7eb">' +
-    '<div style="color:#6b7280;font-size:9px">' + footer + '</div>' +
+    (notes ? '<div style="margin-top:8px;color:#374151"><em>' + lbl.note + ' ' + escHtml(notes) + '</em></div>' : '') +
+    (footerHtml ? '<hr style="margin:8px 0;border-color:#e5e7eb"><div style="color:#9ca3af;font-size:9px;font-style:italic">' + footerHtml + '</div>' : '') +
     '</div>';
 
   document.getElementById('invoice-preview').innerHTML = html;

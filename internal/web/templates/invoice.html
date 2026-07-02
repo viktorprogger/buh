@@ -1,4 +1,4 @@
-{{template "base" .}}
+{{template "entrepreneur_base" .}}
 
 {{define "title"}}Фактура {{.Invoice.InvoiceNumber}}{{end}}
 
@@ -22,6 +22,35 @@
        class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
       ↓ Преузми PDF
     </a>
+  </div>
+
+  <!-- Issuer / Client -->
+  <div class="px-6 py-4 grid grid-cols-2 gap-6 border-b border-gray-100 text-sm">
+    <div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Издавалац</div>
+      {{with .Issuer}}
+      <div class="font-medium">{{.Name}}</div>
+      {{if .MB}}<div class="text-gray-600">MB: <span class="font-mono">{{.MB}}</span></div>{{end}}
+      {{if .PIB}}<div class="text-gray-600">PIB: <span class="font-mono">{{.PIB}}</span></div>{{end}}
+      {{if .Address}}<div class="text-gray-600">{{.Address}}</div>{{end}}
+      {{end}}
+    </div>
+    <div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Клијент</div>
+      {{with .Client}}
+      <div class="font-medium">{{.Name}}</div>
+      {{if .IsForeign}}
+        {{if .RegistrationNumber}}<div class="text-gray-600">Tax ID / Reg No.: <span class="font-mono">{{.RegistrationNumber}}</span></div>{{end}}
+      {{else}}
+        {{if .PIB}}<div class="text-gray-600">PIB: <span class="font-mono">{{.PIB}}</span></div>{{end}}
+        {{if .RegistrationNumber}}<div class="text-gray-600">MB: <span class="font-mono">{{.RegistrationNumber}}</span></div>{{end}}
+      {{end}}
+      {{if .Address}}<div class="text-gray-600">{{.Address}}</div>{{end}}
+      {{if .Email}}<div class="text-gray-600">{{.Email}}</div>{{end}}
+      {{else}}
+      {{if .Invoice.ClientName}}<div class="font-medium">{{.Invoice.ClientName}}</div>{{end}}
+      {{end}}
+    </div>
   </div>
 
   <!-- Metadata -->
@@ -119,9 +148,18 @@
   </div>
   {{end}}
 
-  <div class="px-6 py-3 border-t border-gray-100 text-xs text-gray-400">
-    {{if .Invoice.DueDate.Valid}}Плаћање извршити у року до {{.Invoice.DueDate.Time.Format "02.01.2006."}}. {{end}}
-    Obveznik PDV-a nije u sistemu PDV-a — Paušalni preduzetnik.
+  {{if or .Invoice.DueDate.Valid .Invoice.NoVAT .Invoice.NoSign}}
+  <div class="px-6 py-3 border-t border-gray-100 text-xs text-gray-400 italic space-y-0.5">
+    {{if .Invoice.DueDate.Valid}}
+    <div>{{if eq .Invoice.Language "en"}}Payment due by{{else}}Placanje izvrsiti u roku do{{end}} {{.Invoice.DueDate.Time.Format "02.01.2006."}}.</div>
+    {{end}}
+    {{if .Invoice.NoVAT}}
+    <div>{{if eq .Invoice.Language "en"}}Not subject to VAT according to Article 12 of the VAT Law of the Republic of Serbia.{{else}}Nije obveznik PDV-a na osnovu cl. 12 Zakona o PDV RS.{{end}}</div>
+    {{end}}
+    {{if .Invoice.NoSign}}
+    <div>{{if eq .Invoice.Language "en"}}This invoice is computer-generated and valid without stamp or signature.{{else}}Ovaj racun je generisan kompjuterski i vazecan je bez pecata i potpisa.{{end}}</div>
+    {{end}}
   </div>
+  {{end}}
 </div>
 {{end}}

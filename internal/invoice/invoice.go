@@ -51,6 +51,9 @@ type Invoice struct {
 	TotalRSD             float64
 	BankAccountID        *uuid.UUID
 	CorrespondentBankID  *uuid.UUID
+	Language             string // "sr" or "en"; defaults to "sr"
+	NoVAT                bool   // include VAT disclaimer (Article 12)
+	NoSign               bool   // include "generated without stamp" note
 	CreatedAt            time.Time
 }
 
@@ -76,7 +79,7 @@ func NewRepo(db *sql.DB) *Repo { return &Repo{db: db} }
 
 const invCols = `id, entrepreneur_user_id, client_id, client_name, invoice_type, invoice_number,
 	issue_date, period_start, period_end, due_date, currency, notes, total_rsd,
-	bank_account_id, correspondent_bank_id, created_at`
+	bank_account_id, correspondent_bank_id, language, no_vat, no_sign, created_at`
 
 func scanInv(row interface{ Scan(...any) error }, inv *Invoice) error {
 	var clientID sql.NullString
@@ -88,6 +91,7 @@ func scanInv(row interface{ Scan(...any) error }, inv *Invoice) error {
 		&inv.IssueDate, &inv.PeriodStart, &inv.PeriodEnd, &inv.DueDate,
 		&inv.Currency, &inv.Notes, &inv.TotalRSD,
 		&bankAccountID, &correspondentBankID,
+		&inv.Language, &inv.NoVAT, &inv.NoSign,
 		&inv.CreatedAt,
 	)
 	if err != nil {
@@ -134,16 +138,20 @@ func (r *Repo) Create(ctx context.Context, inv Invoice, items []Item) (Invoice, 
 		correspondentBankID = *inv.CorrespondentBankID
 	}
 
+	lang := inv.Language
+	if lang == "" {
+		lang = "sr"
+	}
 	err = scanInv(tx.QueryRowContext(ctx,
 		`INSERT INTO invoices (entrepreneur_user_id, client_id, client_name, invoice_type, invoice_number,
 		 issue_date, period_start, period_end, due_date, currency, notes, total_rsd,
-		 bank_account_id, correspondent_bank_id)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+		 bank_account_id, correspondent_bank_id, language, no_vat, no_sign)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 		 RETURNING `+invCols,
 		inv.EntrepreneurUserID, clientID, inv.ClientName, string(inv.InvoiceType), inv.InvoiceNumber,
 		inv.IssueDate, nullTime(inv.PeriodStart), nullTime(inv.PeriodEnd), nullTime(inv.DueDate),
 		inv.Currency, inv.Notes, inv.TotalRSD,
-		bankAccountID, correspondentBankID,
+		bankAccountID, correspondentBankID, lang, inv.NoVAT, inv.NoSign,
 	), &inv)
 	if err != nil {
 		return Invoice{}, err

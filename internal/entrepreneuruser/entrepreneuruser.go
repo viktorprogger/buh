@@ -63,6 +63,18 @@ func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (User, error) {
 	return u, err
 }
 
+func (r *Repo) UpdatePasswordHash(ctx context.Context, id uuid.UUID, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.ExecContext(ctx,
+		`UPDATE entrepreneur_users SET password_hash = $1 WHERE id = $2`,
+		string(hash), id,
+	)
+	return err
+}
+
 func CheckPassword(u User, password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {

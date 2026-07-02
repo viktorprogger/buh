@@ -355,6 +355,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS kpo_books_user_year ON kpo_books(entrepreneur_
 			name: "026_add_merged_at_to_kpo_books",
 			sql:  `ALTER TABLE kpo_books ADD COLUMN IF NOT EXISTS merged_at TIMESTAMPTZ;`,
 		},
+		{
+			name: "027_add_language_to_invoices",
+			sql:  `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'sr';`,
+		},
+		{
+			name: "028_add_mb_and_invoice_flags",
+			sql: `ALTER TABLE managed_entrepreneurs ADD COLUMN IF NOT EXISTS mb TEXT NOT NULL DEFAULT '';
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS no_vat BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS no_sign BOOLEAN NOT NULL DEFAULT TRUE;`,
+		},
 	}
 
 	// Create migrations tracking table.
