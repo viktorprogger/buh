@@ -1,8 +1,11 @@
 {{template "base" .}}
 
-{{define "title"}}{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}} — КПО{{end}}
+{{define "title"}}{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}} — предузетник{{end}}
 
 {{define "content"}}
+<div class="mb-4 text-sm text-gray-500">
+  <a href="/a/" class="hover:text-primary">← Предузетници</a>
+</div>
 <!-- ── Entrepreneur card ──────────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
@@ -383,7 +386,8 @@ function eEdit(on) {
       </form>
     {{else}}
       <form method="POST"
-            action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/finalize">
+            action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/finalize"
+            onsubmit="return confirm('Финализовати КПО за {{.SelectedYear}} годину? Ова акција закључава књигу. Накнадне измене захтевају откључавање.')">
         <button type="submit"
                 class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
           Укњижи
