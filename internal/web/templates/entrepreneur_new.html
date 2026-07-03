@@ -15,7 +15,7 @@
 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-xs max-w-lg">
   <form method="POST" action="/a/entrepreneurs/new" class="space-y-4">
     <div>
-      <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Приказни назив</label>
+      <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Назив (кратко)</label>
       <input type="text" id="title" name="title" value="{{.Title}}"
              placeholder="нпр. Петар Петровић"
              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
@@ -45,7 +45,7 @@
              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
     </div>
     <div>
-      <label for="bank_account" class="block text-sm font-medium text-gray-700 mb-1">Текући рачун</label>
+      <label for="bank_account" class="block text-sm font-medium text-gray-700 mb-1">Жиро рачун</label>
       <input type="text" id="bank_account" name="bank_account" value="{{.BankAccount}}"
              placeholder="нпр. 123-0000000000000-00"
              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
