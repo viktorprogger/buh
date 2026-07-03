@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 
@@ -36,7 +37,38 @@ func (h *Handler) handleBankAccountList(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurBankAccounts, map[string]any{"Accounts": accounts})
+
+	sortCol, sortDir, page := shared.ParseListParams(r, "bank", "asc")
+	sort.Slice(accounts, func(i, j int) bool {
+		a, b := accounts[i], accounts[j]
+		switch sortCol {
+		case "type":
+			return shared.LessStr(string(a.AccountType), string(b.AccountType), sortDir)
+		case "number":
+			numA := a.AccountNumber
+			if string(a.AccountType) == "foreign" {
+				numA = a.IBAN
+			}
+			numB := b.AccountNumber
+			if string(b.AccountType) == "foreign" {
+				numB = b.IBAN
+			}
+			return shared.LessStr(numA, numB, sortDir)
+		default:
+			return shared.LessStr(a.BankName, b.BankName, sortDir)
+		}
+	})
+
+	list := shared.NewListState(sortCol, sortDir, page, len(accounts), "/e/bank-accounts")
+	data := map[string]any{
+		"Accounts": shared.PageSlice(accounts, page),
+		"List":     list,
+	}
+	if r.Header.Get("HX-Request") == "true" {
+		shared.RenderNamedTemplate(w, h.tmpl.EntrepreneurBankAccounts, "accounts-list", data)
+		return
+	}
+	shared.RenderTemplate(w, h.tmpl.EntrepreneurBankAccounts, data)
 }
 
 func (h *Handler) handleBankAccountNewForm(w http.ResponseWriter, r *http.Request) {

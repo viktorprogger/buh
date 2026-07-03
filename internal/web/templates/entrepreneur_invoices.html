@@ -11,7 +11,11 @@
   </a>
 </div>
 
-<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+{{template "invoices-list" .}}
+{{end}}
+
+{{define "invoices-list"}}
+<div id="invoices-list" class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-lg font-semibold text-gray-900">Фактуре</h2>
   </div>
@@ -19,11 +23,46 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
-        <th class="px-4 py-2 text-left">Број</th>
-        <th class="px-4 py-2 text-left">Клијент</th>
-        <th class="px-4 py-2 text-left">Тип</th>
-        <th class="px-4 py-2 text-left">Датум</th>
-        <th class="px-4 py-2 text-right">Износ (RSD)</th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "number"}}"
+             hx-get="{{.List.SortLink "number"}}"
+             hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Број {{.List.SortIcon "number"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "client"}}"
+             hx-get="{{.List.SortLink "client"}}"
+             hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Клијент {{.List.SortIcon "client"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "type"}}"
+             hx-get="{{.List.SortLink "type"}}"
+             hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Тип {{.List.SortIcon "type"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "date"}}"
+             hx-get="{{.List.SortLink "date"}}"
+             hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Датум {{.List.SortIcon "date"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-right">
+          <a href="{{.List.SortLink "amount"}}"
+             hx-get="{{.List.SortLink "amount"}}"
+             hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Износ (RSD) {{.List.SortIcon "amount"}}
+          </a>
+        </th>
         <th class="px-4 py-2"></th>
       </tr>
     </thead>
@@ -44,6 +83,23 @@
       {{end}}
     </tbody>
   </table>
+  {{if or .List.HasPrev .List.HasNext}}
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm">
+    <span class="text-gray-500">Страна {{.List.Page}} од {{.List.LastPage}} (укупно {{.List.Total}})</span>
+    <div class="flex gap-2">
+      {{if .List.HasPrev}}
+      <a href="{{.List.PrevURL}}"
+         hx-get="{{.List.PrevURL}}" hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">← Претходна</a>
+      {{end}}
+      {{if .List.HasNext}}
+      <a href="{{.List.NextURL}}"
+         hx-get="{{.List.NextURL}}" hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">Следећа →</a>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
   {{else}}
   <div class="px-6 py-8 text-center text-gray-400 text-sm">
     Нема фактура. <a href="/e/invoices/new" class="text-primary hover:underline">Креирај прву фактуру</a>.

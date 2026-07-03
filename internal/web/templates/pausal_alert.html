@@ -1,22 +1,28 @@
 {{define "pausal_alert"}}
 {{if .}}
 <div class="mb-4 rounded border px-4 py-3 text-sm leading-snug
-  {{if eq .Severity "alert"}}bg-red-50 border-red-300 text-red-900
+  {{if eq .Severity "exceeded"}}bg-gray-900 border-gray-800 text-white
+  {{else if eq .Severity "alert"}}bg-red-50 border-red-300 text-red-900
   {{else if eq .Severity "high"}}bg-orange-50 border-orange-300 text-orange-900
   {{else}}bg-amber-50 border-amber-200 text-amber-800{{end}}">
-  {{if eq .Severity "alert"}}
-    <strong>УПОЗОРЕЊЕ!</strong> Достигли сте <strong>{{.Milestone}}%</strong> паушалног прага
+  {{if eq .Severity "exceeded"}}
+    <strong>КРИТИЧНО!</strong> Достигли сте паушални праг
     ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD).
     <strong>Хитно се консултујте са вашим књиговођом.</strong>
     <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
+  {{else if eq .Severity "alert"}}
+    <strong>УПОЗОРЕЊЕ!</strong> Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> паушалног прага
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD).
+    <strong>Хитно се консултујте са вашим књиговођом.</strong>
+    <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{else if eq .Severity "high"}}
-    Достигли сте <strong>{{.Milestone}}%</strong> паушалног прага
-    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD).
+    Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> паушалног прага
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD).
     Препоручујемо консултацију са вашим књиговођом.
     <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{else}}
-    Достигли сте <strong>{{.Milestone}}%</strong> паушалног прага
-    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD).
+    Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> паушалног прага
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD).
     <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{end}}
 </div>

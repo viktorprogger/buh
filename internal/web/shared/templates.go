@@ -38,6 +38,7 @@ type Templates struct {
 	EntrepreneurClients      *template.Template
 	EntrepreneurBankAccounts *template.Template
 	EntrepreneurInvoices     *template.Template
+	EntrepreneurProfile      *template.Template
 }
 
 func mustPageTmpl(tfs fs.FS, name string, funcs template.FuncMap, extra ...string) *template.Template {
@@ -93,5 +94,6 @@ func ParseTemplates(tfs fs.FS) Templates {
 		EntrepreneurClients:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_clients.html"),
 		EntrepreneurBankAccounts: mustEntrepreneurPageTmpl(tfs, "entrepreneur_bank_accounts.html"),
 		EntrepreneurInvoices:     mustEntrepreneurPageTmpl(tfs, "entrepreneur_invoices.html"),
+		EntrepreneurProfile:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_profile.html"),
 	}
 }

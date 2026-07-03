@@ -1,22 +1,28 @@
 {{define "vat_alert"}}
 {{if .}}
 <div class="mb-4 rounded border px-4 py-3 text-sm leading-snug
-  {{if eq .Severity "alert"}}bg-red-50 border-red-300 text-red-900
+  {{if eq .Severity "exceeded"}}bg-gray-900 border-gray-800 text-white
+  {{else if eq .Severity "alert"}}bg-red-50 border-red-300 text-red-900
   {{else if eq .Severity "high"}}bg-orange-50 border-orange-300 text-orange-900
   {{else}}bg-amber-50 border-amber-200 text-amber-800{{end}}">
-  {{if eq .Severity "alert"}}
-    <strong>УПОЗОРЕЊЕ!</strong> Достигли сте <strong>{{.Milestone}}%</strong> прага за ПДВ регистрацију
+  {{if eq .Severity "exceeded"}}
+    <strong>КРИТИЧНО!</strong> Достигли сте праг за ПДВ регистрацију
     ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
     <strong>Хитно се консултујте са вашим књиговођом.</strong>
     <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
+  {{else if eq .Severity "alert"}}
+    <strong>УПОЗОРЕЊЕ!</strong> Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
+    <strong>Хитно се консултујте са вашим књиговођом.</strong>
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{else if eq .Severity "high"}}
-    Достигли сте <strong>{{.Milestone}}%</strong> прага за ПДВ регистрацију
-    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
+    Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
     Препоручујемо консултацију са вашим књиговођом.
     <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{else}}
-    Достигли сте <strong>{{.Milestone}}%</strong> прага за ПДВ регистрацију
-    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
+    Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
     <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{end}}
 </div>

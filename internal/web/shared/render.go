@@ -13,6 +13,13 @@ func RenderTemplate(w http.ResponseWriter, tmpl *template.Template, data any) {
 	}
 }
 
+func RenderNamedTemplate(w http.ResponseWriter, tmpl *template.Template, name string, data any) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := tmpl.ExecuteTemplate(w, name, data); err != nil {
+		log.Printf("template error: %v", err)
+	}
+}
+
 func RenderError(w http.ResponseWriter, errPage *template.Template, code int) {
 	type errData struct {
 		Code    int

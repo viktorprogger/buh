@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -23,7 +24,32 @@ func (h *Handler) handleClientList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при учитавању клијената", http.StatusInternalServerError)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurClients, map[string]any{"Clients": clients})
+
+	sortCol, sortDir, page := shared.ParseListParams(r, "name", "asc")
+	sort.Slice(clients, func(i, j int) bool {
+		a, b := clients[i], clients[j]
+		switch sortCol {
+		case "pib":
+			return shared.LessStr(a.PIB, b.PIB, sortDir)
+		case "email":
+			return shared.LessStr(a.Email, b.Email, sortDir)
+		case "type":
+			return shared.LessBool(a.IsForeign, b.IsForeign, sortDir)
+		default:
+			return shared.LessStr(a.Name, b.Name, sortDir)
+		}
+	})
+
+	list := shared.NewListState(sortCol, sortDir, page, len(clients), "/e/clients")
+	data := map[string]any{
+		"Clients": shared.PageSlice(clients, page),
+		"List":    list,
+	}
+	if r.Header.Get("HX-Request") == "true" {
+		shared.RenderNamedTemplate(w, h.tmpl.EntrepreneurClients, "clients-list", data)
+		return
+	}
+	shared.RenderTemplate(w, h.tmpl.EntrepreneurClients, data)
 }
 
 func (h *Handler) handleClientSearch(w http.ResponseWriter, r *http.Request) {

@@ -11,7 +11,11 @@
   </a>
 </div>
 
-<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+{{template "clients-list" .}}
+{{end}}
+
+{{define "clients-list"}}
+<div id="clients-list" class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-lg font-semibold text-gray-900">Клијенти</h2>
   </div>
@@ -19,10 +23,38 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
-        <th class="px-4 py-2 text-left">Назив</th>
-        <th class="px-4 py-2 text-left">ПИБ</th>
-        <th class="px-4 py-2 text-left">Е-пошта</th>
-        <th class="px-4 py-2 text-left">Тип</th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "name"}}"
+             hx-get="{{.List.SortLink "name"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Назив {{.List.SortIcon "name"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "pib"}}"
+             hx-get="{{.List.SortLink "pib"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            ПИБ {{.List.SortIcon "pib"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "email"}}"
+             hx-get="{{.List.SortLink "email"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Е-пошта {{.List.SortIcon "email"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "type"}}"
+             hx-get="{{.List.SortLink "type"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Тип {{.List.SortIcon "type"}}
+          </a>
+        </th>
         <th class="px-4 py-2"></th>
       </tr>
     </thead>
@@ -46,6 +78,23 @@
       {{end}}
     </tbody>
   </table>
+  {{if or .List.HasPrev .List.HasNext}}
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm">
+    <span class="text-gray-500">Страна {{.List.Page}} од {{.List.LastPage}} (укупно {{.List.Total}})</span>
+    <div class="flex gap-2">
+      {{if .List.HasPrev}}
+      <a href="{{.List.PrevURL}}"
+         hx-get="{{.List.PrevURL}}" hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">← Претходна</a>
+      {{end}}
+      {{if .List.HasNext}}
+      <a href="{{.List.NextURL}}"
+         hx-get="{{.List.NextURL}}" hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">Следећа →</a>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
   {{else}}
   <div class="px-6 py-8 text-center text-gray-400 text-sm">
     Нема клијената. <a href="/e/clients/new" class="text-primary hover:underline">Додај првог клијента</a>.

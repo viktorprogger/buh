@@ -31,6 +31,8 @@ func ComputePausalAlert(total float64, limit int64, now time.Time) *PausalAlert 
 	var severity string
 	var milestone int
 	switch {
+	case pct >= 100:
+		severity, milestone = "exceeded", 100
 	case pct >= 90:
 		severity, milestone = "alert", 90
 	case pct >= 80:
@@ -67,6 +69,8 @@ func ComputeVATAlert(total float64, limit int64) *PausalAlert {
 	var severity string
 	var milestone int
 	switch {
+	case pct >= 100:
+		severity, milestone = "exceeded", 100
 	case pct >= 90:
 		severity, milestone = "alert", 90
 	case pct >= 80:

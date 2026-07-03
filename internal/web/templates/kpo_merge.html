@@ -39,8 +39,9 @@
     <thead>
       <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
         <th class="px-4 py-2 text-center w-10">#</th>
-        <th class="px-4 py-2 text-left">Датум наплате</th>
+        <th class="px-4 py-2 text-left">Датум</th>
         <th class="px-4 py-2 text-left">Бр. рачуна</th>
+        <th class="px-4 py-2 text-left">Опис</th>
         <th class="px-4 py-2 text-right">Роба</th>
         <th class="px-4 py-2 text-right">Услуге</th>
         <th class="px-4 py-2 text-right">Укупно</th>
@@ -53,6 +54,7 @@
         <td class="px-4 py-2 text-center text-gray-400 text-xs">{{add $i 1}}</td>
         <td class="px-4 py-2 text-gray-700">{{$e.CollectionDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-gray-800">{{$e.InvoiceNumber}}</td>
+        <td class="px-4 py-2 text-gray-500 text-xs">{{$e.Description}}</td>
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ProductRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ServiceRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">{{printf "%.2f" $e.Total}}</td>
@@ -91,8 +93,9 @@
     <thead>
       <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
         <th class="px-4 py-2 text-center w-10">#</th>
-        <th class="px-4 py-2 text-left">Датум наплате</th>
+        <th class="px-4 py-2 text-left">Датум</th>
         <th class="px-4 py-2 text-left">Бр. рачуна</th>
+        <th class="px-4 py-2 text-left">Опис</th>
         <th class="px-4 py-2 text-right">Роба</th>
         <th class="px-4 py-2 text-right">Услуге</th>
         <th class="px-4 py-2 text-right">Укупно</th>
@@ -104,6 +107,7 @@
         <td class="px-4 py-2 text-center text-gray-400 text-xs">{{add $i 1}}</td>
         <td class="px-4 py-2 text-gray-700">{{$e.CollectionDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-gray-800">{{$e.InvoiceNumber}}</td>
+        <td class="px-4 py-2 text-gray-500 text-xs">{{$e.Description}}</td>
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ProductRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ServiceRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">{{printf "%.2f" $e.Total}}</td>

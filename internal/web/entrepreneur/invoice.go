@@ -6,6 +6,7 @@ import (
 	htmltemplate "html/template"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -28,7 +29,40 @@ func (h *Handler) handleInvoiceList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при учитавању фактура", http.StatusInternalServerError)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurInvoices, map[string]any{"Invoices": invoices})
+
+	sortCol, sortDir, page := shared.ParseListParams(r, "date", "desc")
+	sort.Slice(invoices, func(i, j int) bool {
+		a, b := invoices[i], invoices[j]
+		switch sortCol {
+		case "number":
+			return shared.LessStr(a.InvoiceNumber, b.InvoiceNumber, sortDir)
+		case "client":
+			return shared.LessStr(a.ClientName, b.ClientName, sortDir)
+		case "type":
+			return shared.LessStr(string(a.InvoiceType), string(b.InvoiceType), sortDir)
+		case "amount":
+			return shared.LessFloat(a.TotalRSD, b.TotalRSD, sortDir)
+		default: // date
+			if a.IssueDate.Equal(b.IssueDate) {
+				return false
+			}
+			if sortDir == "desc" {
+				return a.IssueDate.After(b.IssueDate)
+			}
+			return a.IssueDate.Before(b.IssueDate)
+		}
+	})
+
+	list := shared.NewListState(sortCol, sortDir, page, len(invoices), "/e/invoices")
+	data := map[string]any{
+		"Invoices": shared.PageSlice(invoices, page),
+		"List":     list,
+	}
+	if r.Header.Get("HX-Request") == "true" {
+		shared.RenderNamedTemplate(w, h.tmpl.EntrepreneurInvoices, "invoices-list", data)
+		return
+	}
+	shared.RenderTemplate(w, h.tmpl.EntrepreneurInvoices, data)
 }
 
 func (h *Handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {

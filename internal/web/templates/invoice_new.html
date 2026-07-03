@@ -375,6 +375,7 @@ function fmtPausalRSD(n) {
 
 function computePausalMilestone(projected, limit, yearPct) {
   var pct = projected / limit * 100;
+  if (pct >= 100) return {severity: 'exceeded', milestone: 100, percent: pct};
   if (pct >= 90) return {severity: 'alert', milestone: 90, percent: pct};
   if (pct >= 80) return {severity: 'high', milestone: 80, percent: pct};
   if (pct >= 75) return {severity: 'minor', milestone: 75, percent: pct};
@@ -416,15 +417,18 @@ function updatePausalAlert() {
   var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(PAUSAL_LIMIT) + ' RSD';
   var infoLink = ' <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
   var msg = '';
-  if (hit.severity === 'alert') {
+  if (hit.severity === 'exceeded') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-gray-900 border-gray-800 text-white';
+    msg = '<strong>КРИТИЧНО!</strong> Са овом фактуром достићи ћете паушални праг (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'alert') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
-    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> паушалног прага (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
   } else if (hit.severity === 'high') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
-    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> паушалног прага (' + pctStr + '% — ' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
   } else {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
-    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> паушалног прага (' + pctStr + '% — ' + totalStr + ').' + infoLink;
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + ').' + infoLink;
   }
   alertEl.innerHTML = msg;
 }
@@ -447,6 +451,7 @@ function computeVATRolling(issueDateStr) {
 
 function computeVATMilestone(projected, limit) {
   var pct = projected / limit * 100;
+  if (pct >= 100) return {severity: 'exceeded', milestone: 100, percent: pct};
   if (pct >= 90) return {severity: 'alert', milestone: 90, percent: pct};
   if (pct >= 80) return {severity: 'high', milestone: 80, percent: pct};
   if (pct >= 75) return {severity: 'minor', milestone: 75, percent: pct};
@@ -484,15 +489,18 @@ function updateVATAlert() {
   var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(VAT_LIMIT) + ' RSD у последњих 12 месеци';
   var infoLink = ' <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
   var msg = '';
-  if (hit.severity === 'alert') {
+  if (hit.severity === 'exceeded') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-gray-900 border-gray-800 text-white';
+    msg = '<strong>КРИТИЧНО!</strong> Са овом фактуром достићи ћете праг за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'alert') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
-    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> прага за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
   } else if (hit.severity === 'high') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
-    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> прага за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
   } else {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
-    msg = 'Са овом фактуром достићи ћете <strong>' + hit.milestone + '%</strong> прага за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + ').' + infoLink;
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + ').' + infoLink;
   }
   alertEl.innerHTML = msg;
 }

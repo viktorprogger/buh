@@ -15,30 +15,7 @@
   </a>
 </div>
 
-{{if .Entrepreneurs}}
-<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="bg-gray-50 border-b border-gray-200">
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Назив / Предузетник</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">ПИБ</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {{range .Entrepreneurs}}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/a/entrepreneurs/{{.ID}}'">
-        <td class="px-4 py-3 font-medium text-gray-900">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}</td>
-        <td class="px-4 py-3 font-mono text-gray-600 text-xs">{{.PIB}}</td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
-</div>
-{{else}}
-<div class="bg-white border border-gray-200 rounded-lg p-6 text-sm text-gray-600 mb-6">
-  Нема предузетника. Учитајте PDF решење из е-Пореза да бисте аутоматски додали предузетника.
-</div>
-{{end}}
+{{template "index-list" .}}
 
 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-xs">
   <h2 class="text-lg font-semibold text-gray-900 mb-1">Учитај PDF решење</h2>
@@ -51,5 +28,101 @@
       Обради
     </button>
   </form>
+</div>
+{{end}}
+
+{{define "index-list"}}
+<div id="index-list" class="mb-6">
+{{if .Rows}}
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200">
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">
+          <a href="{{.List.SortLink "name"}}"
+             hx-get="{{.List.SortLink "name"}}"
+             hx-target="#index-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Назив / Предузетник {{.List.SortIcon "name"}}
+          </a>
+        </th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">
+          <a href="{{.List.SortLink "pib"}}"
+             hx-get="{{.List.SortLink "pib"}}"
+             hx-target="#index-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            ПИБ {{.List.SortIcon "pib"}}
+          </a>
+        </th>
+        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">
+          <a href="{{.List.SortLinkDesc "pausal"}}"
+             hx-get="{{.List.SortLinkDesc "pausal"}}"
+             hx-target="#index-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            Паушал (год.) {{.List.SortIcon "pausal"}}
+          </a>
+        </th>
+        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">
+          <a href="{{.List.SortLinkDesc "vat"}}"
+             hx-get="{{.List.SortLinkDesc "vat"}}"
+             hx-target="#index-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            ПДВ (12 мес.) {{.List.SortIcon "vat"}}
+          </a>
+        </th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Rows}}
+      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/a/entrepreneurs/{{.E.ID}}'">
+        <td class="px-4 py-3 font-medium text-gray-900">{{if .E.Title}}{{.E.Title}}{{else}}{{.E.Name}}{{end}}</td>
+        <td class="px-4 py-3 font-mono text-gray-600 text-xs">{{.E.PIB}}</td>
+        <td class="px-4 py-3 text-right text-gray-700 tabular-nums">
+          {{.PausalTotal}} RSD
+          {{if .PausalAlert}}
+          <span class="inline-block w-2 h-2 rounded-full ml-1 align-middle
+            {{if eq .PausalAlert.Severity "exceeded"}}bg-gray-900
+            {{else if eq .PausalAlert.Severity "alert"}}bg-red-500
+            {{else if eq .PausalAlert.Severity "high"}}bg-orange-400
+            {{else}}bg-amber-400{{end}}"></span>
+          {{end}}
+        </td>
+        <td class="px-4 py-3 text-right text-gray-700 tabular-nums">
+          {{.VATTotal}} RSD
+          {{if .VATAlert}}
+          <span class="inline-block w-2 h-2 rounded-full ml-1 align-middle
+            {{if eq .VATAlert.Severity "exceeded"}}bg-gray-900
+            {{else if eq .VATAlert.Severity "alert"}}bg-red-500
+            {{else if eq .VATAlert.Severity "high"}}bg-orange-400
+            {{else}}bg-amber-400{{end}}"></span>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{if or .List.HasPrev .List.HasNext}}
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm">
+    <span class="text-gray-500">Страна {{.List.Page}} од {{.List.LastPage}} (укупно {{.List.Total}})</span>
+    <div class="flex gap-2">
+      {{if .List.HasPrev}}
+      <a href="{{.List.PrevURL}}"
+         hx-get="{{.List.PrevURL}}" hx-target="#index-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">← Претходна</a>
+      {{end}}
+      {{if .List.HasNext}}
+      <a href="{{.List.NextURL}}"
+         hx-get="{{.List.NextURL}}" hx-target="#index-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">Следећа →</a>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{else}}
+<div class="bg-white border border-gray-200 rounded-lg p-6 text-sm text-gray-600">
+  Нема предузетника. Учитајте PDF решење из е-Пореза да бисте аутоматски додали предузетника.
+</div>
+{{end}}
 </div>
 {{end}}
