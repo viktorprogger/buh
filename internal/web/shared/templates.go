@@ -3,6 +3,7 @@ package shared
 import (
 	"html/template"
 	"io/fs"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -65,6 +66,9 @@ func ParseTemplates(tfs fs.FS) Templates {
 	entrepreneurFuncs := template.FuncMap{
 		"slipTableArgs": func(entrepreneurID uuid.UUID, slips []sliprecord.SlipRecord) SlipTableData {
 			return SlipTableData{EntrepreneurID: entrepreneurID, Slips: slips}
+		},
+		"fmtMoney": func(f float64) string {
+			return FormatIntWithSpaces(int64(math.Round(f)))
 		},
 	}
 	return Templates{

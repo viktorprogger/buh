@@ -226,7 +226,7 @@ function eEdit(on) {
           <td class="px-3 py-2 text-gray-500 text-xs">{{.ClientName}}</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
-          <td class="px-3 py-2 text-right font-mono text-gray-500">{{printf "%.2f" .TotalRSD}}</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-500">{{fmtMoney .TotalRSD}}</td>
           {{if not $.CurrentBook.IsFinalized}}<td></td>{{end}}
         </tr>
         {{else}}
@@ -267,7 +267,7 @@ function eEdit(on) {
           </td>
           <!-- Product revenue -->
           <td class="px-3 py-2 text-right">
-            <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ProductRevenue}}</span>
+            <span class="view-val font-mono text-gray-800">{{fmtMoney .ProductRevenue}}</span>
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="product_revenue"
                    value="{{printf "%.2f" .ProductRevenue}}" style="display:none"
@@ -276,7 +276,7 @@ function eEdit(on) {
           </td>
           <!-- Service revenue -->
           <td class="px-3 py-2 text-right">
-            <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ServiceRevenue}}</span>
+            <span class="view-val font-mono text-gray-800">{{fmtMoney .ServiceRevenue}}</span>
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="service_revenue"
                    value="{{printf "%.2f" .ServiceRevenue}}" style="display:none"
@@ -284,7 +284,7 @@ function eEdit(on) {
             {{end}}
           </td>
           <!-- Total (view only) -->
-          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .EntryTotal}}</td>
+          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{fmtMoney .EntryTotal}}</td>
           <!-- Actions -->
           {{if not $.CurrentBook.IsFinalized}}
           <td class="px-2 py-2 text-center">
@@ -315,9 +315,9 @@ function eEdit(on) {
         {{if .KPOEntries}}
         <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
           <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">Укупно:</td>
-          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalProduct}}</td>
-          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalService}}</td>
-          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalAll}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalProduct}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalService}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalAll}}</td>
           {{if not .CurrentBook.IsFinalized}}<td></td>{{end}}
         </tr>
         {{end}}
