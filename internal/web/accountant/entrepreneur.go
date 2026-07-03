@@ -101,12 +101,20 @@ func (h *Handler) handleAccountantIndex(w http.ResponseWriter, r *http.Request) 
 	for i, e := range entrepreneurs {
 		pausalTotal := pausalSums[e.ID]
 		vatTotal := vatSums[e.ID]
+		pausalAlert := shared.ComputePausalAlert(pausalTotal, pausalLimit, now)
+		if pausalAlert != nil {
+			pausalAlert.IsAccountant = true
+		}
+		vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
+		if vatAlert != nil {
+			vatAlert.IsAccountant = true
+		}
 		rows[i] = entrepreneurListRow{
 			E:           e,
 			PausalTotal: shared.FormatIntWithSpaces(int64(math.Round(pausalTotal))),
-			PausalAlert: shared.ComputePausalAlert(pausalTotal, pausalLimit, now),
+			PausalAlert: pausalAlert,
 			VATTotal:    shared.FormatIntWithSpaces(int64(math.Round(vatTotal))),
-			VATAlert:    shared.ComputeVATAlert(vatTotal, vatLimit),
+			VATAlert:    vatAlert,
 		}
 	}
 
@@ -259,6 +267,9 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pausalAlert := shared.ComputePausalAlert(pausalalTotal, pausalalLimit, time.Now())
+	if pausalAlert != nil {
+		pausalAlert.IsAccountant = true
+	}
 
 	vatNow := time.Now()
 	vatDays := 364
@@ -273,6 +284,9 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
+	if vatAlert != nil {
+		vatAlert.IsAccountant = true
+	}
 
 	shared.RenderTemplate(w, h.tmpl.Entrepreneur, map[string]any{
 		"Entrepreneur":     e,

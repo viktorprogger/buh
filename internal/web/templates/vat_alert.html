@@ -8,12 +8,12 @@
   {{if eq .Severity "exceeded"}}
     <strong>КРИТИЧНО!</strong> Достигли сте праг за ПДВ регистрацију
     ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
-    <strong>Хитно се консултујте са вашим књиговођом.</strong>
+    {{if .IsAccountant}}<strong>Хитно обавестите клијента.</strong>{{else}}<strong>Хитно се консултујте са вашим књиговођом.</strong>{{end}}
     <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{else if eq .Severity "alert"}}
     <strong>УПОЗОРЕЊЕ!</strong> Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
     ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
-    <strong>Хитно се консултујте са вашим књиговођом.</strong>
+    {{if .IsAccountant}}<strong>Хитно обавестите клијента.</strong>{{else}}<strong>Хитно се консултујте са вашим књиговођом.</strong>{{end}}
     <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
   {{else if eq .Severity "high"}}
     Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију

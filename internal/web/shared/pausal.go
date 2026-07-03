@@ -7,11 +7,12 @@ import (
 
 // PausalAlert holds the computed milestone alert for a paušal entrepreneur.
 type PausalAlert struct {
-	Severity  string  // "minor", "high", "alert"
-	Milestone int     // percentage threshold that triggered this (50, 70, 75, 80, 90)
-	TotalFmt  string  // formatted current total
-	LimitFmt  string  // formatted limit
-	Percent   float64 // actual percentage
+	Severity     string  // "minor", "high", "alert"
+	Milestone    int     // percentage threshold that triggered this (50, 70, 75, 80, 90)
+	TotalFmt     string  // formatted current total
+	LimitFmt     string  // formatted limit
+	Percent      float64 // actual percentage
+	IsAccountant bool    // true if this alert is being shown to an accountant
 }
 
 // ComputePausalAlert returns the most severe applicable milestone alert for the given

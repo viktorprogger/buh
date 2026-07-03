@@ -1,75 +1,250 @@
-# Accountant UX Review — Паушалне уплатнице
+# UX Review — Паушалне уплатнице
 
-Review performed by: simulated Serbian accountant session (Playwright, July 2026)
-Account used: `test@test.test` (Рачуновођа role)
-
----
-
-## 🔴 Critical
-
-### 1. No warning when паушалац exceeds the income limit
-The test entrepreneur (Nemanja) has income of 27,876,690 RSD against a 6,000,000 RSD ceiling — 464.61% over limit. The app displays the percentage but raises no alert. When a паушалац exceeds the annual limit they are legally required to switch tax regimes. This is a compliance failure that the app silently ignores.
-
-**Expected:** a prominent warning (banner, badge, email) as soon as income crosses the threshold, with guidance on next steps.
-
-### 2. All contribution amounts show 0.00 RSD
-Six payment slips are auto-generated (ПИО, ЗДРО, НЗС for 2026 and 2027) but every amount is 0.00 RSD. The landing page says "upload PDFs from e-Порез to auto-detect amounts," but it is not clear whether uploading actually populates these fields — and no feedback is given after upload. An accountant cannot pay anything in this state.
-
-**Expected:** amounts populated from the uploaded e-Порез решење, with a clear indication of which решење each slip was derived from.
-
-### 3. No KPO book export
-КПО (Knjiga poslovnih prihoda — the official income ledger) is a legal document that must be printed and archived. There is no "Export to PDF" or "Print" button on the KPO table.
-
-**Expected:** a print/PDF export action on the KPO section, producing an output that matches the official form layout required by Serbian tax law.
+**Reviewer perspective:** Рачуновођа који управља КПО књигама за паушалне предузетнике  
+**Date:** 2026-07-03  
+**Tested as:** рачуновођа (test@test.test)
 
 ---
 
-## 🟡 Significant gaps
-
-### 4. Entrepreneur list has no status indicators
-The list shows only name and PIB. With 10+ clients an accountant cannot see at a glance who is approaching the income limit, who has overdue contributions, or whose next payment deadline is coming up.
-
-**Expected:** status column or color-coded badges showing limit usage %, next due date, and any overdue items.
-
-### 5. New entrepreneur form asks for only two fields
-Creating a new entrepreneur requires only Name and PIB. But to generate payment slips or any official document, МБ (registration number), address, and bank account are also needed — and can only be added in a second edit step.
-
-**Expected:** the creation form should include all fields needed to make the entrepreneur immediately usable, or at minimum prompt the user to complete them before they can generate slips.
-
-### 6. Mixed scripts in payment slip purposes
-The UI is entirely in Cyrillic, but auto-generated payment slip descriptions use Latin script ("Doprinos za NZS za 2027. godinu"). Inconsistent and looks unfinished.
-
-**Expected:** consistent use of one script throughout — either Cyrillic everywhere, or at least make the Latin-script field values user-editable.
-
-### 7. No search or filter on entrepreneur list
-No search input or filter on the entrepreneurs list. This will become unusable past ~15 clients.
-
-**Expected:** a search field that filters by name or PIB.
+## Критичне грешке (Broken functionality)
 
 ---
 
-## 🟠 Confusing behavior
+### 1. Клик на уплатницу из предузетниковог профила даје 404
 
-### 8. "Укњижи" button has no explanation or confirmation
-The "Book" button appears below the KPO table without any tooltip, confirmation dialog, or description of what it finalizes. It is unclear what state it moves data into, whether it is reversible, and what happens to the KPO entries afterwards.
-
-**Expected:** a confirmation dialog explaining what booking does and warning that it may lock entries, or at minimum a tooltip.
-
-### 9. "Аванс" checkbox on payment slip is unclear
-The new payment slip form has an "Аванс" checkbox with a small "?" marker. Advance payments for паушалци are a specific legal concept. It is not evident what this checkbox changes in the generated slip or who should use it.
-
-**Expected:** an inline explanation (tooltip or help text) describing when advance payment applies and how it affects the slip fields.
-
-### 10. No history of uploaded e-Порез решења
-The main dashboard has a "Учитај PDF решење" upload section, but there is no log of what was uploaded and when. After submitting PDFs, the accountant has no way to confirm the import succeeded or to audit which решење each payment amount came from.
-
-**Expected:** an import history section (date, file name, entrepreneur matched, amounts extracted) accessible from the dashboard or the entrepreneur's page.
+**Where:** Страница предузетника → секција „Уплатнице" → клик на ред са уплатницом  
+**What happens:** Сваки ред у листи уплатница у прозору предузетника садржи `onclick` са URL-ом у облику `/slips/<uuid>`. Тај URL враћа 404 страницу. Исправан URL за рачуновођу је `/a/slips/<uuid>`.  
+**Why it's a problem:** Рачуновођа не може да отвори ниједну већ сачувану уплатницу кликом на листу. Морате ручно да промените URL у адресној траци. Уплатница је кључни документ — ако јој нема приступа из листе, цела функционалност је блокирана.  
+**Severity:** **High** (broken navigation; workaround exists only for technical users)
 
 ---
 
-## 🔵 Nice-to-have / future work
+### 2. Дугмад „Сачувај" и „Преузми PDF" на постојећој уплатници шаљу на погрешне URL-ове
 
-- **Payment deadlines** — contributions are due by the 15th of each month; no calendar or "next due" indicator is shown anywhere.
-- **ЈМБГ field** — the personal ID number is required on some official Serbian tax documents but is not stored.
-- **Bulk slip generation** — no way to generate payment slips for all clients at once; each entrepreneur must be opened individually.
-- **Delete entrepreneur** — no delete action visible on the list or detail page; unclear how to remove a client.
+**Where:** `/a/slips/<uuid>` → дугмад „Сачувај" и „Преузми PDF"  
+**What happens:** `formaction` атрибути ових дугмади указују на `/slips/<uuid>/save` и `/slips/<uuid>/download` (без `/a/` префикса). Ово вероватно враћа 404 или редиректује на погрешно место.  
+**Why it's a problem:** Рачуновођа може да отвори уплатницу (ако ручно исправи URL — видети грешку #1), али не може да је сачува нити преузме PDF. Основна акција не ради.  
+**Severity:** **High**
+
+---
+
+## Озбиљни проблеми (High severity)
+
+---
+
+### 3. QR код на уплатници никада не постоји — само „place holder"
+
+**Where:** Страница уплатнице (нова и постојећа)  
+**What happens:** На месту где би требало да буде QR код, увек стоји испрекидани оквир са текстом „Овде ће бити QR код". QR код се никад не генерише.  
+**Why it's a problem:** Цела сврха налога за уплату у Србији је NBS-стандардни QR код који предузетник скенира у мобилној апликацији банке. Без QR кода, уплатница је само визуелни образац — предузетник мора ручно да куца све бројеве (рачун примаоца, позив на број) у банкарску апликацију. Ово потире главну вредност алата.  
+**Severity:** **High**
+
+---
+
+### 4. Поље „Година" на постојећим уплатницама приказује „0"
+
+**Where:** `/a/slips/<uuid>` → поље „Година"  
+**What happens:** Систем је сачувао уплатницу (нпр. „Doprinos za NZS za 2027. godinu"), али поље „Година" у форми показује вредност `0`. Поље је обавезно и има валидацију `min="2000"`, тако да је `0` технички неважећа вредност.  
+**Why it's a problem:** Уплатница не зна за коју годину је — при штампању или касниjем прегледу, клик на „Сачувај" би могао послати `0` као годину. Пореска архива мора да зна годину за сваку уплатницу.  
+**Severity:** **High**
+
+---
+
+### 5. Обојене тачке поред износа у листи предузетника немају легенду
+
+**Where:** Главна страница → листа предузетника → колоне „Паушал (год.)" и „ПДВ (12 мес.)"  
+**What happens:** Поред неких износа стоје малe обојене кружнице (постоје барем три варијанте: жута/наранчаста, тамна/црна). Нема ниједне легенде, натписа, ни тултипа.  
+**Why it's a problem:** Рачуновођа са 20+ клијената скенира ову листу да би брзо идентификовао ризике. Значење боја је непознато без детаљнијег истраживања (морао сам да отворим сваки профил да схватим да тамна = >100% прага, жута = ~75%). Ово је централна информација за ризик-менаџмент — мора да буде одмах разумљива.  
+**Severity:** **High**
+
+---
+
+### 6. Упозорења о прагу приходу написана за предузетника, не за рачуновођу
+
+**Where:** Страница предузетника → банери „КРИТИЧНО!" и „Достигли сте X%..."  
+**What happens:** Банер каже „Хитно се консултујте са **вашим** књиговођом." — у другом лицу, директно предузетнику. Рачуновођа то чита као упутство самом себи да зове самог себе.  
+**Why it's a problem:** Рачуновођа гледа своје клијенте и треба да добије другачију поруку: „Клијент је прекорачио праг — обавестите га." Тренутна порука је збуњујућа и делује непрофесионално у рачуновођиној верзији интерфејса.  
+**Severity:** **High**
+
+---
+
+### 7. Нема претраге ни филтера на листи предузетника
+
+**Where:** Главна страница `/a/`  
+**What happens:** Листа предузетника је пагинована (20 по страни), са сортирањем по колонама. Нема поља за претрагу по имену, ПИБ-у, МБ-у, ни по статусу.  
+**Why it's a problem:** Рачуновођа са 50-100 клијената не може брзо да нађе конкретног предузетника. Само је постигнуто сортирање по имену, ПИБ-у или износу — то не замењује претрагу. Свакодневно рад подразумева брзо налажење клијента по имену; странична навигација кроз 5 страница је неприхватљиво споро.  
+**Severity:** **High**
+
+---
+
+### 8. Редоследни број ставки КПО не одговара хронолошком реду
+
+**Where:** Страница предузетника „Nemanja" → КПО табела  
+**What happens:** Ставке у КПО табели приказане су редом: #2 (20.05), #1 (02.06), #3 (21.06), #4 (29.06), #5 (01.07). Ставка са редним бројем #1 у КПО књизи је датирана на 02.06, а иза ставке бројеване са #2 (20.05).  
+**Why it's a problem:** Книга прихода (КПО) је службена пословна евиденција — ставке морају бити нумерисане узлазно по датуму наплате. Редни број #1 мора да буде прва хронолошка ставка. Ако систем дозвољава преорганизовање drag-and-drop-ом и тиме мења редне бројеве независно од датума, то може произвести КПО који не задовољава законске захтеве.  
+**Severity:** **High**
+
+---
+
+## Средњи проблеми (Medium severity)
+
+---
+
+### 9. Drag-and-drop преуређивање редоследа у КПО-у је потенцијално незаконито
+
+**Where:** Страница предузетника → КПО табела  
+**What happens:** Свака ставка у КПО-у може да се превуче (drag) и постави на другу позицију. Редни бројеви се ажурирају, а нови редослед шаље на сервер.  
+**Why it's a problem:** Законска КПО евиденција мора да одражава хронолошки редослед наплате. Произвољно преређивање ставки је нелегално и може испровоцирати проблеме при пореској контроли. Ову функционалност би требало ограничити или уклонити — а ако остаје, мора бити јасно упозорење.  
+**Severity:** **Medium**
+
+---
+
+### 10. Нема навигационе нити (breadcrumb) ни линка „Назад" на детаљ страни предузетника
+
+**Where:** Страница предузетника (нпр. `/a/entrepreneurs/<uuid>`)  
+**What happens:** Страница почиње директно са „Подаци предузетника" без иједне индикације где се налазимо у хијерархији. Нема линка „← Предузетници" на врху. Линк у навигационом хедеру води на главну страницу, тј. функционише као хом, али то није видљиво из контекста.  
+**Why it's a problem:** Рачуновођа у раду константно прелази са листе на клијента и назад. Морате да кликнете на „Предузетници" у хедеру или да притиснете Back у прегледачу — нема визуелно јасне навигације. Компарације ради, страница уплатнице има „← Назад на предузетника".  
+**Severity:** **Medium**
+
+---
+
+### 11. Дугме „Укњижи" нема никакво објашњење ни потврдни дијалог
+
+**Where:** Страница предузетника → КПО секција → дугме „Укњижи"  
+**What happens:** Зелено дугме „Укњижи" стоји испод КПО табеле без тултипа, помоћног текста ни modal-а за потврду.  
+**Why it's a problem:** Рачуновођа не зна шта ће се десити по клику. „Укњижи" значи затварање/финализацију КПО за ту годину — ако је то неповратна акција (нпр. спречава даље уносе), онда мора да постоји јасно упозорење и потврда. Ако нису забрањене накнадне измене, корисник не зна ни то.  
+**Severity:** **Medium**
+
+---
+
+### 12. Датумско поље у КПО-у прима само „дд.мм" — без године
+
+**Where:** Страница предузетника → КПО табела → ред за нови унос  
+**What happens:** Поље за датум у реду за унос нове ставке прима само дан и месец у формату `дд.мм`. Година је имплицитна (одређена избором у селект-боксу изнад табеле).  
+**Why it's a problem:** Рачуновоља уноси много података и ради брзо. Необичан формат дд.мм (без године) захтева посебну пажњу. Такође, ако рачуновођа промени годину у select-у, није јасно да ли нови датуми иду у ту годину. Стандардни рачуноводствени алати приказују пуни датум.  
+**Severity:** **Medium**
+
+---
+
+### 13. Двојезички натписи унутар форме уплатнице нису конзистентни
+
+**Where:** Форма уплатнице (нова и постојећа)  
+**What happens:** Поља унутар образца уплатнице имају ознаке на два језика: „Уплатилац / Uplatilac", „Сврха уплате / Svrha uplate", „Прималац / Primalac". Цело остало сучеље апликације је на српском ћирилицом.  
+**Why it's a problem:** Двојезичност у образцу је разумљива ако се мисли на физички образац за банку, али у оквиру ионако српске апликације делује недоследно. Ако постоји разлог за то (стандардни банкарски образац), требало би да буде јасно одвојен од UI-а апликације.  
+**Severity:** **Medium**
+
+---
+
+### 14. Назив истог поља се разликује у форми за унос и у погледу
+
+**Where:** Нови предузетник vs. детаљ предузетника  
+**What happens:**  
+- Текући рачун у форми за новог предузетника се зове „Текући рачун", а у детаљу „Жиро рачун"  
+- Кратки назив у форми за новог предузетника је „Приказни назив", а у детаљу „Назив (кратко)"  
+**Why it's a problem:** Рачуновођа унесе „Текући рачун" при креирању, а касније у погледу види „Жиро рачун" — мора да схвати да је реч о истом пољу. Ово успорава рад и ствара конфузију код тренинга.  
+**Severity:** **Medium**
+
+---
+
+### 15. Нема шаблона за стандардне пореске уплатнице
+
+**Where:** Страница предузетника → „+ Нова уплатница"  
+**What happens:** Нова уплатница отвара потпуно празан образац — рачуновођа мора ручно да унесе примаоца, рачун примаоца, позив на број, сврху уплате.  
+**Why it's a problem:** За паушалне предузетнике постоје фиксни, стандардни налози за уплату: ПИО доприноси, ЗЗДО доприноси, НЗС, порез на приход. Примаоц је увек „Пореска управа Републике Србије", рачун је фиксан по врсти доприноса, шифра плаћања је 253. Рачуновођа са 20 клијената мора 20 пута да куца исти рачун примаоца. Шаблони би уштедели огроман број сати.  
+**Severity:** **Medium**
+
+---
+
+### 16. Износи у КПО табели немају хиљадни раздвајач ни ознаку валуте
+
+**Where:** Страница предузетника → КПО табела → колоне Продаја роба, Услуге, Укупно  
+**What happens:** Износи се приказују у облику `13213120.00` — без хиљадних раздвајача и без „RSD". Тотали ред показује `4500000.00`.  
+**Why it's a problem:** Велики бројеви без раздвајача су тешки за читање. `13213120.00` захтева бројање цифри да бисте схватили да ли је 13 милиона или 1.3 милиона. Остатак апликације (листа предузетника) користи „13 213 120 RSD" са правилним форматом — зашто КПО таблица не ради исто?  
+**Severity:** **Medium**
+
+---
+
+### 17. „Текуће" vs. „Претходне" таб за уплатнице — разлика је нејасна
+
+**Where:** Страница предузетника → секција „Уплатнице" → табови „Текуће" / „Претходне"  
+**What happens:** Предузетник „Nemanja" има 6 уплатница (за 2026. и 2027. годину), све видљиве у табу „Текуће". Таб „Претходне" је потпуно празан.  
+**Why it's a problem:** Шта чини уплатницу „текућом" а шта „претходном"? Није јасно ни из имена таба ни из помоћног текста. Ако „претходне" значи „прошле пореске године", то би требало да буде написано. Тренутно „Претходне" таб изгледа неисправан/празан.  
+**Severity:** **Medium**
+
+---
+
+## Мањи проблеми (Low severity)
+
+---
+
+### 18. Наслов странице предузетника је „Nemanja — КПО"
+
+**Where:** Browser tab / `<title>` за страницу предузетника  
+**What happens:** Наслов таба у прегледачу каже нпр. „Nemanja — КПО", иако страница садржи подате предузетника, КПО, уплатнице и упозорења.  
+**Why it's a problem:** „КПО" у наслову сугерише да је реч о специфичном подпогледу, а не о целокупном профилу предузетника. Корисници са пуно отворених табова теже разликују шта је шта.  
+**Severity:** **Low**
+
+---
+
+### 19. Дугме за upload PDF-а приказује текст на енглеском
+
+**Where:** Главна страница → „Учитај PDF решење" → дугме за одабир фајла  
+**What happens:** Стандардни HTML file input приказује „Browse..." и „No files selected." на енглеском.  
+**Why it's a problem:** Сав остали интерфејс је на српском. Ово је ситан детаљ, али делује недовршено.  
+**Severity:** **Low**
+
+---
+
+### 20. Страница `/info/pausal-limit` нема линк назад на предузетника
+
+**Where:** Линк „Шта то значи?" у упозорењу о прагу → страница `/info/pausal-limit`  
+**What happens:** Информативна страница се отвара у новом табу (атрибут `target="_blank"`). Добро. Али страница нема никакав линк назад или до претходне странице унутар апликације — само лого у хедеру.  
+**Why it's a problem:** Мало. Ако корисник случајно отвори у истом прозору, нема поврата.  
+**Severity:** **Low**
+
+---
+
+### 21. Нема поља за контакт информације предузетника (телефон, имејл)
+
+**Where:** Подаци предузетника (форма за унос и приказ)  
+**What happens:** Доступна поља: Назив, Службени назив, МБ, ПИБ, Адреса, Жиро рачун, Шифра пореског обвезника, Шифра делатности. Нема телефона ни имејла.  
+**Why it's a problem:** Рачуновођа свакодневно контактира клијенте. Тренутно мора да чува контакте у телефону или другом систему. Интеграција контакт информација у профил предузетника би олакшала рад.  
+**Severity:** **Low**
+
+---
+
+### 22. Колоне листе „Паушал (год.)" и „ПДВ (12 мес.)" немају тултипе
+
+**Where:** Главна страница → хедер табеле предузетника  
+**What happens:** Скраћенице у хедерима колона нису даље објашњене. „год." и „12 мес." могу бити очигледне искусним корисницима, али не и новим.  
+**Why it's a problem:** Минорно за рачуновођу, али апликација нема „помоћ" нигде у близини ових колона.  
+**Severity:** **Low**
+
+---
+
+## Сумарна табела
+
+| # | Проблем | Severity |
+|---|---------|----------|
+| 1 | Линкови уплатница у предузетниковом профилу → 404 | High |
+| 2 | „Сачувај"/„Преузми PDF" на уплатници → погрешни URL-ови | High |
+| 3 | QR код никада не постоји — само placeholder | High |
+| 4 | Поље „Година" показује 0 за постојеће уплатнице | High |
+| 5 | Обојене тачке у листи предузетника немају легенду | High |
+| 6 | Упозорења о прагу адресирана предузетнику, не рачуновођи | High |
+| 7 | Нема претраге на листи предузетника | High |
+| 8 | Редни бројеви КПО ставки не прате хронолошки ред | High |
+| 9 | Drag-and-drop реордеринг КПО-а је потенцијално незаконит | Medium |
+| 10 | Нема breadcrumb-а/линка „Назад" на страни предузетника | Medium |
+| 11 | „Укњижи" дугме без објашњења и потврде | Medium |
+| 12 | Датум у КПО уносу само у формату дд.мм | Medium |
+| 13 | Двојезичке ознаке у форми уплатнице | Medium |
+| 14 | Исто поље има различита имена у форми и погледу | Medium |
+| 15 | Нема шаблона за стандардне пореске уплатнице | Medium |
+| 16 | Износи у КПО без хиљадних раздвајача и без RSD | Medium |
+| 17 | „Текуће"/„Претходне" разлика за уплатнице је нејасна | Medium |
+| 18 | Наслов странице „Nemanja — КПО" је делимичан | Low |
+| 19 | Upload дугме приказује текст на енглеском | Low |
+| 20 | `/info/pausal-limit` нема линк назад | Low |
+| 21 | Нема поља за телефон/имејл предузетника | Low |
+| 22 | Скраћенице у хедерима колона без тултипа | Low |
