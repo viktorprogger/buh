@@ -1,0 +1,129 @@
+{{template "entrepreneur_base" .}}
+
+{{define "title"}}Мој профил{{end}}
+
+{{define "content"}}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Мој профил</h1>
+
+{{if not .Paired}}
+<div class="bg-yellow-50 border border-yellow-200 rounded-lg px-6 py-4 text-sm text-yellow-800">
+  Повежите налог са рачуновођом да бисте управљали подацима о предузећу.
+  <a href="/e/invite-accountant" class="font-medium underline hover:text-yellow-900">Позовите рачуновођу</a>.
+</div>
+{{else}}
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-gray-900">Подаци предузетника</h2>
+    <button id="e-edit-btn" type="button" onclick="eEdit(true)"
+            class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+      Измени
+    </button>
+  </div>
+
+  {{if .Error}}
+  <div class="px-6 pt-4 text-sm text-red-600">{{.Error}}</div>
+  {{end}}
+
+  <!-- View mode -->
+  <div id="e-view" class="px-6 py-4{{if .EditMode}} hidden{{end}}">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="sm:col-span-2">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Службени назив</div>
+        <div class="text-sm text-gray-900">{{if .Managed.Name}}{{.Managed.Name}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">МБ</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Managed.MB}}{{.Managed.MB}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">ПИБ</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Managed.PIB}}{{.Managed.PIB}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Адреса</div>
+        <div class="text-sm text-gray-900">{{if .Managed.Address}}{{.Managed.Address}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Жиро рачун</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Managed.BankAccount}}{{.Managed.BankAccount}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Шифра пореског обвезника</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Managed.TaxpayerCode}}{{.Managed.TaxpayerCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Шифра делатности</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Managed.ActivityCode}}{{.Managed.ActivityCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit mode -->
+  <form id="e-form" method="POST" action="/e/profile"
+        class="px-6 py-4{{if not .EditMode}} hidden{{end}}">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-name">Службени назив</label>
+        <input id="f-name" type="text" name="name" value="{{.Managed.Name}}" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-mb">МБ</label>
+        <input id="f-mb" type="text" name="mb" value="{{.Managed.MB}}"
+               placeholder="нпр. 12345678"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-pib">ПИБ</label>
+        <input id="f-pib" type="text" name="pib" value="{{.Managed.PIB}}" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-address">Адреса</label>
+        <input id="f-address" type="text" name="address" value="{{.Managed.Address}}"
+               placeholder="нпр. Нушићева 11, Београд"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-bank">Жиро рачун</label>
+        <input id="f-bank" type="text" name="bank_account" value="{{.Managed.BankAccount}}"
+               placeholder="нпр. 265-1234567890123-56"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-taxpayer-code">Шифра пореског обвезника</label>
+        <input id="f-taxpayer-code" type="text" name="taxpayer_code" value="{{.Managed.TaxpayerCode}}"
+               placeholder="нпр. 5060"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-activity-code">Шифра делатности</label>
+        <input id="f-activity-code" type="text" name="activity_code" value="{{.Managed.ActivityCode}}"
+               placeholder="нпр. 6201"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        Сачувај
+      </button>
+      <button type="button" onclick="eEdit(false)"
+              class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        Откажи
+      </button>
+    </div>
+  </form>
+</div>
+{{end}}
+
+<script>
+function eEdit(on) {
+  document.getElementById('e-view').classList.toggle('hidden', on);
+  document.getElementById('e-form').classList.toggle('hidden', !on);
+  document.getElementById('e-edit-btn').classList.toggle('hidden', on);
+  if (on) document.getElementById('f-name').focus();
+}
+{{if .EditMode}}eEdit(true);{{end}}
+</script>
+{{end}}

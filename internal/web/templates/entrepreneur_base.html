@@ -6,6 +6,7 @@
 <title>{{block "title" .}}Паушалне уплатнице{{end}}</title>
 <link rel="stylesheet" href="/static/app.css">
 <style>{{block "style" .}}{{end}}</style>
+<script src="/static/htmx.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
 <div class="flex h-screen overflow-hidden">
@@ -38,6 +39,9 @@
       </a>
       <a href="/e/invite-accountant" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
         Позови рачуновођу
+      </a>
+      <a href="/e/profile" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        Профил
       </a>
     </nav>
     <div class="px-4 py-3 border-t border-slate-700">

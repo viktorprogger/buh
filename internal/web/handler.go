@@ -21,6 +21,7 @@ import (
 	"buh/internal/invoice"
 	"buh/internal/kpo"
 	"buh/internal/middleware"
+	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
 	webaccountant "buh/internal/web/accountant"
 	webentrepreneur "buh/internal/web/entrepreneur"
@@ -51,6 +52,7 @@ func (h *handler) renderError(w http.ResponseWriter, code int) {
 func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
 	entrepreneurs := entrepreneur.NewRepo(db)
 	slips := sliprecord.NewRepo(db)
+	slipHistory := sliphistory.NewRepo(db)
 	kpoBooks := kpo.NewRepo(db)
 	clients := client.NewRepo(db)
 	invoices := invoice.NewRepo(db)
@@ -62,8 +64,9 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 		sessions,
 		entrepreneurs,
 		slips,
+		slipHistory,
 		kpoBooks,
-		importer.New(entrepreneurs, slips),
+		importer.New(entrepreneurs, slips, slipHistory),
 		entrepreneurUsers,
 		invitations,
 		invoices,

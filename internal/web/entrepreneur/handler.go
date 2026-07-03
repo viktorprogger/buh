@@ -102,5 +102,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /kpo/{year}/entries/{entryID}/delete", h.handleKPODeleteEntry)
 	mux.HandleFunc("POST /kpo/{year}/finalize", h.handleKPOFinalize)
 	mux.HandleFunc("POST /kpo/{year}/unfinalize", h.handleKPOUnfinalize)
+	mux.HandleFunc("GET /profile", h.handleProfileForm)
+	mux.HandleFunc("POST /profile", h.handleProfileUpdate)
 	return mux
 }
