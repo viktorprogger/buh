@@ -84,7 +84,8 @@
             {{if eq .PausalAlert.Severity "exceeded"}}bg-gray-900
             {{else if eq .PausalAlert.Severity "alert"}}bg-red-500
             {{else if eq .PausalAlert.Severity "high"}}bg-orange-400
-            {{else}}bg-amber-400{{end}}"></span>
+            {{else}}bg-amber-400{{end}}"
+            title="{{if eq .PausalAlert.Severity "exceeded"}}Прекорачен паушални лимит{{else if eq .PausalAlert.Severity "alert"}}Критично: паушал{{else if eq .PausalAlert.Severity "high"}}Упозорење: паушал{{else}}Пажња: паушал{{end}} ({{printf "%.0f" .PausalAlert.Percent}}%)"></span>
           {{end}}
         </td>
         <td class="px-4 py-3 text-right text-gray-700 tabular-nums">
@@ -94,7 +95,8 @@
             {{if eq .VATAlert.Severity "exceeded"}}bg-gray-900
             {{else if eq .VATAlert.Severity "alert"}}bg-red-500
             {{else if eq .VATAlert.Severity "high"}}bg-orange-400
-            {{else}}bg-amber-400{{end}}"></span>
+            {{else}}bg-amber-400{{end}}"
+            title="{{if eq .VATAlert.Severity "exceeded"}}Прекорачен ПДВ лимит{{else if eq .VATAlert.Severity "alert"}}Критично: ПДВ праг{{else if eq .VATAlert.Severity "high"}}Упозорење: ПДВ праг{{else}}Пажња: ПДВ праг{{end}} ({{printf "%.0f" .VATAlert.Percent}}%)"></span>
           {{end}}
         </td>
       </tr>
