@@ -122,4 +122,35 @@
     </div>
   </form>
 </div>
+
+{{if .History}}
+<div class="mt-8">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">Историја промена</h2>
+  <div class="space-y-3">
+    {{range .History}}
+    <div class="bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-xs">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-medium text-gray-800">{{.EventLabel}}</span>
+        <span class="text-xs text-gray-400">{{.At.Format "02.01.2006. 15:04"}}</span>
+      </div>
+      <div class="text-xs text-gray-500 mb-2">{{.ActorLabel}}</div>
+      {{if .Changes}}
+      <ul class="text-xs text-gray-700 space-y-0.5">
+        {{range .Changes}}
+        <li>
+          <span class="font-medium">{{.Label}}:</span>
+          {{if .Old}}
+          <span class="text-gray-400 line-through mr-1">{{.Old}}</span>→ {{.New}}
+          {{else}}
+          {{.New}}
+          {{end}}
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
 {{end}}

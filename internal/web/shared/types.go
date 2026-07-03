@@ -18,6 +18,7 @@ type KPORow struct {
 	// Regular KPO entry fields:
 	EntryID        uuid.UUID
 	OrdinalNumber  int
+	Description    string
 	ProductRevenue float64
 	ServiceRevenue float64
 	EntryTotal     float64

@@ -131,21 +131,22 @@ func (r *Repo) Update(ctx context.Context, s SlipRecord) error {
 // If not found it inserts and returns UpsertCreated.
 // The advance field is part of the key because the same purpose text can appear on both a main slip
 // and an advance slip from different tax-year resolutions.
-func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (SlipRecord, UpsertStatus, error) {
+// Returns (old, result, status, err); old is zero for UpsertCreated, equals result for UpsertUnchanged.
+func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (old SlipRecord, result SlipRecord, status UpsertStatus, err error) {
 	var existing SlipRecord
-	err := scanSlip(r.db.QueryRowContext(ctx,
+	scanErr := scanSlip(r.db.QueryRowContext(ctx,
 		`SELECT `+selectCols+`
 		 FROM slip_records
 		 WHERE entrepreneur_id = $1 AND purpose = $2 AND advance = $3
 		 LIMIT 1`,
 		s.EntrepreneurID, s.Purpose, s.Advance,
 	), &existing)
-	if errors.Is(err, sql.ErrNoRows) {
-		saved, err := r.Save(ctx, s)
-		return saved, UpsertCreated, err
+	if errors.Is(scanErr, sql.ErrNoRows) {
+		saved, saveErr := r.Save(ctx, s)
+		return SlipRecord{}, saved, UpsertCreated, saveErr
 	}
-	if err != nil {
-		return SlipRecord{}, 0, err
+	if scanErr != nil {
+		return SlipRecord{}, SlipRecord{}, 0, scanErr
 	}
 
 	if existing.PaymentCode == s.PaymentCode &&
@@ -156,15 +157,76 @@ func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (SlipRec
 		existing.Payee == s.Payee &&
 		existing.Payer == s.Payer &&
 		existing.Year == s.Year {
-		return existing, UpsertUnchanged, nil
+		return existing, existing, UpsertUnchanged, nil
 	}
 
 	s.ID = existing.ID
 	s.GeneratedAt = existing.GeneratedAt
-	if err := r.Update(ctx, s); err != nil {
-		return SlipRecord{}, 0, err
+	if updateErr := r.Update(ctx, s); updateErr != nil {
+		return SlipRecord{}, SlipRecord{}, 0, updateErr
 	}
-	return s, UpsertUpdated, nil
+	return existing, s, UpsertUpdated, nil
+}
+
+// Snapshot returns all editable fields of a SlipRecord as a flat map (for history logging).
+func Snapshot(s SlipRecord) map[string]any {
+	return map[string]any{
+		"amount":       s.Amount,
+		"currency":     s.Currency,
+		"purpose":      s.Purpose,
+		"payee":        s.Payee,
+		"payeeAccount": s.PayeeAccount,
+		"reference":    s.Reference,
+		"payer":        s.Payer,
+		"paymentCode":  s.PaymentCode,
+		"year":         s.Year,
+		"advance":      s.Advance,
+	}
+}
+
+type fieldDiff struct {
+	Old any `json:"old"`
+	New any `json:"new"`
+}
+
+// Diff returns only the fields that differ between old and new as {field: {old, new}} (for history logging).
+// Returns nil if there are no differences.
+func Diff(old, new SlipRecord) map[string]any {
+	out := map[string]any{}
+	if old.Amount != new.Amount {
+		out["amount"] = fieldDiff{Old: old.Amount, New: new.Amount}
+	}
+	if old.Currency != new.Currency {
+		out["currency"] = fieldDiff{Old: old.Currency, New: new.Currency}
+	}
+	if old.Purpose != new.Purpose {
+		out["purpose"] = fieldDiff{Old: old.Purpose, New: new.Purpose}
+	}
+	if old.Payee != new.Payee {
+		out["payee"] = fieldDiff{Old: old.Payee, New: new.Payee}
+	}
+	if old.PayeeAccount != new.PayeeAccount {
+		out["payeeAccount"] = fieldDiff{Old: old.PayeeAccount, New: new.PayeeAccount}
+	}
+	if old.Reference != new.Reference {
+		out["reference"] = fieldDiff{Old: old.Reference, New: new.Reference}
+	}
+	if old.Payer != new.Payer {
+		out["payer"] = fieldDiff{Old: old.Payer, New: new.Payer}
+	}
+	if old.PaymentCode != new.PaymentCode {
+		out["paymentCode"] = fieldDiff{Old: old.PaymentCode, New: new.PaymentCode}
+	}
+	if old.Year != new.Year {
+		out["year"] = fieldDiff{Old: old.Year, New: new.Year}
+	}
+	if old.Advance != new.Advance {
+		out["advance"] = fieldDiff{Old: old.Advance, New: new.Advance}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // Delete removes the slip record with the given ID.

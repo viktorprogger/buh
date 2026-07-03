@@ -74,6 +74,7 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 			IsAdvanceInvoice: false,
 			Date:             en.CollectionDate,
 			InvoiceNum:       en.InvoiceNumber,
+			Description:      en.Description,
 			EntryID:          en.ID,
 			OrdinalNumber:    i + 1,
 			ProductRevenue:   en.ProductRevenue,
@@ -165,6 +166,7 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 		KPOBookID:      book.ID,
 		CollectionDate: date,
 		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
+		Description:    strings.TrimSpace(r.FormValue("description")),
 		ProductRevenue: prodRev,
 		ServiceRevenue: svcRev,
 	}); err != nil {
@@ -202,6 +204,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		KPOBookID:      book.ID,
 		CollectionDate: date,
 		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
+		Description:    strings.TrimSpace(r.FormValue("description")),
 		ProductRevenue: prodRev,
 		ServiceRevenue: svcRev,
 	}); err != nil {
@@ -299,10 +302,12 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	info := kpo.EntrepreneurInfo{}
 	if ent, err := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID); err == nil {
 		info = kpo.EntrepreneurInfo{
-			Name:    ent.Name,
-			PIB:     ent.PIB,
-			MB:      ent.MB,
-			Address: ent.Address,
+			Name:         ent.Name,
+			PIB:          ent.PIB,
+			MB:           ent.MB,
+			Address:      ent.Address,
+			TaxpayerCode: ent.TaxpayerCode,
+			ActivityCode: ent.ActivityCode,
 		}
 	}
 

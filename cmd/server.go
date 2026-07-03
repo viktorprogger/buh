@@ -365,6 +365,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS kpo_books_user_year ON kpo_books(entrepreneur_
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS no_vat BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS no_sign BOOLEAN NOT NULL DEFAULT TRUE;`,
 		},
+		{
+			name: "029_create_slip_history",
+			sql: `CREATE TABLE IF NOT EXISTS slip_history (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    slip_id    UUID        NOT NULL,
+    event      TEXT        NOT NULL,
+    actor_type TEXT        NOT NULL,
+    actor_id   UUID        NOT NULL,
+    changes    JSONB       NOT NULL DEFAULT '{}',
+    changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS slip_history_slip_id_idx ON slip_history(slip_id);`,
+		},
+		{
+			name: "030_add_taxpayer_activity_code_to_entrepreneurs",
+			sql: `ALTER TABLE managed_entrepreneurs ADD COLUMN IF NOT EXISTS taxpayer_code TEXT NOT NULL DEFAULT '';
+ALTER TABLE managed_entrepreneurs ADD COLUMN IF NOT EXISTS activity_code TEXT NOT NULL DEFAULT '';`,
+		},
+		{
+			name: "031_add_description_to_kpo_entries",
+			sql:  `ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';`,
+		},
 	}
 
 	// Create migrations tracking table.

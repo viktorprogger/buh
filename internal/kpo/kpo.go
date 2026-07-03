@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 var ErrNotFound = errors.New("kpo: not found")
@@ -41,6 +42,7 @@ type Entry struct {
 	OrdinalNumber  int // = position (1-based display order)
 	CollectionDate time.Time
 	InvoiceNumber  string
+	Description    string // client name / service description (column 2 of the official KPO form)
 	ProductRevenue float64
 	ServiceRevenue float64
 	CreatedAt      time.Time
@@ -226,11 +228,11 @@ func (r *Repo) AddEntry(ctx context.Context, e Entry) (Entry, error) {
 	}
 
 	if err = tx.QueryRowContext(ctx,
-		`INSERT INTO kpo_entries (kpo_book_id, collection_date, invoice_number, product_revenue, service_revenue, position)
-		 VALUES ($1, $2, $3, $4, $5, $6)
-		 RETURNING id, kpo_book_id, collection_date, invoice_number, product_revenue, service_revenue, created_at, position`,
-		e.KPOBookID, e.CollectionDate, e.InvoiceNumber, e.ProductRevenue, e.ServiceRevenue, newPos,
-	).Scan(&e.ID, &e.KPOBookID, &e.CollectionDate, &e.InvoiceNumber, &e.ProductRevenue, &e.ServiceRevenue, &e.CreatedAt, &e.OrdinalNumber); err != nil {
+		`INSERT INTO kpo_entries (kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, position)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 RETURNING id, kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, created_at, position`,
+		e.KPOBookID, e.CollectionDate, e.InvoiceNumber, e.Description, e.ProductRevenue, e.ServiceRevenue, newPos,
+	).Scan(&e.ID, &e.KPOBookID, &e.CollectionDate, &e.InvoiceNumber, &e.Description, &e.ProductRevenue, &e.ServiceRevenue, &e.CreatedAt, &e.OrdinalNumber); err != nil {
 		return Entry{}, err
 	}
 
@@ -293,9 +295,9 @@ func (r *Repo) UpdateEntry(ctx context.Context, e Entry) error {
 
 	if _, err = tx.ExecContext(ctx,
 		`UPDATE kpo_entries
-		 SET collection_date = $1, invoice_number = $2, product_revenue = $3, service_revenue = $4, position = $5
-		 WHERE id = $6`,
-		e.CollectionDate, e.InvoiceNumber, e.ProductRevenue, e.ServiceRevenue, newPos, e.ID,
+		 SET collection_date = $1, invoice_number = $2, description = $3, product_revenue = $4, service_revenue = $5, position = $6
+		 WHERE id = $7`,
+		e.CollectionDate, e.InvoiceNumber, e.Description, e.ProductRevenue, e.ServiceRevenue, newPos, e.ID,
 	); err != nil {
 		return err
 	}
@@ -325,7 +327,7 @@ func (r *Repo) ReorderEntries(ctx context.Context, bookID uuid.UUID, ids []uuid.
 // ListEntries returns all entries for a book ordered by position.
 func (r *Repo) ListEntries(ctx context.Context, kpoBookID uuid.UUID) ([]Entry, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, kpo_book_id, collection_date, invoice_number, product_revenue, service_revenue, created_at, position
+		`SELECT id, kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, created_at, position
 		 FROM kpo_entries WHERE kpo_book_id = $1 ORDER BY position`,
 		kpoBookID,
 	)
@@ -337,7 +339,7 @@ func (r *Repo) ListEntries(ctx context.Context, kpoBookID uuid.UUID) ([]Entry, e
 	for rows.Next() {
 		var e Entry
 		if err := rows.Scan(
-			&e.ID, &e.KPOBookID, &e.CollectionDate, &e.InvoiceNumber,
+			&e.ID, &e.KPOBookID, &e.CollectionDate, &e.InvoiceNumber, &e.Description,
 			&e.ProductRevenue, &e.ServiceRevenue, &e.CreatedAt, &e.OrdinalNumber,
 		); err != nil {
 			return nil, err
@@ -474,6 +476,67 @@ func (r *Repo) SumForEntrepreneurUser(ctx context.Context, entrepreneurUserID uu
 
 // SumForYear returns the total revenue and whether any entries exist for the given
 // managed_entrepreneur+year. It does not create the book if it is absent.
+// SumForYearBulk returns current-year revenue per managed entrepreneur ID.
+// Entrepreneurs with no entries are absent from the map (zero value applies).
+func (r *Repo) SumForYearBulk(ctx context.Context, ids []uuid.UUID, year int) (map[uuid.UUID]float64, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT kb.managed_entrepreneur_id, COALESCE(SUM(ke.product_revenue + ke.service_revenue), 0)
+		FROM kpo_books kb
+		JOIN kpo_entries ke ON ke.kpo_book_id = kb.id
+		WHERE kb.managed_entrepreneur_id = ANY($1) AND kb.year = $2
+		GROUP BY kb.managed_entrepreneur_id`,
+		pq.Array(ids), year,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[uuid.UUID]float64, len(ids))
+	for rows.Next() {
+		var id uuid.UUID
+		var total float64
+		if err := rows.Scan(&id, &total); err != nil {
+			return nil, err
+		}
+		result[id] = total
+	}
+	return result, rows.Err()
+}
+
+// RollingSumBulk returns rolling revenue per managed entrepreneur ID in [from, to].
+// Entrepreneurs with no entries in the window are absent from the map.
+func (r *Repo) RollingSumBulk(ctx context.Context, ids []uuid.UUID, from, to time.Time) (map[uuid.UUID]float64, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT kb.managed_entrepreneur_id, COALESCE(SUM(ke.product_revenue + ke.service_revenue), 0)
+		FROM kpo_books kb
+		JOIN kpo_entries ke ON ke.kpo_book_id = kb.id
+		WHERE kb.managed_entrepreneur_id = ANY($1)
+		  AND ke.collection_date >= $2 AND ke.collection_date <= $3
+		GROUP BY kb.managed_entrepreneur_id`,
+		pq.Array(ids), from, to,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[uuid.UUID]float64, len(ids))
+	for rows.Next() {
+		var id uuid.UUID
+		var total float64
+		if err := rows.Scan(&id, &total); err != nil {
+			return nil, err
+		}
+		result[id] = total
+	}
+	return result, rows.Err()
+}
+
 func (r *Repo) SumForYear(ctx context.Context, managedEntrepreneurID uuid.UUID, year int) (total float64, hasEntries bool, err error) {
 	var count int
 	err = r.db.QueryRowContext(ctx, `

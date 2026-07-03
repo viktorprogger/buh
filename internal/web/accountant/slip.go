@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,9 +16,99 @@ import (
 	"buh/internal/entrepreneur"
 	"buh/internal/ips"
 	"buh/internal/slip"
+	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
 	"buh/internal/web/shared"
 )
+
+var fieldLabels = map[string]string{
+	"amount":       "Износ",
+	"currency":     "Валута",
+	"purpose":      "Сврха",
+	"payee":        "Прималац",
+	"payeeAccount": "Рачун примаоца",
+	"reference":    "Позив на број",
+	"payer":        "Уплатилац",
+	"paymentCode":  "Шифра плаћања",
+	"year":         "Година",
+	"advance":      "Аванс",
+}
+
+var eventLabels = map[sliphistory.Event]string{
+	sliphistory.EventCreated:  "Уплатница је креирана",
+	sliphistory.EventImported: "Уплатница је увезена",
+	sliphistory.EventUpdated:  "Уплатница је ажурирана",
+	sliphistory.EventDeleted:  "Уплатница је обрисана",
+}
+
+var actorLabels = map[string]string{
+	"accountant":   "Рачуновођа",
+	"entrepreneur": "Предузетник",
+}
+
+// HistoryChange is one field change for display in the slip history timeline.
+type HistoryChange struct {
+	Label string
+	Old   string
+	New   string
+}
+
+// HistoryEntry is one formatted history record for display.
+type HistoryEntry struct {
+	EventLabel string
+	ActorLabel string
+	At         time.Time
+	Changes    []HistoryChange
+}
+
+func buildHistoryEntries(records []sliphistory.Record) []HistoryEntry {
+	entries := make([]HistoryEntry, 0, len(records))
+	for _, rec := range records {
+		entry := HistoryEntry{
+			EventLabel: eventLabels[rec.Event],
+			ActorLabel: actorLabels[rec.ActorType],
+			At:         rec.ChangedAt,
+		}
+		if entry.EventLabel == "" {
+			entry.EventLabel = string(rec.Event)
+		}
+		if entry.ActorLabel == "" {
+			entry.ActorLabel = rec.ActorType
+		}
+
+		for key, val := range rec.Changes {
+			label := fieldLabels[key]
+			if label == "" {
+				label = key
+			}
+			// diff entry: {"old": X, "new": Y}
+			if m, ok := val.(map[string]interface{}); ok {
+				entry.Changes = append(entry.Changes, HistoryChange{
+					Label: label,
+					Old:   fmt.Sprintf("%v", m["old"]),
+					New:   fmt.Sprintf("%v", m["new"]),
+				})
+				continue
+			}
+			// snapshot entry (created/deleted): just show the value
+			entry.Changes = append(entry.Changes, HistoryChange{
+				Label: label,
+				New:   fmt.Sprintf("%v", val),
+			})
+		}
+		entries = append(entries, entry)
+	}
+	return entries
+}
+
+func (h *Handler) logSlipHistory(ctx context.Context, slipID uuid.UUID, event sliphistory.Event, actorID uuid.UUID, changes map[string]any) {
+	if h.slipHistory == nil {
+		return
+	}
+	if err := h.slipHistory.Log(ctx, slipID, event, "accountant", actorID, changes); err != nil {
+		log.Printf("slip history log failed slip=%s event=%s: %v", slipID, event, err)
+	}
+}
 
 func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.UUID) (sliprecord.SlipRecord, bool) {
 	accountantID, ok := h.accountantFromSession(r)
@@ -77,10 +168,17 @@ func (h *Handler) handleSlip(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	var historyEntries []HistoryEntry
+	if h.slipHistory != nil {
+		if records, err := h.slipHistory.ListBySlip(r.Context(), id); err == nil {
+			historyEntries = buildHistoryEntries(records)
+		}
+	}
 	shared.RenderTemplate(w, h.tmpl.Slip, map[string]any{
 		"Slip":        s,
 		"Saved":       r.URL.Query().Get("saved") == "1",
 		"Downloading": r.URL.Query().Get("download") == "1",
+		"History":     historyEntries,
 	})
 }
 
@@ -100,6 +198,11 @@ func (h *Handler) handleSlipSave(w http.ResponseWriter, r *http.Request) {
 	if err := h.slips.Update(r.Context(), updated); err != nil {
 		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
 		return
+	}
+	if actorID, ok := h.accountantFromSession(r); ok {
+		if diff := sliprecord.Diff(existing, updated); diff != nil {
+			h.logSlipHistory(r.Context(), id, sliphistory.EventUpdated, actorID, diff)
+		}
 	}
 	http.Redirect(w, r, "/a/slips/"+idStr+"?saved=1", http.StatusFound)
 }
@@ -121,6 +224,11 @@ func (h *Handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
 		return
 	}
+	if actorID, ok := h.accountantFromSession(r); ok {
+		if diff := sliprecord.Diff(existing, updated); diff != nil {
+			h.logSlipHistory(r.Context(), id, sliphistory.EventUpdated, actorID, diff)
+		}
+	}
 	http.Redirect(w, r, "/a/slips/"+idStr+"?saved=1&download=1", http.StatusFound)
 }
 
@@ -135,6 +243,9 @@ func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entrepreneurID := s.EntrepreneurID
+	if actorID, ok := h.accountantFromSession(r); ok {
+		h.logSlipHistory(r.Context(), id, sliphistory.EventDeleted, actorID, sliprecord.Snapshot(s))
+	}
 	if err := h.slips.Delete(r.Context(), id); err != nil {
 		http.Error(w, "Грешка при брисању уплатнице", http.StatusInternalServerError)
 		return
@@ -292,6 +403,9 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
 		return
+	}
+	if actorID, ok := h.accountantFromSession(r); ok {
+		h.logSlipHistory(r.Context(), saved.ID, sliphistory.EventCreated, actorID, sliprecord.Snapshot(saved))
 	}
 	http.Redirect(w, r, "/a/slips/"+saved.ID.String(), http.StatusFound)
 }

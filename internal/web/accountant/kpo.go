@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -63,6 +64,7 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 		KPOBookID:      book.ID,
 		CollectionDate: collectionDate,
 		InvoiceNumber:  r.FormValue("invoice_number"),
+		Description:    strings.TrimSpace(r.FormValue("description")),
 		ProductRevenue: productRev,
 		ServiceRevenue: serviceRev,
 	}); err != nil {
@@ -101,6 +103,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		KPOBookID:      book.ID,
 		CollectionDate: collectionDate,
 		InvoiceNumber:  r.FormValue("invoice_number"),
+		Description:    strings.TrimSpace(r.FormValue("description")),
 		ProductRevenue: productRev,
 		ServiceRevenue: serviceRev,
 	}); err != nil {
@@ -288,6 +291,7 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 		KPOBookID:      accBook.ID,
 		CollectionDate: src.CollectionDate,
 		InvoiceNumber:  src.InvoiceNumber,
+		Description:    src.Description,
 		ProductRevenue: src.ProductRevenue,
 		ServiceRevenue: src.ServiceRevenue,
 	}); err != nil {
@@ -310,10 +314,12 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	info := kpo.EntrepreneurInfo{
-		Name:    e.Name,
-		PIB:     e.PIB,
-		MB:      e.MB,
-		Address: e.Address,
+		Name:         e.Name,
+		PIB:          e.PIB,
+		MB:           e.MB,
+		Address:      e.Address,
+		TaxpayerCode: e.TaxpayerCode,
+		ActivityCode: e.ActivityCode,
 	}
 
 	pdfBytes, err := kpo.GeneratePDF(book, entries, info)

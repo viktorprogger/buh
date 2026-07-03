@@ -65,8 +65,9 @@
       <thead>
         <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
           <th class="px-3 py-2 text-center w-10">#</th>
-          <th class="px-3 py-2 text-left">Датум наплате</th>
+          <th class="px-3 py-2 text-left">Датум</th>
           <th class="px-3 py-2 text-left">Бр. рачуна</th>
+          <th class="px-3 py-2 text-left">Опис</th>
           <th class="px-3 py-2 text-right">Продаја роба</th>
           <th class="px-3 py-2 text-right">Услуге</th>
           <th class="px-3 py-2 text-right">Укупно</th>
@@ -84,8 +85,8 @@
           <td class="px-3 py-2 text-gray-500">
             <a href="/e/invoices/{{.InvoiceID}}"
                class="underline hover:text-primary">{{.InvoiceNum}}</a>
-            {{if .ClientName}}<span class="ml-1 text-xs text-gray-400">{{.ClientName}}</span>{{end}}
           </td>
+          <td class="px-3 py-2 text-gray-500 text-xs">{{.ClientName}}</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-500">{{printf "%.2f" .TotalRSD}}</td>
@@ -110,6 +111,15 @@
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="invoice_number"
                    value="{{.InvoiceNum}}" style="display:none"
+                   class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-500 text-xs">{{.Description}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="description"
+                   value="{{.Description}}" style="display:none"
+                   placeholder="клијент / опис услуге"
                    class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
@@ -157,7 +167,7 @@
 
         {{if .KPOEntries}}
         <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
-          <td colspan="3" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">Укупно:</td>
+          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">Укупно:</td>
           <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalProduct}}</td>
           <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalService}}</td>
           <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalAll}}</td>
@@ -173,13 +183,19 @@
                    id="kpo-date" autofocus
                    maxlength="5" placeholder="дд.мм"
                    class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Датум наплате">
+                   aria-label="Датум">
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="invoice_number" placeholder="нпр. 2026/1"
                    id="kpo-invoice"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                    aria-label="Број рачуна">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="description" placeholder="клијент / опис"
+                   id="kpo-description"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="Опис">
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="product_revenue" value="0"

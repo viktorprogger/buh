@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"os"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"buh/internal/entrepreneur"
 	"buh/internal/extractor"
 	"buh/internal/ips"
+	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
 )
 
@@ -42,10 +44,11 @@ type Result struct {
 type Importer struct {
 	entrepreneurs *entrepreneur.Repo
 	slips         *sliprecord.Repo
+	history       *sliphistory.Repo
 }
 
-func New(entrepreneurs *entrepreneur.Repo, slips *sliprecord.Repo) *Importer {
-	return &Importer{entrepreneurs: entrepreneurs, slips: slips}
+func New(entrepreneurs *entrepreneur.Repo, slips *sliprecord.Repo, history *sliphistory.Repo) *Importer {
+	return &Importer{entrepreneurs: entrepreneurs, slips: slips, history: history}
 }
 
 // ProcessFiles processes uploaded PDF files for the given accountant.
@@ -193,9 +196,20 @@ func (imp *Importer) processFile(ctx context.Context, accountantID uuid.UUID, fh
 			Advance:        advance,
 		}
 
-		saved, upsertStatus, err := imp.slips.FindOrUpdateByPurpose(ctx, rec)
+		oldSlip, saved, upsertStatus, err := imp.slips.FindOrUpdateByPurpose(ctx, rec)
 		if err != nil {
 			continue
+		}
+		if imp.history != nil && upsertStatus != sliprecord.UpsertUnchanged {
+			var changes map[string]any
+			if upsertStatus == sliprecord.UpsertCreated {
+				changes = sliprecord.Snapshot(saved)
+			} else {
+				changes = sliprecord.Diff(oldSlip, saved)
+			}
+			if logErr := imp.history.Log(ctx, saved.ID, sliphistory.EventImported, "accountant", accountantID, changes); logErr != nil {
+				log.Printf("slip history log failed: %v", logErr)
+			}
 		}
 		status := upsertStatusString(upsertStatus)
 		slipResults = append(slipResults, SlipResult{Slip: saved, Status: status})

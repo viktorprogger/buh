@@ -12,6 +12,7 @@ import (
 	"buh/internal/invitation"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
+	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
 	"buh/internal/web/shared"
 )
@@ -20,6 +21,7 @@ type Handler struct {
 	sessions          *auth.SessionManager
 	entrepreneurs     *entrepreneur.Repo
 	slips             *sliprecord.Repo
+	slipHistory       *sliphistory.Repo
 	kpoBooks          *kpo.Repo
 	importer          *importer.Importer
 	entrepreneurUsers *entrepreneuruser.Repo
@@ -32,6 +34,7 @@ func NewHandler(
 	sessions *auth.SessionManager,
 	entrepreneurs *entrepreneur.Repo,
 	slips *sliprecord.Repo,
+	slipHistory *sliphistory.Repo,
 	kpoBooks *kpo.Repo,
 	imp *importer.Importer,
 	entrepreneurUsers *entrepreneuruser.Repo,
@@ -43,6 +46,7 @@ func NewHandler(
 		sessions:          sessions,
 		entrepreneurs:     entrepreneurs,
 		slips:             slips,
+		slipHistory:       slipHistory,
 		kpoBooks:          kpoBooks,
 		importer:          imp,
 		entrepreneurUsers: entrepreneurUsers,

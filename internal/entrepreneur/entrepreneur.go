@@ -21,6 +21,8 @@ type Entrepreneur struct {
 	PIB                  string
 	Address              string
 	BankAccount          string
+	TaxpayerCode         string // šifra poreskog obveznika (assigned by Tax Administration)
+	ActivityCode         string // šifra delatnosti (industry classification code)
 	AccountantID         uuid.UUID
 	EntrepreneurUserID   *uuid.UUID // NULL until paired with an entrepreneur_user
 	PairedAt             *time.Time
@@ -46,7 +48,7 @@ func NewRepo(db *sql.DB) *Repo {
 }
 
 const selectCols = `id, name, pib, accountant_id, created_at, title, address, bank_account, mb,
-	entrepreneur_user_id, paired_at`
+	entrepreneur_user_id, paired_at, taxpayer_code, activity_code`
 
 func scanRow(row interface{ Scan(...any) error }, e *Entrepreneur) error {
 	var entrepreneurUserID sql.NullString
@@ -54,7 +56,7 @@ func scanRow(row interface{ Scan(...any) error }, e *Entrepreneur) error {
 	err := row.Scan(
 		&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt,
 		&e.Title, &e.Address, &e.BankAccount, &e.MB,
-		&entrepreneurUserID, &pairedAt,
+		&entrepreneurUserID, &pairedAt, &e.TaxpayerCode, &e.ActivityCode,
 	)
 	if err != nil {
 		return err
@@ -122,11 +124,11 @@ func (r *Repo) ListByAccountant(ctx context.Context, accountantID uuid.UUID) ([]
 	return out, rows.Err()
 }
 
-// Update saves Name, PIB, Title, Address, BankAccount, and MB for the given entrepreneur.
+// Update saves Name, PIB, Title, Address, BankAccount, MB, TaxpayerCode, and ActivityCode for the given entrepreneur.
 func (r *Repo) Update(ctx context.Context, e Entrepreneur) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE managed_entrepreneurs SET name=$1, pib=$2, title=$3, address=$4, bank_account=$5, mb=$6 WHERE id=$7`,
-		e.Name, e.PIB, e.Title, e.Address, e.BankAccount, e.MB, e.ID,
+		`UPDATE managed_entrepreneurs SET name=$1, pib=$2, title=$3, address=$4, bank_account=$5, mb=$6, taxpayer_code=$7, activity_code=$8 WHERE id=$9`,
+		e.Name, e.PIB, e.Title, e.Address, e.BankAccount, e.MB, e.TaxpayerCode, e.ActivityCode, e.ID,
 	)
 	return err
 }

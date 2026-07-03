@@ -1,0 +1,1 @@
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
