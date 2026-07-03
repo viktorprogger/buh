@@ -2,20 +2,14 @@ package slip
 
 import (
 	"bytes"
-	_ "embed"
 	"fmt"
 	"strings"
 
 	"buh/internal/ips"
+	"buh/internal/pdffonts"
 	"github.com/jung-kurt/gofpdf"
 	qrcode "github.com/skip2/go-qrcode"
 )
-
-//go:embed DejaVuSans.ttf
-var fontRegular []byte
-
-//go:embed DejaVuSans-Bold.ttf
-var fontBold []byte
 
 const (
 	pageW = 210.0
@@ -48,8 +42,8 @@ func GeneratePDF(pay *ips.Payment, outputPath string) error {
 		UnitStr: "mm",
 		Size:    gofpdf.SizeType{Wd: pageW, Ht: pageH},
 	})
-	pdf.AddUTF8FontFromBytes("DejaVu", "", fontRegular)
-	pdf.AddUTF8FontFromBytes("DejaVu", "B", fontBold)
+	pdf.AddUTF8FontFromBytes("DejaVu", "", pdffonts.Regular)
+	pdf.AddUTF8FontFromBytes("DejaVu", "B", pdffonts.Bold)
 	pdf.SetMargins(0, 0, 0)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
@@ -72,22 +66,22 @@ func draw(pdf *gofpdf.Fpdf, pay *ips.Payment) {
 	pdf.SetFont("DejaVu", "B", 7.5)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetXY(0, 1.5)
-	pdf.CellFormat(divX, headerH-1.5, "NALOG ZA UPLATU", "", 0, "C", false, 0, "")
+	pdf.CellFormat(divX, headerH-1.5, "НАЛОГ ЗА УПЛАТУ", "", 0, "C", false, 0, "")
 
 	// Left: payer, purpose, payee
-	fieldBox(pdf, 0, headerH+0*leftRowH, divX, leftRowH, "Uplatilac", joinNonEmpty(pay.P, formatAccount(pay.O)))
-	fieldBox(pdf, 0, headerH+1*leftRowH, divX, leftRowH, "Svrha uplate", pay.S)
-	fieldBox(pdf, 0, headerH+2*leftRowH, divX, leftRowH, "Primalac", pay.N)
+	fieldBox(pdf, 0, headerH+0*leftRowH, divX, leftRowH, "Уплатилац", joinNonEmpty(pay.P, formatAccount(pay.O)))
+	fieldBox(pdf, 0, headerH+1*leftRowH, divX, leftRowH, "Сврха уплате", pay.S)
+	fieldBox(pdf, 0, headerH+2*leftRowH, divX, leftRowH, "Прималац", pay.N)
 
 	// Right: code row
 	currency, amount := splitAmountParts(pay.I)
-	fieldBox(pdf, divX, 0, codeW, codeRowH, "Sifra placanja", pay.SF)
-	fieldBox(pdf, divX+codeW, 0, currW, codeRowH, "Valuta", currency)
-	fieldBox(pdf, divX+codeW+currW, 0, pageW-divX-codeW-currW, codeRowH, "Iznos", amount)
+	fieldBox(pdf, divX, 0, codeW, codeRowH, "Шифра плаћања", pay.SF)
+	fieldBox(pdf, divX+codeW, 0, currW, codeRowH, "Валута", currency)
+	fieldBox(pdf, divX+codeW+currW, 0, pageW-divX-codeW-currW, codeRowH, "Износ", amount)
 
 	// Right: account + reference
-	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Racun primaoca", formatAccount(pay.R))
-	fieldBox(pdf, divX, codeRowH+acctRowH, pageW-divX, refRowH, "Poziv na broj", pay.RO)
+	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Рачун примаоца", formatAccount(pay.R))
+	fieldBox(pdf, divX, codeRowH+acctRowH, pageW-divX, refRowH, "Позив на број", pay.RO)
 
 	// QR: bottom-right, vertically centered in remaining area
 	qrX := pageW - qrSize - 2.0

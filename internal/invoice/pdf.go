@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jung-kurt/gofpdf"
+	"buh/internal/pdffonts"
 )
 
 // IssuerInfo holds the entrepreneur's profile data needed for the invoice PDF.
@@ -128,19 +129,22 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 	}
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddUTF8FontFromBytes("dejavu", "", pdffonts.Regular)
+	pdf.AddUTF8FontFromBytes("dejavu", "B", pdffonts.Bold)
+	pdf.AddUTF8FontFromBytes("dejavu", "I", pdffonts.Italic)
 	pdf.AddPage()
 	pdf.SetMargins(15, 15, 15)
 	pdf.SetAutoPageBreak(true, 15)
 
 	// ── Title ────────────────────────────────────────────────────────────────
-	pdf.SetFont("Helvetica", "B", 18)
+	pdf.SetFont("dejavu", "B", 18)
 	title := lbl.Invoice
 	if inv.InvoiceType == TypeAdvance {
 		title = lbl.AdvanceInvoice
 	}
 	pdf.CellFormat(0, 10, title, "", 1, "L", false, 0, "")
 
-	pdf.SetFont("Helvetica", "", 11)
+	pdf.SetFont("dejavu", "", 11)
 	pdf.CellFormat(0, 6, lbl.Number+" "+inv.InvoiceNumber, "", 1, "L", false, 0, "")
 	pdf.CellFormat(0, 6, lbl.IssueDate+" "+inv.IssueDate.Format("02.01.2006."), "", 1, "L", false, 0, "")
 	if inv.DueDate.Valid {
@@ -205,11 +209,11 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 		clientLines = append(clientLines, client.Address)
 	}
 
-	pdf.SetFont("Helvetica", "B", 10)
+	pdf.SetFont("dejavu", "B", 10)
 	pdf.CellFormat(colW, 6, lbl.Issuer, "", 0, "L", false, 0, "")
 	pdf.CellFormat(colW, 6, lbl.Client, "", 1, "L", false, 0, "")
 
-	pdf.SetFont("Helvetica", "", 10)
+	pdf.SetFont("dejavu", "", 10)
 	maxLines := len(issuerLines)
 	if len(clientLines) > maxLines {
 		maxLines = len(clientLines)
@@ -229,7 +233,7 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 	pdf.Ln(6)
 
 	// ── Items table ──────────────────────────────────────────────────────────
-	pdf.SetFont("Helvetica", "B", 9)
+	pdf.SetFont("dejavu", "B", 9)
 	pdf.SetFillColor(230, 230, 230)
 	wDesc, wQty, wPrice, wDisc, wTotal := 80.0, 18.0, 28.0, 18.0, 30.0
 	pdf.CellFormat(wDesc, 6, lbl.Description, "1", 0, "L", true, 0, "")
@@ -238,7 +242,7 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 	pdf.CellFormat(wDisc, 6, lbl.Discount, "1", 0, "R", true, 0, "")
 	pdf.CellFormat(wTotal, 6, lbl.Amount, "1", 1, "R", true, 0, "")
 
-	pdf.SetFont("Helvetica", "", 9)
+	pdf.SetFont("dejavu", "", 9)
 	var grandTotal float64
 	for _, it := range items {
 		lineTotal := it.LineTotal()
@@ -251,7 +255,7 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 	}
 
 	// Total row
-	pdf.SetFont("Helvetica", "B", 10)
+	pdf.SetFont("dejavu", "B", 10)
 	totalLabel := fmt.Sprintf("%s %.2f %s", lbl.TotalDue, grandTotal, inv.Currency)
 	if inv.Currency != "RSD" {
 		totalLabel += fmt.Sprintf("  (≈ %.2f RSD)", inv.TotalRSD)
@@ -262,16 +266,16 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 	// ── Notes ────────────────────────────────────────────────────────────────
 	if inv.Notes != "" {
 		pdf.Ln(4)
-		pdf.SetFont("Helvetica", "B", 9)
+		pdf.SetFont("dejavu", "B", 9)
 		pdf.CellFormat(0, 6, lbl.Note, "", 1, "L", false, 0, "")
-		pdf.SetFont("Helvetica", "", 9)
+		pdf.SetFont("dejavu", "", 9)
 		pdf.MultiCell(0, 5, inv.Notes, "", "L", false)
 	}
 
 	// ── Footer lines (payment due, VAT disclaimer, no-sign) ──────────────────
 	if inv.DueDate.Valid || inv.NoVAT || inv.NoSign {
 		pdf.Ln(6)
-		pdf.SetFont("Helvetica", "I", 8)
+		pdf.SetFont("dejavu", "I", 8)
 		pdf.SetTextColor(110, 110, 110)
 		if inv.DueDate.Valid {
 			pdf.MultiCell(0, 4, lbl.PaymentBy+" "+inv.DueDate.Time.Format("02.01.2006.")+".", "", "L", false)
