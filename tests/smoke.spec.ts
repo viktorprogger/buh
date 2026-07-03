@@ -93,6 +93,15 @@ test.describe('accountant', () => {
     await expect(page.locator('form')).toBeVisible();
   });
 
+  test('creating a slip records history', async ({ page }) => {
+    await page.goto(entPath + '/slips/new');
+    await page.fill('input[name="SF"]', '253');
+    await page.fill('input[name="S"]', 'Паушални порез');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/a\/slips\//);
+    await expect(page.getByText('Уплатница је креирана')).toBeVisible();
+  });
+
   test('KPO merge view renders', async ({ page }) => {
     await page.goto(entPath + '/kpo/' + CURRENT_YEAR + '/merge');
     await expect(page).not.toHaveURL(/login/);
@@ -167,6 +176,12 @@ test.describe('entrepreneur', () => {
     await page.goto('/e/kpo/' + CURRENT_YEAR);
     await expect(page).not.toHaveURL(/login/);
     await expect(page.locator('h1, h2')).toBeVisible();
+  });
+
+  test('profile page renders', async ({ page }) => {
+    await page.goto('/e/profile');
+    await expect(page).not.toHaveURL(/login/);
+    await expect(page.locator('h1')).toContainText('Мој профил');
   });
 
   test('protected routes redirect unauthenticated requests', async ({ page }) => {

@@ -48,7 +48,7 @@ export async function createLocalClient(page: Page, name: string): Promise<void>
   await page.goto('/e/clients/new');
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="pib"]', uniquePib());
-  await page.fill('input[name="registration_number"]', uniqueMb());
+  await page.fill('#f-reg', uniqueMb());
   await page.fill('input[name="email"]', 'klijent@test.rs');
   await page.getByRole('button', { name: 'Додај клијента' }).click();
   await page.waitForURL('/e/clients');
@@ -63,7 +63,7 @@ export async function createForeignClient(
   await page.goto('/e/clients/new');
   await page.fill('input[name="name"]', name);
   await page.check('input[name="is_foreign"]');
-  await page.fill('input[name="registration_number"]', taxId);
+  await page.fill('#f-taxid', taxId);
   await page.fill('input[name="address"]', 'Almaty, Kazakhstan');
   await page.getByRole('button', { name: 'Додај клијента' }).click();
   await page.waitForURL('/e/clients');

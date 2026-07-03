@@ -144,7 +144,20 @@ test('all opened years appear as tabs', async ({ page }) => {
   expect(await options.count()).toBeGreaterThanOrEqual(3);
 });
 
-// ── 11. Keyboard tab navigation through the non-date entry fields ──────────
+// ── 11. Description field saves and is shown in the table ─────────────────
+test('KPO entry description is saved and shown in the table', async ({ page }) => {
+  await page.fill('#kpo-date', '20.08');
+  await page.fill('#kpo-invoice', 'Desc-test/1');
+  await page.fill('#kpo-description', 'Test client name');
+  await page.fill('#kpo-product', '0');
+  await page.fill('#kpo-service', '2500.00');
+  await page.click('button[form="kpo-new"]');
+  await page.waitForURL(/entrepreneurs/);
+  await expect(page.getByRole('cell', { name: 'Desc-test/1' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Test client name' })).toBeVisible();
+});
+
+// ── 12. Keyboard tab navigation through the non-date entry fields ──────────
 test('tab key moves focus through KPO numeric entry fields', async ({ page }) => {
   const freshYear = CURRENT_YEAR - 10;
   await page.goto(`${entrepreneurUrl}?year=${freshYear}`);
@@ -152,6 +165,9 @@ test('tab key moves focus through KPO numeric entry fields', async ({ page }) =>
 
   await page.locator('#kpo-invoice').focus();
   await expect(page.locator('#kpo-invoice')).toBeFocused();
+
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#kpo-description')).toBeFocused();
 
   await page.keyboard.press('Tab');
   await expect(page.locator('#kpo-product')).toBeFocused();

@@ -145,7 +145,7 @@ test('invoice detail shows PIB and MB for local client', async ({ page }) => {
   await page.goto('/e/clients/new');
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="pib"]', pib);
-  await page.fill('input[name="registration_number"]', mb);
+  await page.fill('#f-reg', mb);
   await page.getByRole('button', { name: 'Додај клијента' }).click();
   await page.waitForURL('/e/clients');
 
@@ -162,9 +162,9 @@ test('invoice detail shows PIB and MB for local client', async ({ page }) => {
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   await expect(page.getByText(`PIB:`)).toBeVisible();
-  await expect(page.getByText(pib)).toBeVisible();
+  await expect(page.getByText(pib, { exact: true })).toBeVisible();
   await expect(page.getByText(`MB:`)).toBeVisible();
-  await expect(page.getByText(mb)).toBeVisible();
+  await expect(page.getByText(mb, { exact: true })).toBeVisible();
   await expect(page.getByText('Tax ID / Reg No.:')).not.toBeVisible();
 });
 
@@ -201,7 +201,7 @@ test('live preview shows PIB and MB for local client', async ({ page }) => {
   await page.goto('/e/clients/new');
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="pib"]', pib);
-  await page.fill('input[name="registration_number"]', mb);
+  await page.fill('#f-reg', mb);
   await page.getByRole('button', { name: 'Додај клијента' }).click();
   await page.waitForURL('/e/clients');
 
