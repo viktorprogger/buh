@@ -23,7 +23,7 @@
 <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded text-sm">
   {{if .Downloading}}
   Уплатница је сачувана. Преузимање почиње...
-  <script>window.location = '/slips/{{.Slip.ID}}/pdf';</script>
+  <script>window.location = '/a/slips/{{.Slip.ID}}/pdf';</script>
   {{else}}
   Уплатница је сачувана.
   {{end}}
@@ -102,7 +102,7 @@
     </div>
 
     <div class="slip-actions slip-actions--between mt-4">
-      <form method="POST" action="/slips/{{.Slip.ID}}/delete"
+      <form method="POST" action="/a/slips/{{.Slip.ID}}/delete"
             onsubmit="return confirm('Обрисати уплатницу?')">
         <button type="submit"
                 class="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
@@ -110,11 +110,11 @@
         </button>
       </form>
       <div style="display:flex;gap:0.5rem">
-        <button type="submit" formaction="/slips/{{.Slip.ID}}/save"
+        <button type="submit" formaction="/a/slips/{{.Slip.ID}}/save"
                 class="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           Сачувај
         </button>
-        <button type="submit" formaction="/slips/{{.Slip.ID}}/download"
+        <button type="submit" formaction="/a/slips/{{.Slip.ID}}/download"
                 class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
           Преузми PDF
         </button>

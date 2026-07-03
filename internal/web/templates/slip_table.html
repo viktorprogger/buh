@@ -11,13 +11,13 @@
   </thead>
   <tbody class="divide-y divide-gray-100">
     {{range .Slips}}
-    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/slips/{{.ID}}'">
+    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/a/slips/{{.ID}}'">
       <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
       <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
       <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
       <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
       <td class="px-2 py-2 text-center" onclick="event.stopPropagation()">
-        <form method="POST" action="/slips/{{.ID}}/delete"
+        <form method="POST" action="/a/slips/{{.ID}}/delete"
               onsubmit="return confirm('Обрисати уплатницу?')">
           <button type="submit"
                   class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
