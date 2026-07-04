@@ -34,9 +34,9 @@ test('can add a KPO entry', async ({ page }) => {
   await page.waitForURL(/entrepreneurs/);
 
   await expect(page.getByRole('cell', { name: '2026/1' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: '15000.00' }).first()).toBeVisible();
-  await expect(page.getByRole('cell', { name: '5000.00' }).first()).toBeVisible();
-  await expect(page.getByRole('cell', { name: '20000.00' }).first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: '15 000' }).first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: '5 000' }).first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: '20 000' }).first()).toBeVisible();
   await expect(page.getByRole('cell', { name: '1' }).first()).toBeVisible();
 });
 
@@ -91,6 +91,7 @@ test('can finalize (укњижити) a year', async ({ page }) => {
   const url = await createEntrepreneur(page, 'Финал Тест', uniquePib());
   await page.goto(url);
 
+  page.on('dialog', d => d.accept());
   await page.getByRole('button', { name: 'Укњижи' }).click();
   await page.waitForURL(/entrepreneurs/);
 
@@ -105,6 +106,7 @@ test('can unfinalize (откључати) a finalized year', async ({ page }) =>
   const url = await createEntrepreneur(page, 'Откључај Тест', uniquePib());
   await page.goto(url);
 
+  page.on('dialog', d => d.accept());
   await page.getByRole('button', { name: 'Укњижи' }).click();
   await page.waitForURL(/entrepreneurs/);
   await expect(page.getByRole('button', { name: 'Откључај' })).toBeVisible();

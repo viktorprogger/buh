@@ -8,7 +8,7 @@ export async function loginAccountant(page: Page) {
   await page.goto('/login');
   await page.fill('input[name="email"]', TEST_EMAIL);
   await page.fill('input[name="password"]', TEST_PASSWORD);
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: 'Пријави се' }).click();
   await page.waitForURL('/a/');
 }
 
@@ -20,7 +20,7 @@ export async function loginEntrepreneur(page: Page, email: string, password: str
   await page.click('#tab-entrepreneur');
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: 'Пријави се' }).click();
   await page.waitForURL('/e/');
 }
 
@@ -75,7 +75,7 @@ export async function createEntrepreneur(page: Page, name = 'КПО Тест ф�
   await page.goto('/a/entrepreneurs/new');
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="pib"]', pib);
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: 'Сачувај' }).click();
   await page.waitForURL(/\/a\/entrepreneurs\/[0-9a-f-]+/);
   return page.url();
 }

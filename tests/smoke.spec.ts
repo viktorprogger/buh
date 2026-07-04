@@ -90,14 +90,17 @@ test.describe('accountant', () => {
   test('new slip form renders', async ({ page }) => {
     await page.goto(entPath + '/slips/new');
     await expect(page).not.toHaveURL(/login/);
-    await expect(page.locator('form')).toBeVisible();
+    await expect(page.locator('form[action*="/slips/new"]')).toBeVisible();
   });
 
   test('creating a slip records history', async ({ page }) => {
     await page.goto(entPath + '/slips/new');
     await page.fill('input[name="SF"]', '253');
     await page.fill('input[name="S"]', 'Паушални порез');
-    await page.click('button[type="submit"]');
+    await page.fill('input[name="N"]', 'Пореска управа');
+    await page.fill('input[name="R"]', '840-3553531843-20');
+    await page.fill('input[name="amount"]', '5000');
+    await page.getByRole('button', { name: 'Сачувај и преузми PDF' }).click();
     await page.waitForURL(/\/a\/slips\//);
     await expect(page.getByText('Уплатница је креирана')).toBeVisible();
   });
@@ -134,7 +137,7 @@ test.describe('entrepreneur', () => {
   test('dashboard renders', async ({ page }) => {
     await page.goto('/e/');
     await expect(page).not.toHaveURL(/login/);
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Контролна табла' })).toBeVisible();
   });
 
   test('invite accountant page renders', async ({ page }) => {
