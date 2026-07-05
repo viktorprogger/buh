@@ -1,0 +1,25 @@
+{{template "base" .}}
+
+{{define "title"}}{{T "invite_token.title"}}{{end}}
+
+{{define "content"}}
+<div class="max-w-lg mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-4">{{T "invite_token.title"}}</h1>
+
+  <div class="bg-white border border-gray-200 rounded-lg shadow-xs p-6">
+    <p class="text-sm text-gray-600 mb-4">
+      {{T "invite_token.desc"}}
+    </p>
+
+    <div class="rounded bg-gray-50 border border-gray-200 px-4 py-3 font-mono text-sm text-gray-800 break-all select-all mb-4">
+      /invite/{{.Token}}
+    </div>
+
+    {{if eq .InviterType "accountant"}}
+    <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}" class="text-primary hover:underline text-sm">{{T "invite_token.back_entrepreneur"}}</a>
+    {{else}}
+    <a href="/e/" class="text-primary hover:underline text-sm">{{T "invite_token.back_home"}}</a>
+    {{end}}
+  </div>
+</div>
+{{end}}

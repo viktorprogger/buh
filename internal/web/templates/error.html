@@ -1,0 +1,14 @@
+{{template "base" .}}
+
+{{define "title"}}{{.Code}} — {{T "app.title"}}{{end}}
+
+{{define "content"}}
+<div class="flex flex-col items-center justify-center py-24 text-center">
+  <p class="text-8xl font-extrabold text-slate-800 leading-none">{{.Code}}</p>
+  <p class="mt-4 text-2xl font-semibold text-gray-700">{{.Title}}</p>
+  <p class="mt-2 text-sm text-gray-500">{{.Message}}</p>
+  <a href="/" class="mt-8 inline-block bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-5 py-2.5 rounded-lg">
+    {{T "error.home"}}
+  </a>
+</div>
+{{end}}

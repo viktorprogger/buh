@@ -2,39 +2,31 @@ package slip
 
 import (
 	"bytes"
-	_ "embed"
 	"fmt"
 	"strings"
 
 	"buh/internal/ips"
+	"buh/internal/pdffonts"
 	"github.com/jung-kurt/gofpdf"
 	qrcode "github.com/skip2/go-qrcode"
 )
 
-//go:embed DejaVuSans.ttf
-var fontRegular []byte
-
-//go:embed DejaVuSans-Bold.ttf
-var fontBold []byte
-
 const (
 	pageW = 210.0
 	pageH = 100.0
-
-	divX = 107.0 // left/right split per PP50 standard
+	divX  = 110.0 // left/right column split
 
 	headerH  = 8.0
-	bottomH  = 18.0                       // stamp / date strip
-	contentH = pageH - headerH - bottomH  // 74mm
-	rowH     = contentH / 3               // ~24.67mm per row
+	leftRowH = (pageH - headerH) / 3 // ~30.67mm
 
-	codeW  = 22.0 // Šifra plaćanja
-	currW  = 18.0 // Valuta
-	stampW = 65.0 // Pečat i potpis width in bottom strip
+	codeRowH = 20.0
+	acctRowH = 20.0
+	refRowH  = 20.0
+	qrAreaY  = codeRowH + acctRowH + refRowH // 60mm
 
-	qrSz = 38.0
-	qrX  = pageW - 2.0 - qrSz                      // 170mm
-	qrY  = headerH + rowH + (2*rowH-qrSz)/2        // centered over rows 2-3
+	rightColW = (pageW - divX) / 3 // equal thirds for Шифра / Валута / Износ
+
+	qrSize = 40.0
 )
 
 // GeneratePDF creates a PP50-format payment slip PDF at outputPath.
@@ -49,8 +41,8 @@ func GeneratePDF(pay *ips.Payment, outputPath string) error {
 		UnitStr: "mm",
 		Size:    gofpdf.SizeType{Wd: pageW, Ht: pageH},
 	})
-	pdf.AddUTF8FontFromBytes("DejaVu", "", fontRegular)
-	pdf.AddUTF8FontFromBytes("DejaVu", "B", fontBold)
+	pdf.AddUTF8FontFromBytes("DejaVu", "", pdffonts.Regular)
+	pdf.AddUTF8FontFromBytes("DejaVu", "B", pdffonts.Bold)
 	pdf.SetMargins(0, 0, 0)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
@@ -62,95 +54,57 @@ func GeneratePDF(pay *ips.Payment, outputPath string) error {
 }
 
 func draw(pdf *gofpdf.Fpdf, pay *ips.Payment) {
-	// === Grid (light gray, thin) ===
-	pdf.SetLineWidth(0.2)
-	pdf.SetDrawColor(229, 231, 235)
-
+	// Outer border + vertical divider
+	pdf.SetLineWidth(0.5)
+	pdf.SetDrawColor(0, 0, 0)
 	pdf.Rect(0, 0, pageW, pageH, "D")
-	pdf.Line(0, headerH, pageW, headerH)           // below header
-	pdf.Line(divX, headerH, divX, pageH)           // left/right split
-	pdf.Line(0, headerH+rowH, pageW, headerH+rowH) // between rows 1-2
-	pdf.Line(0, headerH+2*rowH, pageW, headerH+2*rowH) // between rows 2-3
-	pdf.Line(0, pageH-bottomH, pageW, pageH-bottomH)   // above bottom strip
+	pdf.Line(divX, 0, divX, pageH)
 
-	// Right row 1: sub-dividers for Šifra | Valuta | Iznos
-	pdf.Line(divX+codeW, headerH, divX+codeW, headerH+rowH)
-	pdf.Line(divX+codeW+currW, headerH, divX+codeW+currW, headerH+rowH)
-
-	// Right rows 2-3: QR boundary
-	pdf.Line(qrX-1, headerH+rowH, qrX-1, pageH-bottomH)
-
-	// Bottom strip sub-dividers
-	pdf.Line(stampW, pageH-bottomH, stampW, pageH)
-
-	// === Header ===
+	// Header (left column only)
+	pdf.Line(0, headerH, divX, headerH)
 	pdf.SetFont("DejaVu", "B", 7.5)
-	pdf.SetTextColor(75, 85, 99)
-	pdf.SetXY(0, 2)
-	pdf.CellFormat(pageW, headerH-2, "NALOG ZA UPLATU", "", 0, "C", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetXY(0, 1.5)
+	pdf.CellFormat(divX, headerH-1.5, "НАЛОГ ЗА УПЛАТУ", "", 0, "C", false, 0, "")
 
-	// === Left column: PP50 standard order ===
-	field(pdf, 0, headerH, divX, rowH, "Uplatilac", joinNonEmpty(pay.P, formatAccount(pay.O)))
-	field(pdf, 0, headerH+rowH, divX, rowH, "Svrha uplate", pay.S)
-	field(pdf, 0, headerH+2*rowH, divX, rowH, "Primalac", pay.N)
+	// Left: payer, purpose, payee
+	fieldBox(pdf, 0, headerH+0*leftRowH, divX, leftRowH, "Уплатилац", joinNonEmpty(pay.P, formatAccount(pay.O)))
+	fieldBox(pdf, 0, headerH+1*leftRowH, divX, leftRowH, "Сврха уплате", pay.S)
+	fieldBox(pdf, 0, headerH+2*leftRowH, divX, leftRowH, "Прималац", pay.N)
 
-	// === Right column ===
-	// Row 1: Šifra | Valuta | Iznos
+	// Right: code row
 	currency, amount := splitAmountParts(pay.I)
-	field(pdf, divX, headerH, codeW, rowH, "Šifra plaćanja", pay.SF)
-	field(pdf, divX+codeW, headerH, currW, rowH, "Valuta", currency)
-	fieldLarge(pdf, divX+codeW+currW, headerH, pageW-divX-codeW-currW, rowH, "Iznos", amount)
+	fieldBox(pdf, divX, 0, rightColW, codeRowH, "Шифра плаћања", pay.SF)
+	fieldBox(pdf, divX+rightColW, 0, rightColW, codeRowH, "Валута", currency)
+	fieldBox(pdf, divX+2*rightColW, 0, rightColW, codeRowH, "Износ", amount)
 
-	// Rows 2-3: account and reference (narrowed for QR)
-	narrowW := qrX - 1 - divX
-	field(pdf, divX, headerH+rowH, narrowW, rowH, "Račun primaoca", formatAccount(pay.R))
-	field(pdf, divX, headerH+2*rowH, narrowW, rowH, "Model i poziv na broj (odobrenje)", pay.RO)
+	// Right: account + reference
+	fieldBox(pdf, divX, codeRowH, pageW-divX, acctRowH, "Рачун примаоца", formatAccount(pay.R))
+	fieldBox(pdf, divX, codeRowH+acctRowH, pageW-divX, refRowH, "Позив на број", pay.RO)
 
-	// QR code centered over rows 2-3
-	pdf.ImageOptions("qr", qrX, qrY, qrSz, qrSz, false, gofpdf.ImageOptions{ImageType: "PNG"}, 0, "")
-
-	// === Bottom strip (cashier fills in) ===
-	field(pdf, 0, pageH-bottomH, stampW, bottomH, "Pečat i potpis uplatilaca", "")
-	field(pdf, stampW, pageH-bottomH, divX-stampW, bottomH, "Mesto i datum prijema", "")
-	field(pdf, divX, pageH-bottomH, pageW-divX, bottomH, "Datum valute", "")
+	// QR: bottom-right, vertically centered in remaining area
+	qrX := pageW - qrSize - 2.0
+	qrY := qrAreaY + (pageH-qrAreaY-qrSize)/2
+	pdf.ImageOptions("qr", qrX, qrY, qrSize, qrSize, false, gofpdf.ImageOptions{ImageType: "PNG"}, 0, "")
 }
 
-// field renders a label + value pair inside a grid cell.
-func field(pdf *gofpdf.Fpdf, x, y, w, h float64, label, value string) {
-	const pad = 2.5
+func fieldBox(pdf *gofpdf.Fpdf, x, y, w, h float64, label, value string) {
+	const m = 1.0 // margin from cell edge to field border
+
+	pdf.SetLineWidth(0.2)
+	pdf.SetDrawColor(180, 180, 180)
+	pdf.Rect(x+m, y+m, w-2*m, h-2*m, "D")
+	pdf.SetDrawColor(0, 0, 0)
 
 	pdf.SetFont("DejaVu", "", 5.5)
-	pdf.SetTextColor(75, 85, 99)
-	pdf.SetXY(x+pad, y+1.5)
-	pdf.Cell(w-2*pad, 3.5, label)
+	pdf.SetTextColor(80, 80, 80)
+	pdf.SetXY(x+m+1, y+m+0.8)
+	pdf.Cell(w-2*(m+1), 3.5, label)
 
-	if value == "" {
-		return
-	}
-
-	pdf.SetFont("DejaVu", "", 9)
-	pdf.SetTextColor(31, 41, 55)
-	pdf.SetXY(x+pad, y+5.5)
-	pdf.MultiCell(w-2*pad, 4.5, value, "", "L", false)
-}
-
-// fieldLarge renders a field with a large bold value (used for Iznos).
-func fieldLarge(pdf *gofpdf.Fpdf, x, y, w, h float64, label, value string) {
-	const pad = 2.5
-
-	pdf.SetFont("DejaVu", "", 5.5)
-	pdf.SetTextColor(75, 85, 99)
-	pdf.SetXY(x+pad, y+1.5)
-	pdf.Cell(w-2*pad, 3.5, label)
-
-	if value == "" {
-		return
-	}
-
-	pdf.SetFont("DejaVu", "B", 15)
-	pdf.SetTextColor(31, 41, 55)
-	pdf.SetXY(x+pad, y+6.5)
-	pdf.Cell(w-2*pad, 8, value)
+	pdf.SetFont("DejaVu", "B", 8)
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetXY(x+m+1, y+m+0.8+3.5)
+	pdf.MultiCell(w-2*(m+1), 4.5, value, "", "L", false)
 }
 
 func formatAccount(s string) string {

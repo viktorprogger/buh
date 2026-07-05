@@ -1,0 +1,104 @@
+{{template "entrepreneur_base" .}}
+
+{{define "title"}}{{T "clients.page_title"}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center justify-between">
+  <div class="text-sm text-gray-500"><a href="/e/" class="hover:text-primary">{{T "clients.back"}}</a></div>
+  <a href="/e/clients/new"
+     class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+    {{T "clients.add_new"}}
+  </a>
+</div>
+
+{{template "clients-list" .}}
+{{end}}
+
+{{define "clients-list"}}
+<div id="clients-list" class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">{{T "clients.section_title"}}</h2>
+  </div>
+  {{if .Clients}}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "name"}}"
+             hx-get="{{.List.SortLink "name"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "clients.col_name"}} {{.List.SortIcon "name"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "pib"}}"
+             hx-get="{{.List.SortLink "pib"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "clients.col_pib"}} {{.List.SortIcon "pib"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "email"}}"
+             hx-get="{{.List.SortLink "email"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "clients.col_email"}} {{.List.SortIcon "email"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "type"}}"
+             hx-get="{{.List.SortLink "type"}}"
+             hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "clients.col_type"}} {{.List.SortIcon "type"}}
+          </a>
+        </th>
+        <th class="px-4 py-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Clients}}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 font-medium text-gray-900">{{.Name}}</td>
+        <td class="px-4 py-2 font-mono text-gray-600">{{.PIB}}</td>
+        <td class="px-4 py-2 text-gray-600">{{.Email}}</td>
+        <td class="px-4 py-2">
+          {{if .IsForeign}}<span class="text-xs text-amber-600">{{T "clients.type_foreign"}}</span>{{else}}<span class="text-xs text-gray-400">{{T "clients.type_local"}}</span>{{end}}
+        </td>
+        <td class="px-4 py-2 text-right">
+          <a href="/e/clients/{{.ID}}/edit" class="text-xs text-primary hover:underline mr-2">{{T "clients.edit"}}</a>
+          <form method="POST" action="/e/clients/{{.ID}}/delete" class="inline"
+                onsubmit="return confirm('{{T "clients.delete_confirm"}}')">
+            <button type="submit" class="text-xs text-red-600 hover:underline">{{T "clients.delete"}}</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{if or .List.HasPrev .List.HasNext}}
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm">
+    <span class="text-gray-500">{{TWith "clients.page_info" "Page" .List.Page "LastPage" .List.LastPage "Total" .List.Total}}</span>
+    <div class="flex gap-2">
+      {{if .List.HasPrev}}
+      <a href="{{.List.PrevURL}}"
+         hx-get="{{.List.PrevURL}}" hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">{{T "clients.prev"}}</a>
+      {{end}}
+      {{if .List.HasNext}}
+      <a href="{{.List.NextURL}}"
+         hx-get="{{.List.NextURL}}" hx-target="#clients-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">{{T "clients.next"}}</a>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+  {{else}}
+  <div class="px-6 py-8 text-center text-gray-400 text-sm">
+    {{T "clients.empty"}} <a href="/e/clients/new" class="text-primary hover:underline">{{T "clients.empty_add"}}</a>.
+  </div>
+  {{end}}
+</div>
+{{end}}

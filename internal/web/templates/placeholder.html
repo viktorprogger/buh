@@ -1,12 +1,12 @@
 {{template "base" .}}
 
-{{define "title"}}{{.Title}} — Паушалне уплатнице{{end}}
+{{define "title"}}{{.Title}} — {{T "app.title"}}{{end}}
 
 {{define "content"}}
 <div class="mb-6">
   <h1 class="text-2xl font-bold text-gray-900">{{.Title}}</h1>
 </div>
 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-xs text-sm text-gray-600">
-  Ова страница је у изради.
+  {{T "placeholder.under_construction"}}
 </div>
 {{end}}

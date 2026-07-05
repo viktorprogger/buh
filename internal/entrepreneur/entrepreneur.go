@@ -14,14 +14,30 @@ var ErrNotFound = errors.New("entrepreneur: not found")
 
 // Entrepreneur represents a paušal entrepreneur tracked under a specific accountant.
 type Entrepreneur struct {
-	ID           uuid.UUID
-	Name         string
-	PIB         string
-	AccountantID uuid.UUID
-	CreatedAt    time.Time
+	ID                   uuid.UUID
+	Title                string // short display label chosen by the accountant; falls back to Name in lists
+	Name                 string
+	MB                   string // matični broj (registration number)
+	PIB                  string
+	Address              string
+	BankAccount          string
+	TaxpayerCode         string // šifra poreskog obveznika (assigned by Tax Administration)
+	ActivityCode         string // šifra delatnosti (industry classification code)
+	AccountantID         uuid.UUID
+	EntrepreneurUserID   *uuid.UUID // NULL until paired with an entrepreneur_user
+	PairedAt             *time.Time
+	CreatedAt            time.Time
 }
 
-// Repo handles persistence of entrepreneurs.
+// ProfileComplete returns true when all fields needed for invoice PDF/SEF are filled.
+func (e Entrepreneur) ProfileComplete() bool {
+	return e.PIB != "" && e.Address != "" && e.BankAccount != ""
+}
+
+// IsPaired returns true if this managed entrepreneur is linked to an entrepreneur_user.
+func (e Entrepreneur) IsPaired() bool { return e.EntrepreneurUserID != nil }
+
+// Repo handles persistence of managed entrepreneurs.
 type Repo struct {
 	db *sql.DB
 }
@@ -31,17 +47,41 @@ func NewRepo(db *sql.DB) *Repo {
 	return &Repo{db: db}
 }
 
+const selectCols = `id, name, pib, accountant_id, created_at, title, address, bank_account, mb,
+	entrepreneur_user_id, paired_at, taxpayer_code, activity_code`
+
+func scanRow(row interface{ Scan(...any) error }, e *Entrepreneur) error {
+	var entrepreneurUserID sql.NullString
+	var pairedAt sql.NullTime
+	err := row.Scan(
+		&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt,
+		&e.Title, &e.Address, &e.BankAccount, &e.MB,
+		&entrepreneurUserID, &pairedAt, &e.TaxpayerCode, &e.ActivityCode,
+	)
+	if err != nil {
+		return err
+	}
+	if entrepreneurUserID.Valid {
+		id, err := uuid.Parse(entrepreneurUserID.String)
+		if err == nil {
+			e.EntrepreneurUserID = &id
+		}
+	}
+	if pairedAt.Valid {
+		e.PairedAt = &pairedAt.Time
+	}
+	return nil
+}
+
 // FindOrCreate returns the existing entrepreneur with the given PIB+accountantID,
 // or inserts a new one with the provided name and returns it.
 // The bool return value is true when a new entrepreneur was inserted.
 func (r *Repo) FindOrCreate(ctx context.Context, accountantID uuid.UUID, pib, name string) (Entrepreneur, bool, error) {
 	var e Entrepreneur
-	err := r.db.QueryRowContext(ctx,
-		`SELECT id, name, pib, accountant_id, created_at
-		 FROM entrepreneurs
-		 WHERE pib = $1 AND accountant_id = $2`,
+	err := scanRow(r.db.QueryRowContext(ctx,
+		`SELECT `+selectCols+` FROM managed_entrepreneurs WHERE pib = $1 AND accountant_id = $2`,
 		pib, accountantID,
-	).Scan(&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt)
+	), &e)
 	if err == nil {
 		return e, false, nil
 	}
@@ -49,13 +89,13 @@ func (r *Repo) FindOrCreate(ctx context.Context, accountantID uuid.UUID, pib, na
 		return Entrepreneur{}, false, err
 	}
 
-	err = r.db.QueryRowContext(ctx,
-		`INSERT INTO entrepreneurs (accountant_id, pib, name)
+	err = scanRow(r.db.QueryRowContext(ctx,
+		`INSERT INTO managed_entrepreneurs (accountant_id, pib, name)
 		 VALUES ($1, $2, $3)
 		 ON CONFLICT (accountant_id, pib) DO UPDATE SET name = EXCLUDED.name
-		 RETURNING id, name, pib, accountant_id, created_at`,
+		 RETURNING `+selectCols,
 		accountantID, pib, name,
-	).Scan(&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt)
+	), &e)
 	if err != nil {
 		return Entrepreneur{}, false, err
 	}
@@ -65,10 +105,7 @@ func (r *Repo) FindOrCreate(ctx context.Context, accountantID uuid.UUID, pib, na
 // ListByAccountant returns all entrepreneurs belonging to the given accountant.
 func (r *Repo) ListByAccountant(ctx context.Context, accountantID uuid.UUID) ([]Entrepreneur, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, name, pib, accountant_id, created_at
-		 FROM entrepreneurs
-		 WHERE accountant_id = $1
-		 ORDER BY name`,
+		`SELECT `+selectCols+` FROM managed_entrepreneurs WHERE accountant_id = $1 ORDER BY name`,
 		accountantID,
 	)
 	if err != nil {
@@ -79,7 +116,7 @@ func (r *Repo) ListByAccountant(ctx context.Context, accountantID uuid.UUID) ([]
 	var out []Entrepreneur
 	for rows.Next() {
 		var e Entrepreneur
-		if err := rows.Scan(&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt); err != nil {
+		if err := scanRow(rows, &e); err != nil {
 			return nil, err
 		}
 		out = append(out, e)
@@ -87,17 +124,47 @@ func (r *Repo) ListByAccountant(ctx context.Context, accountantID uuid.UUID) ([]
 	return out, rows.Err()
 }
 
+// Update saves Name, PIB, Title, Address, BankAccount, MB, TaxpayerCode, and ActivityCode for the given entrepreneur.
+func (r *Repo) Update(ctx context.Context, e Entrepreneur) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE managed_entrepreneurs SET name=$1, pib=$2, title=$3, address=$4, bank_account=$5, mb=$6, taxpayer_code=$7, activity_code=$8 WHERE id=$9`,
+		e.Name, e.PIB, e.Title, e.Address, e.BankAccount, e.MB, e.TaxpayerCode, e.ActivityCode, e.ID,
+	)
+	return err
+}
+
 // FindByID returns the entrepreneur with the given ID, or ErrNotFound.
 func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (Entrepreneur, error) {
 	var e Entrepreneur
-	err := r.db.QueryRowContext(ctx,
-		`SELECT id, name, pib, accountant_id, created_at
-		 FROM entrepreneurs
-		 WHERE id = $1`,
-		id,
-	).Scan(&e.ID, &e.Name, &e.PIB, &e.AccountantID, &e.CreatedAt)
+	err := scanRow(r.db.QueryRowContext(ctx,
+		`SELECT `+selectCols+` FROM managed_entrepreneurs WHERE id = $1`, id,
+	), &e)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Entrepreneur{}, ErrNotFound
 	}
 	return e, err
+}
+
+// FindByEntrepreneurUserID returns the managed entrepreneur linked to the given entrepreneur_user,
+// or ErrNotFound.
+func (r *Repo) FindByEntrepreneurUserID(ctx context.Context, userID uuid.UUID) (Entrepreneur, error) {
+	var e Entrepreneur
+	err := scanRow(r.db.QueryRowContext(ctx,
+		`SELECT `+selectCols+` FROM managed_entrepreneurs WHERE entrepreneur_user_id = $1`, userID,
+	), &e)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Entrepreneur{}, ErrNotFound
+	}
+	return e, err
+}
+
+// Pair links a managed entrepreneur to an entrepreneur_user and records the pairing time.
+func (r *Repo) Pair(ctx context.Context, managedID, entrepreneurUserID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE managed_entrepreneurs
+		 SET entrepreneur_user_id = $1, paired_at = now()
+		 WHERE id = $2 AND entrepreneur_user_id IS NULL`,
+		entrepreneurUserID, managedID,
+	)
+	return err
 }

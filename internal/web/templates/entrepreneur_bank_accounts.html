@@ -1,0 +1,97 @@
+{{template "entrepreneur_base" .}}
+
+{{define "title"}}{{T "bank_accounts.page_title"}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center justify-between">
+  <div class="text-sm text-gray-500"><a href="/e/" class="hover:text-primary">{{T "bank_accounts.back"}}</a></div>
+  <a href="/e/bank-accounts/new"
+     class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+    {{T "bank_accounts.add_new"}}
+  </a>
+</div>
+
+{{template "accounts-list" .}}
+{{end}}
+
+{{define "accounts-list"}}
+<div id="accounts-list" class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">{{T "bank_accounts.section_title"}}</h2>
+  </div>
+  {{if .Accounts}}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "bank"}}"
+             hx-get="{{.List.SortLink "bank"}}"
+             hx-target="#accounts-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "bank_accounts.col_bank"}} {{.List.SortIcon "bank"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "type"}}"
+             hx-get="{{.List.SortLink "type"}}"
+             hx-target="#accounts-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "bank_accounts.col_type"}} {{.List.SortIcon "type"}}
+          </a>
+        </th>
+        <th class="px-4 py-2 text-left">
+          <a href="{{.List.SortLink "number"}}"
+             hx-get="{{.List.SortLink "number"}}"
+             hx-target="#accounts-list" hx-swap="outerHTML" hx-push-url="true"
+             class="hover:text-gray-700">
+            {{T "bank_accounts.col_number"}} {{.List.SortIcon "number"}}
+          </a>
+        </th>
+        <th class="px-4 py-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Accounts}}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 font-medium text-gray-900">{{.BankName}}</td>
+        <td class="px-4 py-2">
+          {{if eq (printf "%s" .AccountType) "foreign"}}<span class="text-xs text-blue-600">{{T "bank_accounts.type_foreign"}}</span>{{else}}<span class="text-xs text-gray-400">{{T "bank_accounts.type_local"}}</span>{{end}}
+        </td>
+        <td class="px-4 py-2 font-mono text-xs text-gray-600">
+          {{if eq (printf "%s" .AccountType) "foreign"}}{{.IBAN}}{{else}}{{.AccountNumber}}{{end}}
+        </td>
+        <td class="px-4 py-2 text-right">
+          <a href="/e/bank-accounts/{{.ID}}/edit" class="text-xs text-primary hover:underline mr-2">{{T "bank_accounts.edit"}}</a>
+          <form method="POST" action="/e/bank-accounts/{{.ID}}/delete" class="inline"
+                onsubmit="return confirm('{{T "bank_accounts.delete_confirm"}}')">
+            <button type="submit" class="text-xs text-red-600 hover:underline">{{T "bank_accounts.delete"}}</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{if or .List.HasPrev .List.HasNext}}
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm">
+    <span class="text-gray-500">{{TWith "bank_accounts.page_info" "Page" .List.Page "LastPage" .List.LastPage "Total" .List.Total}}</span>
+    <div class="flex gap-2">
+      {{if .List.HasPrev}}
+      <a href="{{.List.PrevURL}}"
+         hx-get="{{.List.PrevURL}}" hx-target="#accounts-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">{{T "bank_accounts.prev"}}</a>
+      {{end}}
+      {{if .List.HasNext}}
+      <a href="{{.List.NextURL}}"
+         hx-get="{{.List.NextURL}}" hx-target="#accounts-list" hx-swap="outerHTML" hx-push-url="true"
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">{{T "bank_accounts.next"}}</a>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+  {{else}}
+  <div class="px-6 py-8 text-center text-gray-400 text-sm">
+    {{T "bank_accounts.empty"}} <a href="/e/bank-accounts/new" class="text-primary hover:underline">{{T "bank_accounts.empty_add"}}</a>.
+  </div>
+  {{end}}
+</div>
+{{end}}

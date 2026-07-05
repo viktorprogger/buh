@@ -21,6 +21,8 @@ buh
 *.test
 *.out
 
-# Node (Tailwind build tooling)
+# Node (Tailwind build tooling + Playwright)
 node_modules/
 package-lock.json
+playwright-report/
+test-results/

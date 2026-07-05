@@ -4,10 +4,15 @@
   "scripts": {
     "css": "tailwindcss -i ./internal/web/static/input.css -o ./internal/web/static/app.css",
     "css:watch": "tailwindcss -i ./internal/web/static/input.css -o ./internal/web/static/app.css --watch",
-    "css:build": "tailwindcss -i ./internal/web/static/input.css -o ./internal/web/static/app.css --minify"
+    "css:build": "tailwindcss -i ./internal/web/static/input.css -o ./internal/web/static/app.css --minify",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.3.1",
     "tailwindcss": "^4.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
   }
 }

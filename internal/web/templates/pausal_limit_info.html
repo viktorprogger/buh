@@ -1,0 +1,46 @@
+{{template "base" .}}
+
+{{define "title"}}{{T "pausal_limit_info.title"}}{{end}}
+
+{{define "nav"}}{{end}}
+
+{{define "content"}}
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">{{T "pausal_limit_info.title"}}</h1>
+    <p class="mt-1 text-sm text-gray-500">{{T "pausal_limit_info.subtitle"}}</p>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-lg shadow-xs divide-y divide-gray-100 text-sm text-gray-700 leading-relaxed">
+
+    <div class="px-6 py-5">
+      <h2 class="font-semibold text-gray-900 mb-2">{{T "pausal_limit_info.limit_q"}}</h2>
+      <p>{{T "pausal_limit_info.limit_intro"}}</p>
+      <ul class="mt-2 space-y-1 list-disc list-inside text-gray-600">
+        <li>{{T "pausal_limit_info.until_2026"}}</li>
+        <li>{{T "pausal_limit_info.from_2027"}}</li>
+      </ul>
+      <p class="mt-2 text-gray-500 text-xs">{{T "pausal_limit_info.limit_note"}}</p>
+    </div>
+
+    <div class="px-6 py-5">
+      <h2 class="font-semibold text-gray-900 mb-2">{{T "pausal_limit_info.consequences_q"}}</h2>
+      <p>{{T "pausal_limit_info.consequences_intro"}}</p>
+      <ul class="mt-3 space-y-2 list-disc list-inside text-gray-600">
+        <li>{{T "pausal_limit_info.con_bookkeeping"}}</li>
+        <li>{{T "pausal_limit_info.con_tax_payments"}}</li>
+        <li>{{T "pausal_limit_info.con_tax_return"}}</li>
+        <li>{{T "pausal_limit_info.con_burden"}}</li>
+      </ul>
+      <p class="mt-3">{{T "pausal_limit_info.consequences_note"}}</p>
+    </div>
+
+    <div class="px-6 py-5">
+      <h2 class="font-semibold text-gray-900 mb-2">{{T "pausal_limit_info.planning_q"}}</h2>
+      <p>{{T "pausal_limit_info.planning_intro"}}</p>
+      <p class="mt-3">{{T "pausal_limit_info.planning_rec"}}</p>
+    </div>
+
+  </div>
+</div>
+{{end}}

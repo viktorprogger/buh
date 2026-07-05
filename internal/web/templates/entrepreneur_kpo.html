@@ -1,0 +1,404 @@
+{{template "entrepreneur_base" .}}
+
+{{define "title"}}КПО {{.SelectedYear}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 text-sm text-gray-500">
+  <a href="/e/" class="hover:text-primary">{{T "clients.back"}}</a>
+</div>
+
+{{template "pausal_alert" .PausalAlert}}
+{{template "vat_alert" .VATAlert}}
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6" id="kpo">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+    <h2 class="text-lg font-semibold text-gray-900">{{T "kpo.section_title"}}</h2>
+    <div class="flex flex-wrap gap-2 items-center">
+      <a href="/e/invoices/new"
+         class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
+        {{T "kpo.invoice_link"}}
+      </a>
+      <a href="/e/kpo/{{.SelectedYear}}/pdf"
+         class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "kpo.download_pdf"}}
+      </a>
+      {{if .KPOBooks}}
+      <select id="year-select"
+              class="rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              onchange="window.location.href='/e/kpo/'+this.value+'#kpo'">
+        {{range .KPOBooks}}
+        <option value="{{.Year}}"{{if eq .Year $.SelectedYear}} selected{{end}}>{{.Year}}{{if .IsFinalized}} ✓{{end}}</option>
+        {{end}}
+      </select>
+      {{end}}
+      <button type="button"
+              onclick="var f=document.getElementById('add-year-form');f.style.display=f.style.display==='none'?'flex':'none'"
+              class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "kpo.add_year"}}
+      </button>
+      <form id="add-year-form" method="GET" action="/e/kpo/{{.SelectedYear}}"
+            style="display:none" class="flex gap-2 items-center"
+            onsubmit="window.location.href='/e/kpo/'+this.querySelector('[name=year]').value+'#kpo';return false">
+        <input type="number" name="year" min="2000" max="2100" placeholder="{{T "kpo.add_year_ph"}}"
+               class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+               title="{{T "kpo.add_year_title"}}">
+        <button type="submit"
+                class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
+          {{T "kpo.add_year_submit"}}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Entry table -->
+  <div class="overflow-x-auto">
+    <form id="kpo-new" method="POST"
+          action="/e/kpo/{{.SelectedYear}}/entries"
+          aria-label="{{T "kpo.new_entry_aria"}}"></form>
+    {{if not .CurrentBook.IsFinalized}}
+    {{range .KPORows}}{{if not .IsAdvanceInvoice}}<form id="edit-{{.EntryID}}" method="POST"
+          action="/e/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/update"></form>
+    {{end}}{{end}}
+    {{end}}
+
+    <table class="w-full text-sm" aria-label="КПО {{.SelectedYear}}">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <th class="px-3 py-2 text-center w-10">{{T "kpo.col_num"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_date"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_invoice"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_description"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_product"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_service"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_total"}}</th>
+          {{if not .CurrentBook.IsFinalized}}<th class="w-10"></th>{{end}}
+        </tr>
+      </thead>
+      <tbody id="kpo-tbody" class="divide-y divide-gray-100">
+
+        {{range .KPORows}}
+        {{if .IsAdvanceInvoice}}
+        <tr class="opacity-50 hover:opacity-70"
+            title="{{T "kpo.advance_tooltip"}}">
+          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">{{T "kpo.advance_label"}}</td>
+          <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
+          <td class="px-3 py-2 text-gray-500">
+            <a href="/e/invoices/{{.InvoiceID}}"
+               class="underline hover:text-primary">{{.InvoiceNum}}</a>
+          </td>
+          <td class="px-3 py-2 text-gray-500 text-xs">{{.ClientName}}</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-500">{{printf "%.2f" .TotalRSD}}</td>
+          {{if not $.CurrentBook.IsFinalized}}<td></td>{{end}}
+        </tr>
+        {{else}}
+        <tr class="hover:bg-gray-50" data-id="{{.EntryID}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
+          <td class="px-3 py-2 text-center text-gray-400 text-xs{{if not $.CurrentBook.IsFinalized}} cursor-grab select-none{{end}}">
+            {{if not $.CurrentBook.IsFinalized}}<span class="text-gray-300 mr-0.5">⠿</span>{{end}}<span class="row-ordinal">{{.OrdinalNumber}}</span>
+          </td>
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-600">{{.Date.Format "02.01.2006."}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="collection_date"
+                   value="{{.Date.Format "02.01"}}" maxlength="5" placeholder="дд.мм"
+                   style="display:none"
+                   class="edit-input w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-800">{{.InvoiceNum}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="invoice_number"
+                   value="{{.InvoiceNum}}" style="display:none"
+                   class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-500 text-xs">{{.Description}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="description"
+                   value="{{.Description}}" style="display:none"
+                   placeholder="клијент / опис услуге"
+                   class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <td class="px-3 py-2 text-right">
+            <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ProductRevenue}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="product_revenue"
+                   value="{{printf "%.2f" .ProductRevenue}}" style="display:none"
+                   class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <td class="px-3 py-2 text-right">
+            <span class="view-val font-mono text-gray-800">{{printf "%.2f" .ServiceRevenue}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="service_revenue"
+                   value="{{printf "%.2f" .ServiceRevenue}}" style="display:none"
+                   class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .EntryTotal}}</td>
+          {{if not $.CurrentBook.IsFinalized}}
+          <td class="px-2 py-2 text-center">
+            <div class="view-actions flex gap-1 items-center justify-center">
+              <button type="button" onclick="rowEdit('{{.EntryID}}', true)"
+                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="{{T "kpo.row_edit"}}">✎</button>
+              <form method="POST"
+                    action="/e/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/delete"
+                    onsubmit="return confirm('{{T "kpo.row_delete_confirm"}}')">
+                <button type="submit"
+                        class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
+                        title="{{T "kpo.row_delete"}}" aria-label="{{T "kpo.row_delete_label"}}">✕</button>
+              </form>
+            </div>
+            <div class="edit-actions flex gap-1 items-center justify-center" style="display:none">
+              <button form="edit-{{.EntryID}}" type="submit"
+                      class="text-green-600 hover:text-green-800 px-1 py-1" title="{{T "kpo.row_save"}}">✓</button>
+              <button type="button" onclick="rowEdit('{{.EntryID}}', false)"
+                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="{{T "kpo.row_cancel"}}">✕</button>
+            </div>
+          </td>
+          {{end}}
+        </tr>
+        {{end}}
+        {{end}}
+
+        {{if .KPOEntries}}
+        <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
+          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalProduct}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalService}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalAll}}</td>
+          {{if not .CurrentBook.IsFinalized}}<td></td>{{end}}
+        </tr>
+        {{end}}
+
+        {{if not .CurrentBook.IsFinalized}}
+        <tr class="bg-blue-50" id="kpo-new-row">
+          <td class="px-3 py-1.5 text-center text-gray-300 text-xs select-none">+</td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="collection_date" required
+                   id="kpo-date" autofocus
+                   maxlength="5" placeholder="{{T "kpo.ph_date"}}"
+                   class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_date"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="invoice_number" placeholder="{{T "kpo.ph_invoice"}}"
+                   id="kpo-invoice"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_invoice"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="description" placeholder="{{T "kpo.ph_description"}}"
+                   id="kpo-description"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_description"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="product_revenue" value="0"
+                   id="kpo-product"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_product"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="service_revenue" value="0"
+                   id="kpo-service"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_service"}}">
+          </td>
+          <td class="px-3 py-1 text-right font-mono text-sm font-medium text-gray-700 tabular-nums"
+              id="kpo-row-total">0.00</td>
+          <td class="px-1 py-1">
+            <button form="kpo-new" type="submit"
+                    class="rounded bg-primary px-2 py-1 text-xs font-medium text-white hover:bg-primary-hover whitespace-nowrap"
+                    aria-label="{{T "kpo.new_entry_aria"}}">
+              {{T "kpo.new_entry_submit"}}
+            </button>
+          </td>
+        </tr>
+        {{end}}
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Finalize / unfinalize bar -->
+  <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-end gap-4">
+    {{if .CurrentBook.IsFinalized}}
+      <span class="text-sm text-green-700 font-medium">{{T "kpo.finalized_at"}} {{.CurrentBook.FinalizedAtStr}}</span>
+      <form method="POST" action="/e/kpo/{{.SelectedYear}}/unfinalize">
+        <button type="submit"
+                class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+          {{T "kpo.unlock"}}
+        </button>
+      </form>
+    {{else}}
+      <form method="POST" action="/e/kpo/{{.SelectedYear}}/finalize">
+        <button type="submit"
+                class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+          {{T "kpo.finalize"}}
+        </button>
+      </form>
+    {{end}}
+  </div>
+</div>
+
+<script>
+function rowEdit(id, on) {
+  var row = document.querySelector('tr[data-id="' + id + '"]');
+  if (!row) return;
+  row.querySelectorAll('.view-val').forEach(function(el) { el.style.display = on ? 'none' : ''; });
+  row.querySelectorAll('.edit-input').forEach(function(el) { el.style.display = on ? '' : 'none'; });
+  row.querySelector('.view-actions').style.display = on ? 'none' : '';
+  row.querySelector('.edit-actions').style.display = on ? 'flex' : 'none';
+  if (on) {
+    var first = row.querySelector('.edit-input');
+    if (first) { initDateInput(first); first.focus(); }
+  }
+}
+
+function pad2(s) { return ('0' + s).slice(-2); }
+
+function normDateInput(s) {
+  var m;
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.\d{2,4}\.?$/);
+  if (m) return pad2(m[1]) + '.' + pad2(m[2]);
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return m[3] + '.' + m[2];
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.?$/);
+  if (m) return pad2(m[1]) + '.' + pad2(m[2]);
+  return null;
+}
+
+function initDateInput(el) {
+  if (el._dateInited) return;
+  el._dateInited = true;
+  el.addEventListener('paste', function(e) {
+    var text = (e.clipboardData || window.clipboardData).getData('text').trim();
+    var r = normDateInput(text);
+    if (r !== null) { e.preventDefault(); this.value = r; }
+  });
+  el.addEventListener('input', function(e) {
+    this.setCustomValidity('');
+    this.style.borderColor = '';
+    var digits = this.value.replace(/\D/g, '');
+    var deleting = e.inputType && e.inputType.startsWith('delete');
+    if (digits.length <= 1) {
+      this.value = digits;
+    } else if (digits.length === 2) {
+      this.value = deleting ? digits : digits + '.';
+    } else {
+      this.value = digits.slice(0, 2) + '.' + digits.slice(2, 4);
+    }
+  });
+  el.addEventListener('blur', function() {
+    var m = this.value.match(/^(\d{2})\.(\d{2})$/);
+    if (!m) return;
+    var d = +m[1], mo = +m[2];
+    if (d < 1 || d > 31 || mo < 1 || mo > 12) {
+      this.setCustomValidity('{{T "kpo.date_hint"}}');
+      this.reportValidity();
+      this.style.borderColor = '#ef4444';
+    }
+  });
+}
+
+(function () {
+  var kpoDate = document.getElementById('kpo-date');
+  if (kpoDate) initDateInput(kpoDate);
+
+  function parseNum(id) {
+    return parseFloat(document.getElementById(id)?.value?.replace(',', '.')) || 0;
+  }
+  function refreshTotal() {
+    var el = document.getElementById('kpo-row-total');
+    if (el) el.textContent = (parseNum('kpo-product') + parseNum('kpo-service')).toFixed(2);
+  }
+  ['kpo-product', 'kpo-service'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', refreshTotal);
+  });
+
+  var svc = document.getElementById('kpo-service');
+  if (svc) {
+    svc.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('kpo-new')?.submit();
+      }
+    });
+  }
+
+  if (window.location.hash === '#kpo-new') {
+    var dateInput = document.getElementById('kpo-date');
+    if (dateInput) { dateInput.focus(); dateInput.scrollIntoView({ block: 'center' }); }
+  }
+
+  // Drag-and-drop reordering
+  var tbody = document.getElementById('kpo-tbody');
+  if (!tbody) return;
+
+  var dragRow = null;
+  var overRow = null;
+  var dropBefore = true;
+
+  tbody.addEventListener('dragstart', function(e) {
+    var row = e.target.closest('tr[data-id]');
+    if (!row) { e.preventDefault(); return; }
+    dragRow = row;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.id);
+    setTimeout(function() { row.classList.add('opacity-40'); }, 0);
+  });
+
+  tbody.addEventListener('dragover', function(e) {
+    if (!dragRow) return;
+    e.preventDefault();
+    var target = e.target.closest('tr[data-id]');
+    if (!target || target === dragRow) return;
+    if (overRow && overRow !== target) clearIndicator(overRow);
+    overRow = target;
+    var rect = target.getBoundingClientRect();
+    dropBefore = e.clientY < rect.top + rect.height / 2;
+    target.style.borderTop = dropBefore ? '2px solid #2563eb' : '';
+    target.style.borderBottom = dropBefore ? '' : '2px solid #2563eb';
+  });
+
+  function clearIndicator(row) {
+    if (!row) return;
+    row.style.borderTop = '';
+    row.style.borderBottom = '';
+  }
+
+  tbody.addEventListener('dragleave', function(e) {
+    if (!tbody.contains(e.relatedTarget)) { clearIndicator(overRow); overRow = null; }
+  });
+
+  tbody.addEventListener('drop', function(e) {
+    e.preventDefault();
+    if (!dragRow || !overRow || overRow === dragRow) { clearIndicator(overRow); overRow = null; return; }
+    clearIndicator(overRow);
+    tbody.insertBefore(dragRow, dropBefore ? overRow : overRow.nextElementSibling);
+    tbody.querySelectorAll('tr[data-id] .row-ordinal').forEach(function(span, i) { span.textContent = i + 1; });
+    overRow = null;
+  });
+
+  tbody.addEventListener('dragend', function(e) {
+    if (!dragRow) return;
+    dragRow.classList.remove('opacity-40');
+    clearIndicator(overRow);
+    overRow = null;
+    var ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(function(r) { return r.dataset.id; });
+    fetch('/e/kpo/{{.SelectedYear}}/entries/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: ids.map(function(id) { return 'ids[]=' + encodeURIComponent(id); }).join('&')
+    }).catch(function() { location.reload(); });
+    dragRow = null;
+  });
+})();
+</script>
+{{end}}

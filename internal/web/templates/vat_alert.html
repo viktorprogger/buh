@@ -1,0 +1,30 @@
+{{define "vat_alert"}}
+{{if .}}
+<div class="mb-4 rounded border px-4 py-3 text-sm leading-snug
+  {{if eq .Severity "exceeded"}}bg-gray-900 border-gray-800 text-white
+  {{else if eq .Severity "alert"}}bg-red-50 border-red-300 text-red-900
+  {{else if eq .Severity "high"}}bg-orange-50 border-orange-300 text-orange-900
+  {{else}}bg-amber-50 border-amber-200 text-amber-800{{end}}">
+  {{if eq .Severity "exceeded"}}
+    <strong>{{T "vat_alert.critical_title"}}</strong> {{T "vat_alert.critical_message"}}
+    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    {{if .IsAccountant}}<strong>{{T "vat_alert.critical_contact_acc"}}</strong>{{else}}<strong>{{T "vat_alert.critical_contact_self"}}</strong>{{end}}
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
+  {{else if eq .Severity "alert"}}
+    <strong>{{T "vat_alert.alert_title"}}</strong> {{TWith "vat_alert.high_message" "Percent" (printf "%.1f" .Percent)}}
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    {{if .IsAccountant}}<strong>{{T "vat_alert.alert_contact_acc"}}</strong>{{else}}<strong>{{T "vat_alert.alert_contact_self"}}</strong>{{end}}
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
+  {{else if eq .Severity "high"}}
+    {{TWith "vat_alert.high_message" "Percent" (printf "%.1f" .Percent)}}
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    {{T "vat_alert.high_recommendation"}}
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
+  {{else}}
+    {{TWith "vat_alert.minor_message" "Percent" (printf "%.1f" .Percent)}}
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
+  {{end}}
+</div>
+{{end}}
+{{end}}

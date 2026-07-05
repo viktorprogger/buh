@@ -1,0 +1,165 @@
+{{template "entrepreneur_base" .}}
+
+{{define "title"}}{{if eq (printf "%s" .Invoice.InvoiceType) "advance"}}{{T "invoice_detail.title_advance"}}{{else}}{{T "invoice_detail.title_standard"}}{{end}} {{.Invoice.InvoiceNumber}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="{{.BackURL}}" class="hover:text-primary">{{T "invoice_detail.back"}}</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden max-w-2xl">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900">
+        {{if eq (printf "%s" .Invoice.InvoiceType) "advance"}}{{T "invoice_detail.title_advance"}}{{else}}{{T "invoice_detail.title_standard"}}{{end}}
+        {{if .Invoice.InvoiceNumber}}<span class="font-mono ml-1">{{.Invoice.InvoiceNumber}}</span>{{end}}
+      </h2>
+      {{if .Invoice.ClientName}}
+      <div class="text-sm text-gray-500 mt-0.5">{{.Invoice.ClientName}}</div>
+      {{end}}
+    </div>
+    <a href="{{.PDFUrl}}"
+       class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+      {{T "invoice_detail.download"}}
+    </a>
+  </div>
+
+  <!-- Issuer / Client -->
+  <div class="px-6 py-4 grid grid-cols-2 gap-6 border-b border-gray-100 text-sm">
+    <div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_detail.issuer"}}</div>
+      {{with .Issuer}}
+      <div class="font-medium">{{.Name}}</div>
+      {{if .MB}}<div class="text-gray-600">MB: <span class="font-mono">{{.MB}}</span></div>{{end}}
+      {{if .PIB}}<div class="text-gray-600">PIB: <span class="font-mono">{{.PIB}}</span></div>{{end}}
+      {{if .Address}}<div class="text-gray-600">{{.Address}}</div>{{end}}
+      {{end}}
+    </div>
+    <div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_detail.client"}}</div>
+      {{with .Client}}
+      <div class="font-medium">{{.Name}}</div>
+      {{if .IsForeign}}
+        {{if .RegistrationNumber}}<div class="text-gray-600">Tax ID / Reg No.: <span class="font-mono">{{.RegistrationNumber}}</span></div>{{end}}
+      {{else}}
+        {{if .PIB}}<div class="text-gray-600">PIB: <span class="font-mono">{{.PIB}}</span></div>{{end}}
+        {{if .RegistrationNumber}}<div class="text-gray-600">MB: <span class="font-mono">{{.RegistrationNumber}}</span></div>{{end}}
+      {{end}}
+      {{if .Address}}<div class="text-gray-600">{{.Address}}</div>{{end}}
+      {{if .Email}}<div class="text-gray-600">{{.Email}}</div>{{end}}
+      {{else}}
+      {{if .Invoice.ClientName}}<div class="font-medium">{{.Invoice.ClientName}}</div>{{end}}
+      {{end}}
+    </div>
+  </div>
+
+  <!-- Metadata -->
+  <div class="px-6 py-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm border-b border-gray-100">
+    <div>
+      <span class="text-gray-500">{{T "invoice_detail.issue_date"}}</span>
+      <span class="ml-1 font-medium">{{.Invoice.IssueDate.Format "02.01.2006."}}</span>
+    </div>
+    {{if .Invoice.DueDate.Valid}}
+    <div>
+      <span class="text-gray-500">{{T "invoice_detail.due_date"}}</span>
+      <span class="ml-1 font-medium">{{.Invoice.DueDate.Time.Format "02.01.2006."}}</span>
+    </div>
+    {{end}}
+    {{if .Invoice.PeriodStart.Valid}}
+    <div class="col-span-2">
+      <span class="text-gray-500">{{T "invoice_detail.period"}}</span>
+      <span class="ml-1 font-medium">
+        {{.Invoice.PeriodStart.Time.Format "02.01.2006."}} – {{.Invoice.PeriodEnd.Time.Format "02.01.2006."}}
+      </span>
+    </div>
+    {{end}}
+    <div>
+      <span class="text-gray-500">{{T "invoice_detail.currency"}}</span>
+      <span class="ml-1 font-medium font-mono">{{.Invoice.Currency}}</span>
+    </div>
+    {{if ne .Invoice.Currency "RSD"}}
+    <div>
+      <span class="text-gray-500">{{T "invoice_detail.amount_rsd"}}</span>
+      <span class="ml-1 font-medium font-mono">{{printf "%.2f" .Invoice.TotalRSD}} RSD</span>
+    </div>
+    {{end}}
+  </div>
+
+  <!-- Items table -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <th class="px-4 py-2 text-left">{{T "invoice_detail.col_description"}}</th>
+          <th class="px-4 py-2 text-right w-16">{{T "invoice_detail.col_qty"}}</th>
+          <th class="px-4 py-2 text-right w-24">{{T "invoice_detail.col_unit_price"}}</th>
+          <th class="px-4 py-2 text-right w-16">{{T "invoice_detail.col_discount"}}</th>
+          <th class="px-4 py-2 text-right w-24">{{T "invoice_detail.col_amount"}}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {{range .Items}}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 text-gray-900">
+            {{.Description}}
+            {{if .IsProduct}}<span class="ml-1 text-xs text-gray-400">{{T "invoice_detail.product_label"}}</span>{{end}}
+          </td>
+          <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" .Quantity}}</td>
+          <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" .UnitPrice}}</td>
+          <td class="px-4 py-2 text-right text-gray-600">{{printf "%.0f" .DiscountPct}}%</td>
+          <td class="px-4 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .LineTotal}}</td>
+        </tr>
+        {{end}}
+        <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold">
+          <td colspan="4" class="px-4 py-2 text-right text-sm text-gray-600">{{T "invoice_detail.total_label"}}</td>
+          <td class="px-4 py-2 text-right font-mono text-gray-900">
+            {{printf "%.2f" .GrandTotal}} {{.Invoice.Currency}}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {{if .BankAccount}}
+  <div class="px-6 py-3 border-t border-gray-100 text-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_detail.payment_account"}}</div>
+    <div class="text-gray-800">
+      {{if .BankAccount.BankName}}<span class="font-medium">{{.BankAccount.BankName}}</span>{{end}}
+      {{if eq (printf "%s" .BankAccount.AccountType) "foreign"}}
+        — IBAN: <span class="font-mono">{{.BankAccount.IBAN}}</span>
+        / SWIFT: <span class="font-mono">{{.BankAccount.SWIFT}}</span>
+      {{else}}
+        {{if .BankAccount.AccountNumber}}— <span class="font-mono">{{.BankAccount.AccountNumber}}</span>{{end}}
+      {{end}}
+    </div>
+    {{if .CorrespondentBank}}
+    <div class="mt-1 text-xs text-gray-500">
+      {{T "invoice_detail.corr_bank"}} <span class="font-medium">{{.CorrespondentBank.BankName}}</span>
+      {{if .CorrespondentBank.SWIFT}}/ SWIFT: <span class="font-mono">{{.CorrespondentBank.SWIFT}}</span>{{end}}
+      {{if .CorrespondentBank.BankAddress}}/ {{.CorrespondentBank.BankAddress}}{{end}}
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if .Invoice.Notes}}
+  <div class="px-6 py-3 border-t border-gray-100 text-sm text-gray-600">
+    <span class="font-medium">{{T "invoice_detail.notes_label"}}</span> {{.Invoice.Notes}}
+  </div>
+  {{end}}
+
+  {{if or .Invoice.DueDate.Valid .Invoice.NoVAT .Invoice.NoSign}}
+  <div class="px-6 py-3 border-t border-gray-100 text-xs text-gray-400 italic space-y-0.5">
+    {{if .Invoice.DueDate.Valid}}
+    <div>{{if eq .Invoice.Language "en"}}Payment due by{{else}}Placanje izvrsiti u roku do{{end}} {{.Invoice.DueDate.Time.Format "02.01.2006."}}.</div>
+    {{end}}
+    {{if .Invoice.NoVAT}}
+    <div>{{if eq .Invoice.Language "en"}}Not subject to VAT according to Article 12 of the VAT Law of the Republic of Serbia.{{else}}Nije obveznik PDV-a na osnovu cl. 12 Zakona o PDV RS.{{end}}</div>
+    {{end}}
+    {{if .Invoice.NoSign}}
+    <div>{{if eq .Invoice.Language "en"}}This invoice is computer-generated and valid without stamp or signature.{{else}}Ovaj racun je generisan kompjuterski i vazecan je bez pecata i potpisa.{{end}}</div>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+{{end}}

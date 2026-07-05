@@ -5,26 +5,30 @@ import (
 	"database/sql"
 	"embed"
 	"errors"
-	"fmt"
-	"html/template"
-	"log"
 	"net/http"
-	"os"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
 	"buh/internal/accountant"
 	"buh/internal/auth"
+	"buh/internal/bankaccount"
+	"buh/internal/client"
 	"buh/internal/entrepreneur"
-	"buh/internal/importer"
-	"buh/internal/ips"
+	"buh/internal/entrepreneuruser"
+	"buh/internal/i18n"
+	"buh/internal/invitation"
+	"buh/internal/uploadqueue"
+	"buh/internal/invoice"
+	"buh/internal/kpo"
 	"buh/internal/middleware"
-	"buh/internal/slip"
+	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
+	webaccountant "buh/internal/web/accountant"
+	webentrepreneur "buh/internal/web/entrepreneur"
+	"buh/internal/web/shared"
 )
-
-const maxUploadFiles = 4
 
 //go:embed templates
 var templateFS embed.FS
@@ -32,549 +36,333 @@ var templateFS embed.FS
 //go:embed static
 var staticFS embed.FS
 
-type templates struct {
-	login           *template.Template
-	index           *template.Template
-	entrepreneur    *template.Template
-	entrepreneurNew *template.Template
-	results         *template.Template
-	slip            *template.Template
-	slipNew         *template.Template
-	placeholder     *template.Template
-}
-
-// mustPageTmpl parses base.html + a page template (and optional extras) into a single template set.
-// The root template is named after the page file; Execute renders the full page via {{template "base" .}}.
-func mustPageTmpl(name string, funcs template.FuncMap, extra ...string) *template.Template {
-	t := template.New(name)
-	if funcs != nil {
-		t = t.Funcs(funcs)
-	}
-	files := append([]string{"templates/base.html", "templates/" + name}, extra...)
-	return template.Must(t.ParseFS(templateFS, files...))
-}
-
-func parseTemplates() templates {
-	slipExtra := []string{"templates/slip_styles.html"}
-	return templates{
-		login:           template.Must(template.New("login.html").ParseFS(templateFS, "templates/login.html")),
-		index:           mustPageTmpl("index.html", nil),
-		entrepreneur:    mustPageTmpl("entrepreneur.html", nil),
-		entrepreneurNew: mustPageTmpl("entrepreneur_new.html", nil),
-		results:         mustPageTmpl("results.html", nil),
-		slip:            mustPageTmpl("slip.html", nil, slipExtra...),
-		slipNew:         mustPageTmpl("slip_new.html", nil, slipExtra...),
-		placeholder:     mustPageTmpl("placeholder.html", nil),
-	}
-}
-
+// handler handles public routes: login, logout, invite accept, registration redirect, privacy, terms.
 type handler struct {
-	accountants   *accountant.Repo
-	sessions      *auth.SessionManager
-	entrepreneurs *entrepreneur.Repo
-	slips         *sliprecord.Repo
-	importer      *importer.Importer
-	tmpl          templates
+	sessions          *auth.SessionManager
+	accountants       *accountant.Repo
+	entrepreneurUsers *entrepreneuruser.Repo
+	invitations       *invitation.Repo
+	entrepreneurs     *entrepreneur.Repo
+	tmpl              shared.Templates
+}
+
+func (h *handler) renderError(w http.ResponseWriter, r *http.Request, code int) {
+	shared.RenderError(w, r, h.tmpl.ErrPage, code)
+}
+
+// langMiddleware resolves the active locale for every request and injects it into the context.
+// Priority: lang cookie > Accept-Language header.
+// On login success the cookie is set to the user's DB preference (see handleLogin).
+func langMiddleware(bundle *i18n.Bundle) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			lang := i18n.Detect(r, "")
+			l := bundle.NewLocalizer(lang)
+			r = i18n.WithLocalizer(r, l)
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // NewHandler returns an HTTP handler for the web UI.
-func NewHandler(accountants *accountant.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
+func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
 	entrepreneurs := entrepreneur.NewRepo(db)
 	slips := sliprecord.NewRepo(db)
+	slipHistory := sliphistory.NewRepo(db)
+	kpoBooks := kpo.NewRepo(db)
+	clients := client.NewRepo(db)
+	invoices := invoice.NewRepo(db)
+	bankAccounts := bankaccount.NewRepo(db)
+	invitations := invitation.NewRepo(db)
+	tmpl := shared.ParseTemplates(templateFS)
+	bundle := i18n.NewBundle()
+
+	uploadQueue := uploadqueue.NewRepo(db)
+	aH := webaccountant.NewHandler(
+		sessions,
+		entrepreneurs,
+		slips,
+		slipHistory,
+		kpoBooks,
+		uploadQueue,
+		entrepreneurUsers,
+		invitations,
+		invoices,
+		tmpl,
+	)
+	eH := webentrepreneur.NewHandler(
+		sessions,
+		entrepreneurs,
+		kpoBooks,
+		clients,
+		invoices,
+		bankAccounts,
+		entrepreneurUsers,
+		invitations,
+		tmpl,
+	)
+
 	h := &handler{
-		accountants:   accountants,
-		sessions:      sessions,
-		entrepreneurs: entrepreneurs,
-		slips:         slips,
-		importer:      importer.New(entrepreneurs, slips),
-		tmpl:          parseTemplates(),
+		sessions:          sessions,
+		accountants:       accts,
+		entrepreneurUsers: entrepreneurUsers,
+		invitations:       invitations,
+		entrepreneurs:     entrepreneurs,
+		tmpl:              tmpl,
 	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
+	mux.HandleFunc("POST /language", h.handleSetLanguage)
 	mux.HandleFunc("/login", h.handleLogin)
 	mux.HandleFunc("/logout", h.handleLogout)
 	mux.HandleFunc("/privacy", h.handlePrivacy)
 	mux.HandleFunc("/terms", h.handleTerms)
+	mux.HandleFunc("/info/pausal-limit", h.handlePausalLimitInfo)
+	mux.HandleFunc("/info/vat-limit", h.handleVATLimitInfo)
 
-	protected := http.NewServeMux()
-	protected.HandleFunc("POST /process", h.handleProcess)
-	protected.HandleFunc("GET /entrepreneurs/new", h.handleEntrepreneurNewForm)
-	protected.HandleFunc("POST /entrepreneurs/new", h.handleEntrepreneurNewSubmit)
-	protected.HandleFunc("GET /entrepreneurs/{id}", h.handleEntrepreneur)
-	protected.HandleFunc("GET /entrepreneurs/{id}/slips/new", h.handleSlipNewForm)
-	protected.HandleFunc("POST /entrepreneurs/{id}/slips/new", h.handleSlipNewSubmit)
-	protected.HandleFunc("GET /slips/{id}", h.handleSlip)
-	protected.HandleFunc("POST /slips/{id}/save", h.handleSlipSave)
-	protected.HandleFunc("POST /slips/{id}/download", h.handleSlipDownload)
-	protected.HandleFunc("GET /slips/{id}/pdf", h.handleSlipPDF)
-	protected.HandleFunc("/", h.handleIndex)
+	// Public entrepreneur routes (no auth middleware).
+	mux.HandleFunc("GET /e/register", eH.HandleRegisterForm)
+	mux.HandleFunc("POST /e/register", eH.HandleRegisterSubmit)
+	mux.HandleFunc("GET /invite/{token}", h.handleInviteToken)
+	mux.HandleFunc("POST /invite/{token}/accept", h.handleInviteAccept)
 
-	mux.Handle("/", middleware.RequireAuth(sessions, protected))
-	return mux
+	mux.Handle("/a/", http.StripPrefix("/a", middleware.RequireAccountant(sessions, aH.Routes())))
+	mux.Handle("/e/", http.StripPrefix("/e", middleware.RequireEntrepreneur(sessions, eH.Routes())))
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			h.renderError(w, r, http.StatusNotFound)
+			return
+		}
+		http.Redirect(w, r, "/login", http.StatusFound)
+	})
+
+	return langMiddleware(bundle)(mux)
 }
 
-// handleLogin GET → login form, POST → check email+password.
+// handleSetLanguage handles POST /language. Sets the lang cookie and, if the user
+// is logged in, persists the preference to the database.
+func (h *handler) handleSetLanguage(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	lang := r.FormValue("lang")
+	if lang != "sr" && lang != "en" && lang != "ru" {
+		lang = "sr"
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:    i18n.LangCookie,
+		Value:   lang,
+		Path:    "/",
+		MaxAge:  365 * 24 * 60 * 60,
+		Expires: time.Now().Add(365 * 24 * time.Hour),
+	})
+	if sess, ok := h.sessions.Get(r); ok {
+		if sess.UserType == auth.UserTypeAccountant {
+			_ = h.accountants.SetLanguage(r.Context(), sess.UserID, lang)
+		} else if sess.UserType == auth.UserTypeEntrepreneur {
+			if id, err := uuid.Parse(sess.UserID); err == nil {
+				_ = h.entrepreneurUsers.SetLanguage(r.Context(), id, lang)
+			}
+		}
+	}
+	ref := r.Header.Get("Referer")
+	if ref == "" {
+		ref = "/"
+	}
+	http.Redirect(w, r, ref, http.StatusFound)
+}
+
 func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		email := strings.TrimSpace(r.FormValue("email"))
 		password := r.FormValue("password")
+		userType := r.FormValue("user_type")
+
+		renderErr := func() {
+			shared.RenderTemplate(w, r, h.tmpl.Login, map[string]any{"Error": "Погрешна е-пошта или лозинка.", "UserType": userType})
+		}
+
+		if userType == "entrepreneur" {
+			u, err := h.entrepreneurUsers.FindByEmail(r.Context(), email)
+			if err == nil {
+				err = entrepreneuruser.CheckPassword(u, password)
+			}
+			if errors.Is(err, entrepreneuruser.ErrNotFound) || errors.Is(err, entrepreneuruser.ErrInvalidCredentials) {
+				renderErr()
+				return
+			}
+			if err != nil {
+				http.Error(w, "Грешка при пријави", http.StatusInternalServerError)
+				return
+			}
+			if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeEntrepreneur, UserID: u.ID.String()}); err != nil {
+				http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
+				return
+			}
+			// Persist the user's language preference to cookie.
+			if u.Language != "" {
+				http.SetCookie(w, &http.Cookie{
+					Name:    i18n.LangCookie,
+					Value:   u.Language,
+					Path:    "/",
+					MaxAge:  365 * 24 * 60 * 60,
+					Expires: time.Now().Add(365 * 24 * time.Hour),
+				})
+			}
+			http.Redirect(w, r, "/e/", http.StatusFound)
+			return
+		}
 
 		a, err := h.accountants.FindByEmail(context.Background(), email)
 		if err == nil {
 			err = accountant.CheckPassword(a, password)
 		}
 		if errors.Is(err, accountant.ErrNotFound) || errors.Is(err, accountant.ErrInvalidCredentials) {
-			renderTemplate(w, h.tmpl.login, map[string]any{"Error": "Погрешна е-пошта или лозинка."})
+			renderErr()
 			return
 		}
 		if err != nil {
 			http.Error(w, "Грешка при пријави", http.StatusInternalServerError)
 			return
 		}
-
-		if err := h.sessions.Set(w, a.ID); err != nil {
+		if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeAccountant, UserID: a.ID}); err != nil {
 			http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		// Persist the accountant's language preference to cookie.
+		if a.Language != "" {
+			http.SetCookie(w, &http.Cookie{
+				Name:    i18n.LangCookie,
+				Value:   a.Language,
+				Path:    "/",
+				MaxAge:  365 * 24 * 60 * 60,
+				Expires: time.Now().Add(365 * 24 * time.Hour),
+			})
+		}
+		http.Redirect(w, r, "/a/", http.StatusFound)
 		return
 	}
-	renderTemplate(w, h.tmpl.login, nil)
+	shared.RenderTemplate(w, r, h.tmpl.Login, nil)
 }
 
-// handleLogout clears the session and redirects to /login.
 func (h *handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	h.sessions.Clear(w)
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
-// handleIndex lists all entrepreneurs for the logged-in accountant.
-func (h *handler) handleIndex(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	accountantIDStr, _ := h.sessions.Get(r)
-	accountantID, err := uuid.Parse(accountantIDStr)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	entrepreneurs, err := h.entrepreneurs.ListByAccountant(context.Background(), accountantID)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
-		return
-	}
-
-	renderTemplate(w, h.tmpl.index, map[string]any{
-		"Entrepreneurs": entrepreneurs,
-	})
-}
-
-// handleEntrepreneur shows an entrepreneur's details and their slip list.
-func (h *handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	e, err := h.entrepreneurs.FindByID(context.Background(), id)
-	if errors.Is(err, entrepreneur.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
-		return
-	}
-
-	slips, err := h.slips.ListByEntrepreneur(context.Background(), id)
-	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатница", http.StatusInternalServerError)
-		return
-	}
-
-	renderTemplate(w, h.tmpl.entrepreneur, map[string]any{
-		"Entrepreneur": e,
-		"Slips":        slips,
-	})
-}
-
-// handleEntrepreneurNewForm renders the manual entrepreneur creation form.
-func (h *handler) handleEntrepreneurNewForm(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, h.tmpl.entrepreneurNew, nil)
-}
-
-// handleEntrepreneurNewSubmit validates and creates a new entrepreneur, then redirects.
-func (h *handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	name := strings.TrimSpace(r.FormValue("name"))
-	pib := strings.TrimSpace(r.FormValue("pib"))
-
-	if name == "" || pib == "" {
-		renderTemplate(w, h.tmpl.entrepreneurNew, map[string]any{
-			"Error": "Оба поља су обавезна.",
-			"Name":  name,
-			"PIB":  pib,
-		})
-		return
-	}
-
-	accountantIDStr, _ := h.sessions.Get(r)
-	accountantID, err := uuid.Parse(accountantIDStr)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	e, _, err := h.entrepreneurs.FindOrCreate(context.Background(), accountantID, pib, name)
-	if err != nil {
-		http.Error(w, "Грешка при чувању предузетника", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/entrepreneurs/"+e.ID.String(), http.StatusFound)
-}
-
-// handleSlip shows a saved slip's details and a re-download button.
-func (h *handler) handleSlip(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	s, err := h.slips.FindByID(context.Background(), id)
-	if errors.Is(err, sliprecord.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	renderTemplate(w, h.tmpl.slip, map[string]any{
-		"Slip":        s,
-		"Saved":       r.URL.Query().Get("saved") == "1",
-		"Downloading": r.URL.Query().Get("download") == "1",
-	})
-}
-
-// slipFormToRecord fills editable SlipRecord fields from the posted form.
-// It assumes r.ParseForm() has already been called.
-func slipFormToRecord(r *http.Request, existing sliprecord.SlipRecord) sliprecord.SlipRecord {
-	rawAccount := strings.ReplaceAll(strings.TrimSpace(r.FormValue("R")), "-", "")
-	existing.Payer = strings.TrimSpace(r.FormValue("P"))
-	existing.Purpose = strings.TrimSpace(r.FormValue("S"))
-	existing.Payee = strings.TrimSpace(r.FormValue("N"))
-	existing.PayeeAccount = rawAccount
-	existing.Reference = strings.TrimSpace(r.FormValue("RO"))
-	existing.PaymentCode = strings.TrimSpace(r.FormValue("SF"))
-	existing.Amount = strings.TrimSpace(r.FormValue("amount"))
-	existing.Currency = r.FormValue("currency")
-	return existing
-}
-
-// handleSlipSave saves editable field values to DB and redirects to slip detail with ?saved=1.
-func (h *handler) handleSlipSave(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	existing, err := h.slips.FindByID(r.Context(), id)
-	if errors.Is(err, sliprecord.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	r.ParseForm()
-	updated := slipFormToRecord(r, existing)
-	if err := h.slips.Update(r.Context(), updated); err != nil {
-		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/slips/"+idStr+"?saved=1", http.StatusFound)
-}
-
-// handleSlipDownload saves editable field values, then redirects to slip detail with ?saved=1&download=1.
-func (h *handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	existing, err := h.slips.FindByID(r.Context(), id)
-	if errors.Is(err, sliprecord.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	r.ParseForm()
-	updated := slipFormToRecord(r, existing)
-	if err := h.slips.Update(r.Context(), updated); err != nil {
-		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/slips/"+idStr+"?saved=1&download=1", http.StatusFound)
-}
-
-// handleSlipPDF generates the PDF from the current SlipRecord fields and streams it as an attachment.
-func (h *handler) handleSlipPDF(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	s, err := h.slips.FindByID(r.Context(), id)
-	if errors.Is(err, sliprecord.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	pay := &ips.Payment{
-		K:  ips.CodePR,
-		V:  "01",
-		C:  "1",
-		R:  s.PayeeAccount,
-		N:  s.Payee,
-		SF: s.PaymentCode,
-		S:  s.Purpose,
-		RO: s.Reference,
-		O:  "",
-		P:  s.Payer,
-	}
-	pay.I = ips.FormatAmount(s.Currency, strings.ReplaceAll(s.Amount, ",", "."))
-
-	tmp, err := os.CreateTemp("", "buh-slip-*.pdf")
-	if err != nil {
-		http.Error(w, "Грешка при креирању фајла", http.StatusInternalServerError)
-		return
-	}
-	tmp.Close()
-	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
-
-	if err := slip.GeneratePDF(pay, tmpPath); err != nil {
-		http.Error(w, fmt.Sprintf("Грешка при генерисању PDF: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	pdfBytes, err := os.ReadFile(tmpPath)
-	if err != nil {
-		http.Error(w, "Грешка при читању PDF", http.StatusInternalServerError)
-		return
-	}
-
-	filename := fmt.Sprintf("uplatnica-%s.pdf", sanitizeFilename(pay.N))
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	w.Write(pdfBytes)
-}
-
-// slipNewForm holds form values re-rendered on validation error.
-type slipNewForm struct {
-	S        string // purpose
-	N        string // payee name
-	R        string // payee account
-	RO       string // reference
-	SF       string // payment code
-	Amount   string
-	Currency string
-	P        string // payer name
-}
-
-// handleSlipNewForm renders the manual slip creation form.
-func (h *handler) handleSlipNewForm(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	e, err := h.entrepreneurs.FindByID(context.Background(), id)
-	if errors.Is(err, entrepreneur.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
-		return
-	}
-
-	renderTemplate(w, h.tmpl.slipNew, map[string]any{
-		"Entrepreneur": e,
-		"Form":         slipNewForm{SF: "253", Currency: "RSD", P: e.Name},
-	})
-}
-
-// handleSlipNewSubmit builds an IPS payment from form values, generates a PDF,
-// saves a SlipRecord, and redirects to the slip detail page.
-func (h *handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	e, err := h.entrepreneurs.FindByID(context.Background(), id)
-	if errors.Is(err, entrepreneur.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
-		return
-	}
-
-	r.ParseForm()
-	form := slipNewForm{
-		S:        strings.TrimSpace(r.FormValue("S")),
-		N:        strings.TrimSpace(r.FormValue("N")),
-		R:        strings.TrimSpace(r.FormValue("R")),
-		RO:       strings.TrimSpace(r.FormValue("RO")),
-		SF:       strings.TrimSpace(r.FormValue("SF")),
-		Amount:   strings.TrimSpace(r.FormValue("amount")),
-		Currency: r.FormValue("currency"),
-		P:        strings.TrimSpace(r.FormValue("P")),
-	}
-
-	renderErr := func(msg string) {
-		renderTemplate(w, h.tmpl.slipNew, map[string]any{
-			"Entrepreneur": e,
-			"Form":         form,
-			"Error":        msg,
-		})
-	}
-
-	if form.S == "" || form.N == "" || form.R == "" || form.SF == "" || form.Amount == "" {
-		renderErr("Молимо попуните сва обавезна поља.")
-		return
-	}
-
-	// Strip dashes from account number if entered in display format XXX-XXXXXXXXXXXXX-XX.
-	rawAccount := strings.ReplaceAll(form.R, "-", "")
-
-	pay := &ips.Payment{
-		K:  ips.CodePR,
-		V:  "01",
-		C:  "1",
-		R:  rawAccount,
-		N:  form.N,
-		SF: form.SF,
-		S:  form.S,
-		RO: form.RO,
-		P:  form.P,
-	}
-	pay.I = ips.FormatAmount(form.Currency, strings.ReplaceAll(form.Amount, ",", "."))
-
-	tmp, err := os.CreateTemp("", "buh-slip-*.pdf")
-	if err != nil {
-		http.Error(w, "Грешка при креирању фајла", http.StatusInternalServerError)
-		return
-	}
-	tmp.Close()
-	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
-
-	if err := slip.GeneratePDF(pay, tmpPath); err != nil {
-		renderErr(fmt.Sprintf("Грешка при генерисању PDF: %v", err))
-		return
-	}
-
-	rec := sliprecord.SlipRecord{
-		EntrepreneurID: id,
-		PaymentCode:    pay.SF,
-		Amount:         form.Amount,
-		Currency:       form.Currency,
-		Purpose:        pay.S,
-		PayeeAccount:   rawAccount,
-		Reference:      pay.RO,
-		Payee:          pay.N,
-		Payer:          pay.P,
-	}
-	saved, err := h.slips.Save(context.Background(), rec)
-	if err != nil {
-		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/slips/"+saved.ID.String(), http.StatusFound)
-}
-
-// handlePrivacy renders the privacy policy placeholder.
 func (h *handler) handlePrivacy(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, h.tmpl.placeholder, map[string]any{"Title": "Политика приватности"})
+	shared.RenderTemplate(w, r, h.tmpl.Placeholder, map[string]any{"Title": "Политика приватности"})
 }
 
-// handleTerms renders the terms of use placeholder.
 func (h *handler) handleTerms(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, h.tmpl.placeholder, map[string]any{"Title": "Услови коришћења"})
+	shared.RenderTemplate(w, r, h.tmpl.Placeholder, map[string]any{"Title": "Услови коришћења"})
 }
 
-// handleProcess receives uploaded PDFs, saves entrepreneurs and slips to DB, renders import summary.
-func (h *handler) handleProcess(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(32 << 20)
-	files := r.MultipartForm.File["pdfs"]
-	if len(files) == 0 {
-		http.Redirect(w, r, "/", http.StatusFound)
+func (h *handler) handlePausalLimitInfo(w http.ResponseWriter, r *http.Request) {
+	shared.RenderTemplate(w, r, h.tmpl.PausalLimitInfo, nil)
+}
+
+func (h *handler) handleVATLimitInfo(w http.ResponseWriter, r *http.Request) {
+	shared.RenderTemplate(w, r, h.tmpl.VATLimitInfo, nil)
+}
+
+func (h *handler) handleInviteToken(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	inv, err := h.invitations.FindByToken(r.Context(), token)
+	if err != nil {
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	if len(files) > maxUploadFiles {
-		files = files[:maxUploadFiles]
+	if err := inv.Validate(); err != nil {
+		shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": "Позивница је истекла или је већ искоришћена."})
+		return
 	}
-
-	accountantIDStr, _ := h.sessions.Get(r)
-	accountantID, _ := uuid.Parse(accountantIDStr)
-
-	result := h.importer.ProcessFiles(r.Context(), accountantID, files)
-	renderTemplate(w, h.tmpl.results, result)
+	data := map[string]any{
+		"Invitation": inv,
+		"Token":      token,
+	}
+	if inv.ManagedEntrepreneurID != nil {
+		me, err := h.entrepreneurs.FindByID(r.Context(), *inv.ManagedEntrepreneurID)
+		if err == nil {
+			data["ManagedEntrepreneur"] = me
+		}
+	}
+	shared.RenderTemplate(w, r, h.tmpl.InviteAccept, data)
 }
 
-func sanitizeFilename(s string) string {
-	r := strings.NewReplacer(" ", "-", "/", "-", "\\", "-", ":", "-")
-	s = r.Replace(s)
-	if len(s) > 40 {
-		s = s[:40]
+func (h *handler) handleInviteAccept(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	inv, err := h.invitations.FindByToken(r.Context(), token)
+	if err != nil {
+		h.renderError(w, r, http.StatusNotFound)
+		return
 	}
-	if s == "" {
-		s = "slip"
+	if err := inv.Validate(); err != nil {
+		shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": "Позивница је истекла или је већ искоришћена."})
+		return
 	}
-	return s
-}
 
-
-func renderTemplate(w http.ResponseWriter, tmpl *template.Template, data any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("template error: %v", err)
+	sess, ok := h.sessions.Get(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
 	}
+
+	if inv.InviterType == invitation.InviterTypeAccountant {
+		if sess.UserType != auth.UserTypeEntrepreneur {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		entrepreneurUserID, _ := uuid.Parse(sess.UserID)
+		managedID := *inv.ManagedEntrepreneurID
+
+		if existing, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), entrepreneurUserID); existing.ID != uuid.Nil {
+			shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": "Већ сте повезани са рачуновођом."})
+			return
+		}
+		if err := h.entrepreneurs.Pair(r.Context(), managedID, entrepreneurUserID); err != nil {
+			http.Error(w, "Грешка при повезивању", http.StatusInternalServerError)
+			return
+		}
+		h.invitations.Accept(r.Context(), inv.ID)
+		http.Redirect(w, r, "/e/", http.StatusFound)
+		return
+	}
+
+	// Entrepreneur-initiated: accountant accepts.
+	if sess.UserType != auth.UserTypeAccountant {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	r.ParseForm()
+	managedIDStr := strings.TrimSpace(r.FormValue("managed_entrepreneur_id"))
+	accountantID, _ := uuid.Parse(sess.UserID)
+	entrepreneurUserID := inv.InviterID
+
+	var managedID uuid.UUID
+	if managedIDStr == "" || managedIDStr == "new" {
+		u, err := h.entrepreneurUsers.FindByID(r.Context(), entrepreneurUserID)
+		name := "Предузетник"
+		if err == nil && u.Email != "" {
+			name = u.Email
+		}
+		e, _, err := h.entrepreneurs.FindOrCreate(r.Context(), accountantID, "0000000000", name)
+		if err != nil {
+			http.Error(w, "Грешка при креирању предузетника", http.StatusInternalServerError)
+			return
+		}
+		managedID = e.ID
+	} else {
+		if managedID, err = uuid.Parse(managedIDStr); err != nil {
+			h.renderError(w, r, http.StatusBadRequest)
+			return
+		}
+	}
+	if err := h.entrepreneurs.Pair(r.Context(), managedID, entrepreneurUserID); err != nil {
+		http.Error(w, "Грешка при повезивању", http.StatusInternalServerError)
+		return
+	}
+	h.invitations.Accept(r.Context(), inv.ID)
+	http.Redirect(w, r, "/a/entrepreneurs/"+managedID.String(), http.StatusFound)
 }

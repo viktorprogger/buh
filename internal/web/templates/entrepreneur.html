@@ -1,46 +1,677 @@
 {{template "base" .}}
 
-{{define "title"}}{{.Entrepreneur.Name}} — Паушалне уплатнице{{end}}
+{{define "title"}}{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}{{.Entrepreneur.Name}}{{end}} — предузетник{{end}}
 
 {{define "content"}}
-<div class="mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">{{.Entrepreneur.Name}}</h1>
-  <p class="text-sm text-gray-500 mt-1">ПИБ: <span class="font-mono">{{.Entrepreneur.PIB}}</span></p>
+<div class="mb-4 text-sm text-gray-500">
+  <a href="/a/" class="hover:text-primary">{{T "entrepreneur_detail.back"}}</a>
+</div>
+<!-- ── Entrepreneur card ──────────────────────────────────────────────────── -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+    <h2 class="text-lg font-semibold text-gray-900">{{T "entrepreneur_detail.section_data"}}</h2>
+    <div class="flex items-center gap-4 text-sm">
+      {{if .PausalalHasData}}
+        <span class="text-gray-500">{{T "entrepreneur_detail.pausal_label"}} {{.PausalalYear}}:</span>
+        <span class="font-mono font-medium text-gray-900">{{.PausalalTotalFmt}} / {{.PausalalLimitFmt}} RSD</span>
+        <span class="text-gray-500">({{printf "%.2f" .PausalalPercent}}%)</span>
+      {{else}}
+        <span class="text-gray-400 text-xs">{{T "entrepreneur_detail.pausal_label"}} {{.PausalalYear}}: {{T "entrepreneur_detail.no_data"}}</span>
+      {{end}}
+      <button id="e-edit-btn" type="button" onclick="eEdit(true)"
+              class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "entrepreneur_detail.edit"}}
+      </button>
+    </div>
+  </div>
+
+  <!-- View mode -->
+  <div id="e-view" class="px-6 py-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_title"}}</div>
+        <div class="text-sm text-gray-900">{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_name"}}</div>
+        <div class="text-sm text-gray-900">{{.Entrepreneur.Name}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_mb"}}</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.MB}}{{.Entrepreneur.MB}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_pib"}}</div>
+        <div class="text-sm font-mono text-gray-900">{{.Entrepreneur.PIB}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_address"}}</div>
+        <div class="text-sm text-gray-900">{{if .Entrepreneur.Address}}{{.Entrepreneur.Address}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div class="sm:col-span-2">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_account"}}</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.BankAccount}}{{.Entrepreneur.BankAccount}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_taxpayer_code"}}</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.TaxpayerCode}}{{.Entrepreneur.TaxpayerCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_activity_code"}}</div>
+        <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.ActivityCode}}{{.Entrepreneur.ActivityCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
+      </div>
+    </div>
+    {{if .Entrepreneur.IsPaired}}
+    <div class="mt-3 text-xs text-gray-400">{{T "entrepreneur_detail.managed_note"}}</div>
+    {{end}}
+  </div>
+
+  <!-- Edit mode (hidden until Edit is clicked) -->
+  <form id="e-form" method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}"
+        class="hidden px-6 py-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-title">{{T "entrepreneur_detail.label_title"}}</label>
+        <input id="f-title" type="text" name="title" value="{{.Entrepreneur.Title}}"
+               placeholder="{{T "entrepreneur_detail.ph_title"}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-name">{{T "entrepreneur_detail.label_name"}}</label>
+        <input id="f-name" type="text" name="name" value="{{.Entrepreneur.Name}}" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-mb">{{T "entrepreneur_detail.label_mb"}}</label>
+        <input id="f-mb" type="text" name="mb" value="{{.Entrepreneur.MB}}"
+               placeholder="{{T "entrepreneur_detail.ph_mb"}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-pib">{{T "entrepreneur_detail.label_pib"}}</label>
+        <input id="f-pib" type="text" name="pib" value="{{.Entrepreneur.PIB}}" required
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-address">{{T "entrepreneur_detail.label_address"}}</label>
+        <input id="f-address" type="text" name="address" value="{{.Entrepreneur.Address}}"
+               placeholder="{{T "entrepreneur_detail.ph_address"}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-bank">{{T "entrepreneur_detail.label_account"}}</label>
+        <input id="f-bank" type="text" name="bank_account" value="{{.Entrepreneur.BankAccount}}"
+               placeholder="{{T "entrepreneur_detail.ph_account"}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-taxpayer-code">{{T "entrepreneur_detail.label_taxpayer_code"}}</label>
+        <input id="f-taxpayer-code" type="text" name="taxpayer_code" value="{{.Entrepreneur.TaxpayerCode}}"
+               placeholder="{{T "entrepreneur_detail.ph_taxpayer_code"}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-activity-code">{{T "entrepreneur_detail.label_activity_code"}}</label>
+        <input id="f-activity-code" type="text" name="activity_code" value="{{.Entrepreneur.ActivityCode}}"
+               placeholder="{{T "entrepreneur_detail.ph_activity_code"}}"
+               class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+      </div>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <button type="submit"
+              class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        {{T "entrepreneur_detail.save"}}
+      </button>
+      <button type="button" onclick="eEdit(false)"
+              class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "entrepreneur_detail.cancel"}}
+      </button>
+    </div>
+  </form>
 </div>
 
+<script>
+function eEdit(on) {
+  document.getElementById('e-view').classList.toggle('hidden', on);
+  document.getElementById('e-form').classList.toggle('hidden', !on);
+  document.getElementById('e-edit-btn').classList.toggle('hidden', on);
+  if (on) document.getElementById('f-title').focus();
+}
+</script>
+</div>
 
+{{template "pausal_alert" .PausalAlert}}
+{{template "vat_alert" .VATAlert}}
+
+<!-- ── KPO section ───────────────────────────────────────────────────────── -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6" id="kpo">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+    <h2 class="text-lg font-semibold text-gray-900">{{T "kpo.section_title"}}</h2>
+    <div class="flex flex-wrap gap-2 items-center">
+      <!-- Invoices are created by the entrepreneur on /e/invoices/new -->
+      {{if .Entrepreneur.IsPaired}}
+      <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/merge"
+         class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "kpo.download_kpo"}}
+      </a>
+      {{end}}
+      <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/pdf"
+         class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "kpo.download_pdf"}}
+      </a>
+      {{if .KPOBooks}}
+      <select id="year-select"
+              class="rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              onchange="window.location.href='/a/entrepreneurs/{{.Entrepreneur.ID}}?year='+this.value+'#kpo'">
+        {{range .KPOBooks}}
+        <option value="{{.Year}}"{{if eq .Year $.SelectedYear}} selected{{end}}>{{.Year}}{{if .IsFinalized}} ✓{{end}}</option>
+        {{end}}
+      </select>
+      {{end}}
+      <button type="button"
+              onclick="var f=document.getElementById('add-year-form');f.style.display=f.style.display==='none'?'flex':'none'"
+              class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+        {{T "kpo.add_year"}}
+      </button>
+      <form id="add-year-form" method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/open-year"
+            style="display:none" class="flex gap-2 items-center">
+        <input type="number" name="year" min="2000" max="2100" placeholder="{{T "kpo.add_year_ph"}}"
+               class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+               title="{{T "kpo.add_year_title"}}">
+        <button type="submit"
+                class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
+          {{T "kpo.add_year_submit"}}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Entry table -->
+  <div class="overflow-x-auto">
+    <!-- Forms outside the table (inputs reference them via form="…") -->
+    <form id="kpo-new" method="POST"
+          action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/entries"
+          aria-label="{{T "kpo.new_entry_aria"}}"></form>
+    {{if not .CurrentBook.IsFinalized}}
+    {{range .KPORows}}{{if not .IsAdvanceInvoice}}<form id="edit-{{.EntryID}}" method="POST"
+          action="/a/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/update"></form>
+    {{end}}{{end}}
+    {{end}}
+
+    <table class="w-full text-sm" aria-label="КПО {{.SelectedYear}}">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <th class="px-3 py-2 text-center w-10">{{T "kpo.col_num"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_date"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_invoice"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_description"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_product"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_service"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_total"}}</th>
+          {{if not .CurrentBook.IsFinalized}}<th class="w-10"></th>{{end}}
+        </tr>
+      </thead>
+      <tbody id="kpo-tbody" class="divide-y divide-gray-100">
+
+        {{range .KPORows}}
+        {{if .IsAdvanceInvoice}}
+        <!-- Advance invoice row — muted, not counted in KPO totals -->
+        <tr class="opacity-50 hover:opacity-70"
+            title="{{T "kpo.advance_tooltip"}}">
+          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">{{T "kpo.advance_label"}}</td>
+          <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
+          <td class="px-3 py-2 text-gray-500">
+            <span>{{.InvoiceNum}}</span>
+          </td>
+          <td class="px-3 py-2 text-gray-500 text-xs">{{.ClientName}}</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-500">{{fmtMoney .TotalRSD}}</td>
+          {{if not $.CurrentBook.IsFinalized}}<td></td>{{end}}
+        </tr>
+        {{else}}
+        <!-- Regular KPO entry -->
+        <tr class="hover:bg-gray-50" data-id="{{.EntryID}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
+          <!-- Ordinal / drag handle -->
+          <td class="px-3 py-2 text-center text-gray-400 text-xs{{if not $.CurrentBook.IsFinalized}} cursor-grab select-none{{end}}">
+            {{if not $.CurrentBook.IsFinalized}}<span class="text-gray-300 mr-0.5">⠿</span>{{end}}<span class="row-ordinal">{{.OrdinalNumber}}</span>
+          </td>
+          <!-- Date -->
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-600">{{.Date.Format "02.01.2006."}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="collection_date"
+                   value="{{.Date.Format "02.01"}}" maxlength="5" placeholder="{{T "kpo.ph_date"}}"
+                   style="display:none"
+                   class="edit-input w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Invoice -->
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-800">{{.InvoiceNum}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="invoice_number"
+                   value="{{.InvoiceNum}}" style="display:none"
+                   class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Description -->
+          <td class="px-3 py-2">
+            <span class="view-val text-gray-500 text-xs">{{.Description}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="description"
+                   value="{{.Description}}" style="display:none"
+                   placeholder="нпр. клијент / опис услуге"
+                   class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Product revenue -->
+          <td class="px-3 py-2 text-right">
+            <span class="view-val font-mono text-gray-800">{{fmtMoney .ProductRevenue}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="product_revenue"
+                   value="{{printf "%.2f" .ProductRevenue}}" style="display:none"
+                   class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Service revenue -->
+          <td class="px-3 py-2 text-right">
+            <span class="view-val font-mono text-gray-800">{{fmtMoney .ServiceRevenue}}</span>
+            {{if not $.CurrentBook.IsFinalized}}
+            <input form="edit-{{.EntryID}}" type="text" name="service_revenue"
+                   value="{{printf "%.2f" .ServiceRevenue}}" style="display:none"
+                   class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
+            {{end}}
+          </td>
+          <!-- Total (view only) -->
+          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{fmtMoney .EntryTotal}}</td>
+          <!-- Actions -->
+          {{if not $.CurrentBook.IsFinalized}}
+          <td class="px-2 py-2 text-center">
+            <div class="view-actions flex gap-1 items-center justify-center">
+              <button type="button" onclick="rowEdit('{{.EntryID}}', true)"
+                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="{{T "kpo.row_edit"}}">✎</button>
+              <form method="POST"
+                    action="/a/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/delete"
+                    onsubmit="return confirm('{{T "kpo.row_delete_confirm"}}')">
+                <button type="submit"
+                        class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
+                        title="{{T "kpo.row_delete"}}" aria-label="{{T "kpo.row_delete_label"}}">✕</button>
+              </form>
+            </div>
+            <div class="edit-actions flex gap-1 items-center justify-center" style="display:none">
+              <button form="edit-{{.EntryID}}" type="submit"
+                      class="text-green-600 hover:text-green-800 px-1 py-1" title="{{T "kpo.row_save"}}">✓</button>
+              <button type="button" onclick="rowEdit('{{.EntryID}}', false)"
+                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="{{T "kpo.row_cancel"}}">✕</button>
+            </div>
+          </td>
+          {{end}}
+        </tr>
+        {{end}}
+        {{end}}
+
+        <!-- Totals row (shown only when there are regular KPO entries) -->
+        {{if .KPOEntries}}
+        <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
+          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalProduct}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalService}}</td>
+          <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalAll}}</td>
+          {{if not .CurrentBook.IsFinalized}}<td></td>{{end}}
+        </tr>
+        {{end}}
+
+        <!-- New-entry row (hidden when finalized) -->
+        {{if not .CurrentBook.IsFinalized}}
+        <tr class="bg-blue-50" id="kpo-new-row">
+          <td class="px-3 py-1.5 text-center text-gray-300 text-xs select-none">+</td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="collection_date" required
+                   id="kpo-date" autofocus
+                   maxlength="5" placeholder="{{T "kpo.ph_date"}}"
+                   class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_date"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="invoice_number" placeholder="{{T "kpo.ph_invoice"}}"
+                   id="kpo-invoice"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_invoice"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="description" placeholder="{{T "kpo.ph_description"}}"
+                   id="kpo-description"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_description"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="product_revenue" value="0"
+                   id="kpo-product"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_product"}}">
+          </td>
+          <td class="px-1 py-1">
+            <input form="kpo-new" type="text" name="service_revenue" value="0"
+                   id="kpo-service"
+                   class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                   aria-label="{{T "kpo.field_service"}}">
+          </td>
+          <td class="px-3 py-1 text-right font-mono text-sm font-medium text-gray-700 tabular-nums"
+              id="kpo-row-total">0.00</td>
+          <td class="px-1 py-1">
+            <button form="kpo-new" type="submit"
+                    class="rounded bg-primary px-2 py-1 text-xs font-medium text-white hover:bg-primary-hover whitespace-nowrap"
+                    aria-label="Унеси ставку">
+              {{T "kpo.new_entry_submit"}}
+            </button>
+          </td>
+        </tr>
+        {{end}}
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Finalize / unfinalize bar -->
+  <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-end gap-4">
+    {{if .CurrentBook.IsFinalized}}
+      <span class="text-sm text-green-700 font-medium">{{T "kpo.finalized_at"}} {{.CurrentBook.FinalizedAtStr}}</span>
+      <form method="POST"
+            action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/unfinalize">
+        <button type="submit"
+                class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+          {{T "kpo.unlock"}}
+        </button>
+      </form>
+    {{else}}
+      <form method="POST"
+            action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/finalize"
+            onsubmit="return confirm('{{T "kpo.finalize_confirm_q"}} {{.SelectedYear}} {{T "kpo.finalize_confirm_year"}} {{T "kpo.finalize_confirm_detail"}}')">
+        <button type="submit"
+                class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+          {{T "kpo.finalize"}}
+        </button>
+      </form>
+    {{end}}
+  </div>
+</div>
+
+<!-- ── Payment slips section ─────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-900">Уплатнице</h2>
-    <a href="/entrepreneurs/{{.Entrepreneur.ID}}/slips/new"
+    <h2 class="text-lg font-semibold text-gray-900">{{T "slips.section_title"}}</h2>
+    <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/slips/new"
        class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-      + Нова уплатница
+      {{T "slips.add_new"}}
     </a>
   </div>
-  {{if .Slips}}
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="bg-gray-50 border-b border-gray-200">
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Датум</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Сврха</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Прималац</th>
-        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Износ</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {{range .Slips}}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/slips/{{.ID}}'">
-        <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
-        <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
-      </tr>
+
+  {{if or .LatestSlipYear.Regular .LatestSlipYear.Advance .PrevSlipYears}}
+  <!-- Tabs -->
+  <div class="border-b border-gray-200 flex">
+    <button id="slip-tab-latest-btn" onclick="slipTab('latest')"
+            class="px-5 py-2.5 text-sm font-medium text-primary border-b-2 border-primary -mb-px">
+      {{T "slips.tab_current"}}
+    </button>
+    <button id="slip-tab-prev-btn" onclick="slipTab('prev')"
+            class="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent -mb-px">
+      {{T "slips.tab_previous"}}
+    </button>
+  </div>
+
+  <!-- Latest tab -->
+  <div id="slip-tab-latest">
+    {{if .LatestSlipYear.Year}}
+    <div class="px-6 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">{{.LatestSlipYear.Year}}</div>
+    {{end}}
+    {{if .LatestSlipYear.Regular}}
+    {{template "slip_table" (slipTableArgs .Entrepreneur.ID .LatestSlipYear.Regular)}}
+    {{else}}
+    <div class="px-6 py-4 text-sm text-gray-400">{{T "slips.no_regular"}}</div>
+    {{end}}
+    {{if .LatestSlipYear.Advance}}
+    <details class="border-t border-gray-100">
+      <summary class="px-6 py-3 text-sm font-medium text-gray-700 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
+        <span class="text-gray-400 text-xs">▶</span>
+        {{T "slips.advance_label"}} ({{len .LatestSlipYear.Advance}})
+      </summary>
+      {{template "slip_table" (slipTableArgs .Entrepreneur.ID .LatestSlipYear.Advance)}}
+    </details>
+    {{end}}
+  </div>
+
+  <!-- Previous tab -->
+  <div id="slip-tab-prev" class="hidden">
+    {{if .PrevSlipYears}}
+    {{range .PrevSlipYears}}
+    <div class="border-t border-gray-100 first:border-t-0">
+      <div class="px-6 pt-4 pb-1 text-sm font-bold text-gray-700">{{.Year}}</div>
+      {{if .Regular}}
+      <details open>
+        <summary class="px-6 py-2 text-sm font-medium text-gray-600 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
+          <span class="text-gray-400 text-xs accordion-arrow">▶</span>
+          {{T "slips.regular_label"}} ({{len .Regular}})
+        </summary>
+        {{template "slip_table" (slipTableArgs $.Entrepreneur.ID .Regular)}}
+      </details>
       {{end}}
-    </tbody>
-  </table>
+      {{if .Advance}}
+      <details>
+        <summary class="px-6 py-2 text-sm font-medium text-gray-600 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
+          <span class="text-gray-400 text-xs accordion-arrow">▶</span>
+          {{T "slips.advance_label"}} ({{len .Advance}})
+        </summary>
+        {{template "slip_table" (slipTableArgs $.Entrepreneur.ID .Advance)}}
+      </details>
+      {{end}}
+    </div>
+    {{end}}
+    {{else}}
+    <div class="px-6 py-8 text-sm text-gray-500 text-center">{{T "slips.no_previous"}}</div>
+    {{end}}
+  </div>
+
   {{else}}
-  <div class="px-6 py-8 text-sm text-gray-500 text-center">Нема сачуваних уплатница.</div>
+  <div class="px-6 py-8 text-sm text-gray-500 text-center">{{T "slips.no_saved"}}</div>
   {{end}}
 </div>
 
+<script>
+function slipTab(name) {
+  var latest = document.getElementById('slip-tab-latest');
+  var prev = document.getElementById('slip-tab-prev');
+  var btnLatest = document.getElementById('slip-tab-latest-btn');
+  var btnPrev = document.getElementById('slip-tab-prev-btn');
+  var isLatest = name === 'latest';
+  latest.classList.toggle('hidden', !isLatest);
+  prev.classList.toggle('hidden', isLatest);
+  btnLatest.classList.toggle('text-primary', isLatest);
+  btnLatest.classList.toggle('border-primary', isLatest);
+  btnLatest.classList.toggle('text-gray-500', !isLatest);
+  btnLatest.classList.toggle('border-transparent', !isLatest);
+  btnPrev.classList.toggle('text-primary', !isLatest);
+  btnPrev.classList.toggle('border-primary', !isLatest);
+  btnPrev.classList.toggle('text-gray-500', isLatest);
+  btnPrev.classList.toggle('border-transparent', isLatest);
+}
+// Rotate accordion arrow on open/close
+document.querySelectorAll('details').forEach(function(d) {
+  d.addEventListener('toggle', function() {
+    var arrow = d.querySelector('.accordion-arrow');
+    if (arrow) arrow.textContent = d.open ? '▼' : '▶';
+  });
+});
+</script>
+
+<script>
+// ── Row edit toggle ──────────────────────────────────────────────────────────
+function rowEdit(id, on) {
+  var row = document.querySelector('tr[data-id="' + id + '"]');
+  if (!row) return;
+  row.querySelectorAll('.view-val').forEach(function(el) { el.style.display = on ? 'none' : ''; });
+  row.querySelectorAll('.edit-input').forEach(function(el) { el.style.display = on ? '' : 'none'; });
+  row.querySelector('.view-actions').style.display = on ? 'none' : '';
+  row.querySelector('.edit-actions').style.display = on ? 'flex' : 'none';
+  if (on) {
+    var first = row.querySelector('.edit-input');
+    if (first) { initDateInput(first); first.focus(); }
+  }
+}
+
+// ── Date input: auto-format, paste normalisation, range validation ───────────
+function pad2(s) { return ('0' + s).slice(-2); }
+
+function normDateInput(s) {
+  var m;
+  // dd.mm.yyyy or dd.mm.yyyy. (Serbian with optional trailing dot)
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.\d{2,4}\.?$/);
+  if (m) return pad2(m[1]) + '.' + pad2(m[2]);
+  // yyyy-mm-dd (ISO)
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return m[3] + '.' + m[2];
+  // dd.mm (already correct)
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.?$/);
+  if (m) return pad2(m[1]) + '.' + pad2(m[2]);
+  return null;
+}
+
+function initDateInput(el) {
+  if (el._dateInited) return;
+  el._dateInited = true;
+
+  el.addEventListener('paste', function(e) {
+    var text = (e.clipboardData || window.clipboardData).getData('text').trim();
+    var r = normDateInput(text);
+    if (r !== null) { e.preventDefault(); this.value = r; }
+  });
+
+  el.addEventListener('input', function(e) {
+    this.setCustomValidity('');
+    this.style.borderColor = '';
+    var digits = this.value.replace(/\D/g, '');
+    var deleting = e.inputType && e.inputType.startsWith('delete');
+    if (digits.length <= 1) {
+      this.value = digits;
+    } else if (digits.length === 2) {
+      // If user pressed dot (digits unchanged from before dot), don't re-append dot
+      this.value = deleting ? digits : digits + '.';
+    } else {
+      this.value = digits.slice(0, 2) + '.' + digits.slice(2, 4);
+    }
+  });
+
+  el.addEventListener('blur', function() {
+    var m = this.value.match(/^(\d{2})\.(\d{2})$/);
+    if (!m) return;
+    var d = +m[1], mo = +m[2];
+    if (d < 1 || d > 31 || mo < 1 || mo > 12) {
+      this.setCustomValidity('{{T "kpo.date_hint"}}');
+      this.reportValidity();
+      this.style.borderColor = '#ef4444';
+    }
+  });
+}
+
+(function () {
+  // Init paste stripping on the new-entry date input.
+  var kpoDate = document.getElementById('kpo-date');
+  if (kpoDate) initDateInput(kpoDate);
+
+  // Live total in the new-entry row.
+  function parseNum(id) {
+    return parseFloat(document.getElementById(id)?.value?.replace(',', '.')) || 0;
+  }
+  function refreshTotal() {
+    var el = document.getElementById('kpo-row-total');
+    if (el) el.textContent = (parseNum('kpo-product') + parseNum('kpo-service')).toFixed(2);
+  }
+  ['kpo-product', 'kpo-service'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', refreshTotal);
+  });
+
+  // Enter on the last numeric field of the new-entry row submits the form.
+  var svc = document.getElementById('kpo-service');
+  if (svc) {
+    svc.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('kpo-new')?.submit();
+      }
+    });
+  }
+
+  // Scroll to and focus the new-entry row when the URL hash is #kpo-new.
+  if (window.location.hash === '#kpo-new') {
+    var dateInput = document.getElementById('kpo-date');
+    if (dateInput) { dateInput.focus(); dateInput.scrollIntoView({ block: 'center' }); }
+  }
+
+  // ── Drag-and-drop row reordering ───────────────────────────────────────────
+  var tbody = document.getElementById('kpo-tbody');
+  if (!tbody) return;
+
+  var dragRow = null;
+  var overRow = null;
+  var dropBefore = true;
+
+  tbody.addEventListener('dragstart', function(e) {
+    var row = e.target.closest('tr[data-id]');
+    if (!row) { e.preventDefault(); return; }
+    dragRow = row;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.id);
+    setTimeout(function() { row.classList.add('opacity-40'); }, 0);
+  });
+
+  tbody.addEventListener('dragover', function(e) {
+    if (!dragRow) return;
+    e.preventDefault();
+    var target = e.target.closest('tr[data-id]');
+    if (!target || target === dragRow) return;
+    if (overRow && overRow !== target) clearIndicator(overRow);
+    overRow = target;
+    var rect = target.getBoundingClientRect();
+    dropBefore = e.clientY < rect.top + rect.height / 2;
+    target.style.borderTop = dropBefore ? '2px solid #2563eb' : '';
+    target.style.borderBottom = dropBefore ? '' : '2px solid #2563eb';
+  });
+
+  function clearIndicator(row) {
+    if (!row) return;
+    row.style.borderTop = '';
+    row.style.borderBottom = '';
+  }
+
+  tbody.addEventListener('dragleave', function(e) {
+    if (!tbody.contains(e.relatedTarget)) { clearIndicator(overRow); overRow = null; }
+  });
+
+  tbody.addEventListener('drop', function(e) {
+    e.preventDefault();
+    if (!dragRow || !overRow || overRow === dragRow) { clearIndicator(overRow); overRow = null; return; }
+    clearIndicator(overRow);
+    tbody.insertBefore(dragRow, dropBefore ? overRow : overRow.nextElementSibling);
+    tbody.querySelectorAll('tr[data-id] .row-ordinal').forEach(function(span, i) { span.textContent = i + 1; });
+    overRow = null;
+  });
+
+  tbody.addEventListener('dragend', function(e) {
+    if (!dragRow) return;
+    dragRow.classList.remove('opacity-40');
+    clearIndicator(overRow);
+    overRow = null;
+
+    var ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(function(r) { return r.dataset.id; });
+    fetch('/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/entries/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: ids.map(function(id) { return 'ids=' + encodeURIComponent(id); }).join('&')
+    }).catch(function() { location.reload(); });
+
+    dragRow = null;
+  });
+})();
+</script>
 {{end}}

@@ -1,0 +1,751 @@
+{{template "entrepreneur_base" .}}
+
+{{define "title"}}{{T "invoice_new.title"}}{{end}}
+
+{{define "content"}}
+<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+  <a href="{{.BackURL}}" class="hover:text-primary">{{T "invoice_new.back"}}</a>
+</div>
+
+<div id="pausal-alert-invoice" class="hidden mb-4 rounded border px-4 py-3 text-sm leading-snug"></div>
+<div id="vat-alert-invoice" class="hidden mb-4 rounded border px-4 py-3 text-sm leading-snug"></div>
+
+{{if not .ProfileComplete}}
+<div class="mb-4 rounded bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+  <strong>{{T "invoice_new.profile_incomplete_warning"}}</strong>
+  {{T "invoice_new.profile_incomplete_details"}}
+  <a href="{{.SettingsURL}}" class="underline hover:text-amber-900">{{T "invoice_new.profile_incomplete_action"}}</a>
+  {{T "invoice_new.profile_incomplete_alt"}}
+</div>
+{{end}}
+
+<div class="flex flex-col lg:flex-row gap-4 items-start" style="min-height: 600px">
+  <!-- ── Left column: form (60%) ─────────────────────────────────────────── -->
+  <div class="w-full" style="flex: 3">
+    <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">{{T "invoice_new.title"}}</h2>
+      </div>
+
+      <form id="invoice-form" method="POST" action="{{.ActionURL}}" class="px-5 py-4 space-y-4">
+
+        <!-- Invoice type -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_type"}}</div>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" name="invoice_type" value="standard" checked class="text-primary focus:ring-primary" onchange="updatePreview()">
+              {{T "invoice_new.type_standard"}}
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" name="invoice_type" value="advance" class="text-primary focus:ring-primary" onchange="updatePreview()">
+              {{T "invoice_new.type_advance"}}
+            </label>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_language"}}</div>
+          <div class="flex gap-2">
+            <label class="flex items-center">
+              <input type="radio" name="language" value="sr" checked class="sr-only peer" onchange="updatePreview()">
+              <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
+                           peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                           hover:bg-gray-50">{{T "invoice_new.lang_sr"}}</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="language" value="en" class="sr-only peer" onchange="updatePreview()">
+              <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
+                           peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                           hover:bg-gray-50">{{T "invoice_new.lang_en"}}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Client -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_client"}}</label>
+          <div class="relative">
+            <input type="text" id="client-search" placeholder="{{T "invoice_new.client_search_ph"}}"
+                   autocomplete="off"
+                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <input type="hidden" name="client_id" id="client-id-hidden">
+            <input type="hidden" name="client_name" id="client-name-hidden">
+            <ul id="client-dropdown"
+                class="absolute z-10 w-full bg-white border border-gray-200 rounded shadow-lg mt-1 hidden max-h-48 overflow-y-auto text-sm">
+            </ul>
+          </div>
+        </div>
+
+        <!-- Invoice number -->
+        <div>
+          <label for="f-invnum" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_invoice_number"}}</label>
+          <input id="f-invnum" type="text" name="invoice_number" placeholder="{{T "invoice_new.ph_invoice_number"}}"
+                 class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                 oninput="updatePreview()">
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="f-issue" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_issue_date"}} <span class="text-red-500">*</span></label>
+            <input id="f-issue" type="date" name="issue_date" value="{{.Today}}" required
+                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   oninput="updatePreview()">
+          </div>
+          <div>
+            <label for="f-due" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_due_date"}}</label>
+            <input id="f-due" type="date" name="due_date"
+                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                   oninput="updatePreview()">
+          </div>
+        </div>
+
+        <!-- Period (collapsible) -->
+        <div>
+          <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input type="checkbox" id="period-toggle" class="rounded border-gray-300 text-primary focus:ring-primary"
+                   onchange="document.getElementById('period-fields').classList.toggle('hidden', !this.checked)">
+            {{T "invoice_new.period_toggle"}}
+          </label>
+          <div id="period-fields" class="hidden grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <label for="f-pstart" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_period_start"}}</label>
+              <input id="f-pstart" type="date" name="period_start"
+                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                     oninput="updatePreview()">
+            </div>
+            <div>
+              <label for="f-pend" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_period_end"}}</label>
+              <input id="f-pend" type="date" name="period_end"
+                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                     oninput="updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Currency -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_currency"}}</div>
+          <div class="flex gap-2 flex-wrap">
+            {{range .Currencies}}
+            <label class="flex items-center">
+              <input type="radio" name="currency" value="{{.}}" {{if eq . "RSD"}}checked{{end}}
+                     class="sr-only peer" onchange="updatePreview()">
+              <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
+                           peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
+                           hover:bg-gray-50">{{.}}</span>
+            </label>
+            {{end}}
+          </div>
+        </div>
+
+        <!-- Line items -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_items"}}</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="items-table">
+              <thead>
+                <tr class="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-200">
+                  <th class="pb-1 text-left pr-2">{{T "invoice_new.item_description"}}</th>
+                  <th class="pb-1 text-right w-16 pr-2">{{T "invoice_new.item_quantity"}}</th>
+                  <th class="pb-1 text-right w-24 pr-2">{{T "invoice_new.item_unit_price"}}</th>
+                  <th class="pb-1 text-right w-16 pr-2">{{T "invoice_new.item_discount"}}</th>
+                  <th class="pb-1 text-center w-16 pr-2">{{T "invoice_new.item_is_product"}}</th>
+                  <th class="pb-1 w-8"></th>
+                </tr>
+              </thead>
+              <tbody id="items-body">
+                <!-- rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+          <button type="button" onclick="addItem()"
+                  class="mt-2 text-sm text-primary hover:text-primary-hover font-medium">
+            {{T "invoice_new.add_item"}}
+          </button>
+        </div>
+
+        <!-- Total summary -->
+        <div class="text-right text-sm font-semibold text-gray-900 border-t border-gray-200 pt-3">
+          {{T "invoice_new.grand_total"}} <span id="grand-total-label">0,00</span> <span id="grand-total-currency">RSD</span>
+        </div>
+
+        <!-- Bank account -->
+        {{if .BankAccounts}}
+        <div>
+          <label for="f-bank-account" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_bank_account"}}</label>
+          <select id="f-bank-account" name="bank_account_id" onchange="onBankAccountChange()"
+                  class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="">{{T "invoice_new.bank_account_empty"}}</option>
+            {{range .BankAccounts}}
+            <option value="{{.ID}}" data-type="{{.AccountType}}" data-label="{{.DisplayLabel}}">{{.DisplayLabel}}</option>
+            {{end}}
+          </select>
+        </div>
+        <div id="correspondent-section" class="hidden">
+          <label for="f-corr-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_correspondent"}}</label>
+          <select id="f-corr-bank" name="correspondent_bank_id" onchange="updatePreview()"
+                  class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="">{{T "invoice_new.correspondent_empty"}}</option>
+          </select>
+        </div>
+        {{end}}
+
+        <!-- Notes -->
+        <div>
+          <label for="f-notes" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_notes"}}</label>
+          <textarea id="f-notes" name="notes" rows="2"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    oninput="updatePreview()"></textarea>
+        </div>
+
+        <!-- Footer notes -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_footer_notes"}}</div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" name="no_vat" id="no-vat" checked
+                     class="rounded border-gray-300 text-primary focus:ring-primary" onchange="updatePreview()">
+              {{T "invoice_new.no_vat_check"}}
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" name="no_sign" id="no-sign" checked
+                     class="rounded border-gray-300 text-primary focus:ring-primary" onchange="updatePreview()">
+              {{T "invoice_new.no_sign_check"}}
+            </label>
+          </div>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="flex gap-3 pt-2 border-t border-gray-200">
+          <button type="submit"
+                  class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+            {{T "invoice_new.submit"}}
+          </button>
+          <a href="{{.BackURL}}"
+             class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            {{T "invoice_new.cancel"}}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Right column: live preview (40%) ───────────────────────────────── -->
+  <div class="w-full" style="flex: 2; min-width: 280px">
+    <div class="lg:sticky lg:top-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.preview_label"}}</div>
+      <div id="invoice-preview"
+           class="bg-white border border-gray-300 rounded shadow-sm p-6 text-xs font-sans leading-snug"
+           style="min-height: 500px">
+        <!-- updated by updatePreview() -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var CLIENT_SEARCH_URL = '{{.ClientSearchURL}}';
+var CLIENT_NEW_URL = '{{.ClientNewURL}}';
+var PREVIEW_LABELS = {
+  sr: {
+    invoice: 'FAKTURA', advance: 'AVANSNA FAKTURA',
+    number: 'Broj:', issueDate: 'Datum izdavanja:', dueDate: 'Rok placanja:', period: 'Period:',
+    issuer: 'IZDAVALAC', client: 'KLIJENT', corrBank: 'Kor. banka:',
+    description: 'Opis', qty: 'Kol.', unitPrice: 'Jed. cena', discount: 'Popust%', amount: 'Iznos',
+    totalDue: 'Za uplatu:', note: 'Napomena:',
+    paymentBy: 'Placanje izvrsiti u roku do',
+    account: 'Racun za uplatu',
+    noVatLine: 'Nije obveznik PDV-a na osnovu cl. 12 Zakona o PDV RS.',
+    noSignLine: 'Ovaj racun je generisan kompjuterski i vazecan je bez pecata i potpisa.',
+    mb: 'MB:', regNum: 'MB:', taxId: 'Tax ID / Reg. br.:',
+  },
+  en: {
+    invoice: 'INVOICE', advance: 'ADVANCE INVOICE',
+    number: 'Number:', issueDate: 'Date of Issue:', dueDate: 'Payment Due:', period: 'Period:',
+    issuer: 'FROM', client: 'TO', corrBank: 'Corr. Bank:',
+    description: 'Description', qty: 'Qty.', unitPrice: 'Unit Price', discount: 'Discount%', amount: 'Amount',
+    totalDue: 'Total Due:', note: 'Note:',
+    paymentBy: 'Payment due by',
+    account: 'Payment account',
+    noVatLine: 'Not subject to VAT according to Article 12 of the VAT Law of the Republic of Serbia.',
+    noSignLine: 'This invoice is computer-generated and valid without stamp or signature.',
+    mb: 'MB:', regNum: 'Reg. No.:', taxId: 'Tax ID / Reg. No.:',
+  },
+};
+var ISSUER = {
+  name: '{{.IssuerName}}',
+  mb: '{{.IssuerMB}}',
+  pib: '{{.IssuerPIB}}',
+  address: '{{.IssuerAddress}}',
+};
+var selectedClient = null;
+var FX_RATES = {
+  {{range $k, $v := .FXRates}}'{{$k}}': {{$v}},{{end}}
+};
+// Bank accounts data for correspondents lookup
+var BANK_ACCOUNTS = {
+  {{range .BankAccounts}}'{{.ID}}': {type:'{{.AccountType}}', correspondents:[
+    {{range .CorrespondentBanks}}{id:'{{.ID}}',name:'{{.BankName}}',swift:'{{.SWIFT}}',addr:'{{.BankAddress}}'},{{end}}
+  ]},{{end}}
+};
+// Pausal limit alerting data
+var PAUSAL_CURRENT_TOTAL = {{.PausalCurrentTotal}};
+var PAUSAL_LIMIT = {{.PausalLimit}};
+var PAUSAL_YEAR = {{.PausalYear}};
+var PAUSAL_YEAR_PCT = {{.PausalYearPct}};
+// VAT limit alerting data
+var VAT_LIMIT = {{.VATLimit}};
+var VAT_DAILY = {{.VATDailyRevenue}};
+
+// ── Line items ────────────────────────────────────────────────────────────────
+var itemCount = 0;
+
+function addItem() {
+  var tbody = document.getElementById('items-body');
+  var i = itemCount++;
+  var tr = document.createElement('tr');
+  tr.className = 'item-row border-b border-gray-100';
+  tr.innerHTML =
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_description[]" placeholder="{{T "invoice_new.item_description"}}" oninput="updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_quantity[]" value="1" oninput="recalc(); updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_unit_price[]" value="0" oninput="recalc(); updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2">' +
+      '<input type="text" name="item_discount[]" value="0" oninput="recalc(); updatePreview()"' +
+             'class="w-full rounded border border-gray-300 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1 pr-2 text-center">' +
+      '<input type="checkbox" name="item_is_product[]" onchange="updatePreview()"' +
+             'class="rounded border-gray-300 text-primary focus:ring-primary">' +
+    '</td>' +
+    '<td class="py-1">' +
+      '<button type="button" onclick="removeItem(this)" class="text-red-400 hover:text-red-600 text-xs px-1">✕</button>' +
+    '</td>';
+  tbody.appendChild(tr);
+  tr.querySelector('input[name="item_description[]"]').focus();
+  updatePreview();
+}
+
+function removeItem(btn) {
+  btn.closest('tr').remove();
+  recalc();
+  updatePreview();
+}
+
+function parseNum(s) {
+  return parseFloat((s || '0').replace(',', '.')) || 0;
+}
+
+function recalc() {
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var total = 0;
+  rows.forEach(function(row) {
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    total += qty * price * (1 - disc / 100);
+  });
+  var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  document.getElementById('grand-total-label').textContent = total.toFixed(2).replace('.', ',');
+  document.getElementById('grand-total-currency').textContent = cur;
+  updatePausalAlert();
+  updateVATAlert();
+}
+
+function fmtPausalRSD(n) {
+  var s = Math.round(n).toString();
+  var result = '';
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 === 0) result += ' ';
+    result += s[i];
+  }
+  return result;
+}
+
+function computePausalMilestone(projected, limit, yearPct) {
+  var pct = projected / limit * 100;
+  if (pct >= 100) return {severity: 'exceeded', milestone: 100, percent: pct};
+  if (pct >= 90) return {severity: 'alert', milestone: 90, percent: pct};
+  if (pct >= 80) return {severity: 'high', milestone: 80, percent: pct};
+  if (pct >= 75) return {severity: 'minor', milestone: 75, percent: pct};
+  if (pct >= 70 && yearPct < 70) return {severity: 'minor', milestone: 70, percent: pct};
+  if (pct >= 50 && yearPct < 50) return {severity: 'minor', milestone: 50, percent: pct};
+  return null;
+}
+
+function updatePausalAlert() {
+  var alertEl = document.getElementById('pausal-alert-invoice');
+  if (!alertEl || PAUSAL_LIMIT <= 0) return;
+
+  var issueDate = document.getElementById('f-issue').value;
+  var issueYear = issueDate ? parseInt(issueDate.split('-')[0]) : PAUSAL_YEAR;
+  if (issueYear !== PAUSAL_YEAR) {
+    alertEl.className = 'hidden mb-4 rounded border px-4 py-3 text-sm leading-snug';
+    return;
+  }
+
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var invoiceTotal = 0;
+  rows.forEach(function(row) {
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    invoiceTotal += qty * price * (1 - disc / 100);
+  });
+  var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  var invoiceRSD = invoiceTotal * (FX_RATES[cur] || 1);
+  var projected = PAUSAL_CURRENT_TOTAL + invoiceRSD;
+
+  var hit = computePausalMilestone(projected, PAUSAL_LIMIT, PAUSAL_YEAR_PCT);
+  if (!hit) {
+    alertEl.className = 'hidden mb-4 rounded border px-4 py-3 text-sm leading-snug';
+    return;
+  }
+
+  var pctStr = hit.percent.toFixed(1);
+  var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(PAUSAL_LIMIT) + ' RSD';
+  var infoLink = ' <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
+  var msg = '';
+  if (hit.severity === 'exceeded') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-gray-900 border-gray-800 text-white';
+    msg = '<strong>КРИТИЧНО!</strong> Са овом фактуром достићи ћете паушални праг (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'alert') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
+    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'high') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+  } else {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + ').' + infoLink;
+  }
+  alertEl.innerHTML = msg;
+}
+
+function isLeapYear(y) { return y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0); }
+
+function computeVATRolling(issueDateStr) {
+  if (!issueDateStr || VAT_LIMIT <= 0) return 0;
+  var to = new Date(issueDateStr);
+  var daysBack = isLeapYear(to.getFullYear()) ? 365 : 364;
+  var from = new Date(to);
+  from.setDate(from.getDate() - daysBack);
+  var total = 0;
+  for (var dateStr in VAT_DAILY) {
+    var d = new Date(dateStr);
+    if (d >= from && d <= to) total += VAT_DAILY[dateStr];
+  }
+  return total;
+}
+
+function computeVATMilestone(projected, limit) {
+  var pct = projected / limit * 100;
+  if (pct >= 100) return {severity: 'exceeded', milestone: 100, percent: pct};
+  if (pct >= 90) return {severity: 'alert', milestone: 90, percent: pct};
+  if (pct >= 80) return {severity: 'high', milestone: 80, percent: pct};
+  if (pct >= 75) return {severity: 'minor', milestone: 75, percent: pct};
+  if (pct >= 70) return {severity: 'minor', milestone: 70, percent: pct};
+  if (pct >= 50) return {severity: 'minor', milestone: 50, percent: pct};
+  return null;
+}
+
+function updateVATAlert() {
+  var alertEl = document.getElementById('vat-alert-invoice');
+  if (!alertEl || VAT_LIMIT <= 0) return;
+
+  var issueDate = document.getElementById('f-issue').value;
+  var rollingTotal = computeVATRolling(issueDate);
+
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var invoiceTotal = 0;
+  rows.forEach(function(row) {
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    invoiceTotal += qty * price * (1 - disc / 100);
+  });
+  var cur = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  var invoiceRSD = invoiceTotal * (FX_RATES[cur] || 1);
+  var projected = rollingTotal + invoiceRSD;
+
+  var hit = computeVATMilestone(projected, VAT_LIMIT);
+  if (!hit) {
+    alertEl.className = 'hidden mb-4 rounded border px-4 py-3 text-sm leading-snug';
+    return;
+  }
+
+  var pctStr = hit.percent.toFixed(1);
+  var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(VAT_LIMIT) + ' RSD у последњих 12 месеци';
+  var infoLink = ' <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
+  var msg = '';
+  if (hit.severity === 'exceeded') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-gray-900 border-gray-800 text-white';
+    msg = '<strong>КРИТИЧНО!</strong> Са овом фактуром достићи ћете праг за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'alert') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
+    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+  } else if (hit.severity === 'high') {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+  } else {
+    alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
+    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + ').' + infoLink;
+  }
+  alertEl.innerHTML = msg;
+}
+
+// ── Bank account selection ────────────────────────────────────────────────────
+function onBankAccountChange() {
+  var sel = document.getElementById('f-bank-account');
+  if (!sel) return;
+  var aid = sel.value;
+  var corrSection = document.getElementById('correspondent-section');
+  var corrSel = document.getElementById('f-corr-bank');
+  if (!aid || !BANK_ACCOUNTS[aid] || BANK_ACCOUNTS[aid].type !== 'foreign') {
+    if (corrSection) corrSection.classList.add('hidden');
+    if (corrSel) { corrSel.innerHTML = '<option value="">— без кор. банке —</option>'; corrSel.value = ''; }
+    updatePreview();
+    return;
+  }
+  // Foreign account: populate correspondent banks
+  var corrs = BANK_ACCOUNTS[aid].correspondents || [];
+  if (corrSel) {
+    corrSel.innerHTML = '<option value="">— без кор. банке —</option>';
+    corrs.forEach(function(cb) {
+      var opt = document.createElement('option');
+      opt.value = cb.id;
+      opt.textContent = cb.name + (cb.swift ? ' (' + cb.swift + ')' : '');
+      corrSel.appendChild(opt);
+    });
+  }
+  if (corrSection) corrSection.classList.toggle('hidden', corrs.length === 0);
+  updatePreview();
+}
+
+function getBankAccountPreviewLines() {
+  var sel = document.getElementById('f-bank-account');
+  if (!sel || !sel.value) return '';
+  var opt = sel.options[sel.selectedIndex];
+  var aid = sel.value;
+  var acc = BANK_ACCOUNTS[aid];
+  if (!acc) return '';
+  var lines = '<div>' + escHtml(opt.textContent) + '</div>';
+  var corrSel = document.getElementById('f-corr-bank');
+  if (corrSel && corrSel.value && acc.correspondents) {
+    var cb = acc.correspondents.find(function(c) { return c.id === corrSel.value; });
+    if (cb) {
+      lines += '<div style="color:#6b7280;margin-top:2px">Кор. банка: ' + escHtml(cb.name) + ' (' + escHtml(cb.swift) + ')</div>';
+      if (cb.addr) lines += '<div style="color:#6b7280">' + escHtml(cb.addr) + '</div>';
+    }
+  }
+  return lines;
+}
+
+// ── Client autocomplete ───────────────────────────────────────────────────────
+var searchTimeout;
+document.getElementById('client-search').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  var q = this.value.trim();
+  if (q.length < 1) {
+    hideDropdown();
+    document.getElementById('client-id-hidden').value = '';
+    document.getElementById('client-name-hidden').value = '';
+    selectedClient = null;
+    updatePreview();
+    return;
+  }
+  searchTimeout = setTimeout(function() {
+    fetch(CLIENT_SEARCH_URL + '?q=' + encodeURIComponent(q))
+      .then(function(r) { return r.json(); })
+      .then(function(items) {
+        var ul = document.getElementById('client-dropdown');
+        ul.innerHTML = '';
+        if (!items || items.length === 0) {
+          ul.innerHTML = '';
+          var addLi = document.createElement('li');
+          addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">{{T "invoice_new.client_add_new"}}</a>';
+          addLi.className = 'px-3 py-2';
+          ul.appendChild(addLi);
+          ul.classList.remove('hidden');
+          return;
+        }
+        items.forEach(function(item) {
+          var li = document.createElement('li');
+          li.textContent = item.name;
+          li.className = 'px-3 py-2 cursor-pointer hover:bg-gray-100';
+          li.addEventListener('click', function() {
+            selectedClient = item;
+            document.getElementById('client-search').value = item.name;
+            document.getElementById('client-id-hidden').value = item.id;
+            document.getElementById('client-name-hidden').value = item.name;
+            hideDropdown();
+            updatePreview();
+          });
+          ul.appendChild(li);
+        });
+        var addLi = document.createElement('li');
+        addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">+ Додај клијента</a>';
+        addLi.className = 'px-3 py-2 border-t border-gray-100';
+        ul.appendChild(addLi);
+        ul.classList.remove('hidden');
+      }).catch(function() { hideDropdown(); });
+  }, 200);
+});
+
+document.getElementById('client-search').addEventListener('blur', function() {
+  // Delay so click on dropdown item registers first.
+  setTimeout(function() {
+    hideDropdown();
+    // If nothing was selected from dropdown, use typed text as client name.
+    var typed = document.getElementById('client-search').value.trim();
+    if (!document.getElementById('client-id-hidden').value && typed) {
+      document.getElementById('client-name-hidden').value = typed;
+      selectedClient = null;
+    }
+    updatePreview();
+  }, 200);
+});
+
+function hideDropdown() {
+  document.getElementById('client-dropdown').classList.add('hidden');
+}
+
+// ── Live preview ──────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '';
+  var p = iso.split('-');
+  if (p.length !== 3) return iso;
+  return p[2] + '.' + p[1] + '.' + p[0] + '.';
+}
+
+function updatePreview() {
+  var lang = document.querySelector('input[name="language"]:checked')?.value || 'sr';
+  var lbl = PREVIEW_LABELS[lang] || PREVIEW_LABELS.sr;
+
+  var type = document.querySelector('input[name="invoice_type"]:checked')?.value || 'standard';
+  var title = type === 'advance' ? lbl.advance : lbl.invoice;
+  var invNum = document.getElementById('f-invnum').value || '—';
+  var issueDate = fmtDate(document.getElementById('f-issue').value);
+  var dueDate = fmtDate(document.getElementById('f-due').value);
+  var clientName = document.getElementById('client-name-hidden').value ||
+                   document.getElementById('client-search').value || '—';
+  var currency = document.querySelector('input[name="currency"]:checked')?.value || 'RSD';
+  var notes = document.getElementById('f-notes').value;
+
+  var periodStart = document.getElementById('period-toggle').checked
+    ? fmtDate(document.getElementById('f-pstart').value) : '';
+  var periodEnd = document.getElementById('period-toggle').checked
+    ? fmtDate(document.getElementById('f-pend').value) : '';
+
+  // Items
+  var rows = document.querySelectorAll('#items-body .item-row');
+  var itemsHtml = '';
+  var grandTotal = 0;
+  rows.forEach(function(row) {
+    var desc = row.querySelector('[name="item_description[]"]').value || '—';
+    var qty = parseNum(row.querySelector('[name="item_quantity[]"]').value);
+    var price = parseNum(row.querySelector('[name="item_unit_price[]"]').value);
+    var disc = parseNum(row.querySelector('[name="item_discount[]"]').value);
+    var lineTotal = qty * price * (1 - disc / 100);
+    grandTotal += lineTotal;
+    itemsHtml +=
+      '<tr style="border-bottom:1px solid #e5e7eb">' +
+        '<td style="padding:3px 4px">' + escHtml(desc) + '</td>' +
+        '<td style="padding:3px 4px;text-align:right">' + qty.toFixed(2) + '</td>' +
+        '<td style="padding:3px 4px;text-align:right;font-family:monospace">' + price.toFixed(2) + '</td>' +
+        '<td style="padding:3px 4px;text-align:right">' + disc.toFixed(0) + '%</td>' +
+        '<td style="padding:3px 4px;text-align:right;font-family:monospace;font-weight:600">' + lineTotal.toFixed(2) + '</td>' +
+      '</tr>';
+  });
+
+  var totalRSD = grandTotal * (FX_RATES[currency] || 1);
+  var totalLine = lbl.totalDue + ' ' + grandTotal.toFixed(2) + ' ' + currency;
+  if (currency !== 'RSD') totalLine += ' (≈ ' + totalRSD.toFixed(2) + ' RSD)';
+
+  // Issuer column
+  var issuerHtml = '<div style="font-size:9px;font-weight:600;color:#6b7280;margin-bottom:3px;text-transform:uppercase">' + lbl.issuer + '</div>';
+  if (ISSUER.name) issuerHtml += '<div style="font-weight:600">' + escHtml(ISSUER.name) + '</div>';
+  if (ISSUER.mb) issuerHtml += '<div>' + lbl.mb + ' <span style="font-family:monospace">' + escHtml(ISSUER.mb) + '</span></div>';
+  if (ISSUER.pib) issuerHtml += '<div>PIB: <span style="font-family:monospace">' + escHtml(ISSUER.pib) + '</span></div>';
+  if (ISSUER.address) issuerHtml += '<div>' + escHtml(ISSUER.address) + '</div>';
+
+  // Client column
+  var clientHtml = '<div style="font-size:9px;font-weight:600;color:#6b7280;margin-bottom:3px;text-transform:uppercase">' + lbl.client + '</div>';
+  if (selectedClient) {
+    clientHtml += '<div style="font-weight:600">' + escHtml(selectedClient.name) + '</div>';
+    if (selectedClient.is_foreign) {
+      if (selectedClient.registration_number) clientHtml += '<div>' + lbl.taxId + ' <span style="font-family:monospace">' + escHtml(selectedClient.registration_number) + '</span></div>';
+    } else {
+      if (selectedClient.pib) clientHtml += '<div>PIB: <span style="font-family:monospace">' + escHtml(selectedClient.pib) + '</span></div>';
+      if (selectedClient.registration_number) clientHtml += '<div>' + lbl.regNum + ' <span style="font-family:monospace">' + escHtml(selectedClient.registration_number) + '</span></div>';
+    }
+    if (selectedClient.address) clientHtml += '<div>' + escHtml(selectedClient.address) + '</div>';
+  } else {
+    clientHtml += '<div style="font-weight:600">' + escHtml(clientName) + '</div>';
+  }
+
+  var bankLines = getBankAccountPreviewLines();
+
+  // Footer lines
+  var footerParts = [];
+  if (dueDate) footerParts.push(escHtml(lbl.paymentBy + ' ' + dueDate + '.'));
+  var noVat = document.getElementById('no-vat')?.checked;
+  var noSign = document.getElementById('no-sign')?.checked;
+  if (noVat) footerParts.push(escHtml(lbl.noVatLine));
+  if (noSign) footerParts.push(escHtml(lbl.noSignLine));
+  var footerHtml = footerParts.map(function(p) { return '<div style="margin-top:2px">' + p + '</div>'; }).join('');
+
+  var html =
+    '<div style="font-family:sans-serif;color:#111;font-size:11px">' +
+    '<div style="font-size:18px;font-weight:700;margin-bottom:4px">' + title + '</div>' +
+    '<div>' + lbl.number + ' <strong>' + escHtml(invNum) + '</strong></div>' +
+    '<div>' + lbl.issueDate + ' ' + (issueDate || '—') + '</div>' +
+    (dueDate ? '<div>' + lbl.dueDate + ' ' + dueDate + '</div>' : '') +
+    (periodStart && periodEnd ? '<div>' + lbl.period + ' ' + periodStart + ' – ' + periodEnd + '</div>' : '') +
+    '<hr style="margin:8px 0;border-color:#e5e7eb">' +
+    '<div style="display:flex;gap:16px;margin-bottom:8px">' +
+      '<div style="flex:1">' + issuerHtml + '</div>' +
+      '<div style="flex:1">' + clientHtml + '</div>' +
+    '</div>' +
+    (bankLines ? '<div style="margin-bottom:6px;padding:4px 6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:3px"><div style="font-weight:600;font-size:9px;color:#6b7280;margin-bottom:2px">' + lbl.account.toUpperCase() + '</div>' + bankLines + '</div>' : '') +
+    '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:6px">' +
+      '<thead>' +
+        '<tr style="background:#f3f4f6;font-weight:600">' +
+          '<th style="padding:3px 4px;text-align:left">' + lbl.description + '</th>' +
+          '<th style="padding:3px 4px;text-align:right">' + lbl.qty + '</th>' +
+          '<th style="padding:3px 4px;text-align:right">' + lbl.unitPrice + '</th>' +
+          '<th style="padding:3px 4px;text-align:right">%</th>' +
+          '<th style="padding:3px 4px;text-align:right">' + lbl.amount + '</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' + (itemsHtml || '<tr><td colspan="5" style="padding:4px;color:#9ca3af;text-align:center">—</td></tr>') + '</tbody>' +
+    '</table>' +
+    '<div style="text-align:right;font-weight:700;border-top:2px solid #374151;padding-top:4px">' + totalLine + '</div>' +
+    (notes ? '<div style="margin-top:8px;color:#374151"><em>' + lbl.note + ' ' + escHtml(notes) + '</em></div>' : '') +
+    (footerHtml ? '<hr style="margin:8px 0;border-color:#e5e7eb"><div style="color:#9ca3af;font-size:9px;font-style:italic">' + footerHtml + '</div>' : '') +
+    '</div>';
+
+  document.getElementById('invoice-preview').innerHTML = html;
+  recalc();
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init with one empty item row and trigger initial preview.
+addItem();
+updatePreview();
+</script>
+{{end}}

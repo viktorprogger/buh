@@ -1,0 +1,85 @@
+{{template "base" .}}
+
+{{define "title"}}{{T "batch.title"}} — {{T "app.title"}}{{end}}
+
+{{define "head_extra"}}{{if gt .Pending 0}}<meta http-equiv="refresh" content="2">{{end}}{{end}}
+
+{{define "content"}}
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">{{T "batch.title"}}</h1>
+    {{if gt .Pending 0}}
+    <p class="text-sm text-gray-500 mt-1">{{T "batch.processing"}}</p>
+    {{else}}
+    <p class="text-sm text-gray-500 mt-1">{{T "batch.done"}}</p>
+    {{end}}
+  </div>
+  <a href="/a/" class="inline-flex items-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+    {{T "results.back"}}
+  </a>
+</div>
+
+{{if gt .Pending 0}}
+<div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 text-sm text-blue-800">
+  <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+  </svg>
+  {{T "batch.files_pending"}} {{.Pending}}
+</div>
+{{end}}
+
+{{range .Failed}}
+<div class="mb-3 p-3 bg-red-50 border border-red-200 text-red-800 rounded text-sm flex gap-2">
+  <span>&#9888;</span>
+  <span><strong>{{.Filename}}</strong>: {{.ErrorText}}</span>
+</div>
+{{end}}
+
+{{if .Done}}
+<div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-100">
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-2.5">{{T "batch.col_file"}}</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-2.5">{{T "results.col_entrepreneur"}}</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-2.5">{{T "results.status_created"}}</th>
+        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-2.5">{{T "results.status_updated"}}</th>
+        <th class="px-4 py-2.5"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {{range .Done}}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3 text-gray-600 font-mono text-xs">{{.Filename}}</td>
+        <td class="px-4 py-3 text-gray-800">
+          {{if .HasEntrepreneur}}
+          <a href="/a/entrepreneurs/{{.EntrepreneurID}}" class="hover:text-primary">{{.EntrepreneurName}}</a>
+          {{if .IsNewEntrepreneur}}
+          <span class="ml-1 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">{{T "results.badge_new"}}</span>
+          {{end}}
+          {{else}}
+          {{.EntrepreneurName}}
+          {{end}}
+        </td>
+        <td class="px-4 py-3 text-gray-600">{{.SlipsCreated}}</td>
+        <td class="px-4 py-3 text-gray-600">{{.SlipsUpdated}}</td>
+        <td class="px-4 py-3 text-right">
+          {{if .HasEntrepreneur}}
+          <a href="/a/entrepreneurs/{{.EntrepreneurID}}"
+             class="inline-flex items-center rounded border border-primary px-3 py-1 text-xs font-medium text-primary hover:bg-primary-light">
+            {{T "results.details_link"}}
+          </a>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else if eq .Pending 0}}
+<div class="bg-white border border-gray-200 rounded-lg p-8 text-center text-sm text-gray-500">
+  {{T "results.no_results"}}
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,31 @@
+{{define "slip_table"}}
+<table class="w-full text-sm">
+  <thead>
+    <tr class="bg-gray-50 border-b border-gray-200">
+      <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_date"}}</th>
+      <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_purpose"}}</th>
+      <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_payee"}}</th>
+      <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_amount"}}</th>
+      <th class="w-10"></th>
+    </tr>
+  </thead>
+  <tbody class="divide-y divide-gray-100">
+    {{range .Slips}}
+    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/a/slips/{{.ID}}'">
+      <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
+      <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
+      <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
+      <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
+      <td class="px-2 py-2 text-center" onclick="event.stopPropagation()">
+        <form method="POST" action="/a/slips/{{.ID}}/delete"
+              onsubmit="return confirm('{{T "slip_table.delete_confirm"}}')">
+          <button type="submit"
+                  class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
+                  title="{{T "slip_table.delete_tooltip"}}" aria-label="{{T "slip_table.delete_label"}}">✕</button>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
