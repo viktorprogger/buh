@@ -44,11 +44,11 @@ func (h *Handler) kpoBookFromPath(r *http.Request) (entrepreneur.Entrepreneur, k
 func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return
 	}
 	r.ParseForm()
@@ -77,16 +77,16 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return
 	}
 	entryID, err := uuid.Parse(r.PathValue("entryID"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	r.ParseForm()
@@ -116,11 +116,11 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request) {
 	_, book, _, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return
 	}
 	if err = r.ParseForm(); err != nil {
@@ -147,16 +147,16 @@ func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request
 func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return
 	}
 	entryID, err := uuid.Parse(r.PathValue("entryID"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.DeleteEntry(r.Context(), book.ID, entryID); err != nil {
@@ -169,7 +169,7 @@ func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
@@ -182,7 +182,7 @@ func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.Unfinalize(r.Context(), book.ID); err != nil {
@@ -195,7 +195,7 @@ func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOOpenYear(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	e, ok := h.findOwnedEntrepreneur(w, r, id)
@@ -218,7 +218,7 @@ func (h *Handler) handleKPOOpenYear(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOMergeView(w http.ResponseWriter, r *http.Request) {
 	e, accBook, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	accEntries, err := h.kpoBooks.ListEntries(r.Context(), accBook.ID)
@@ -236,7 +236,7 @@ func (h *Handler) handleKPOMergeView(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	shared.RenderTemplate(w, h.tmpl.KpoMerge, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.KpoMerge, map[string]any{
 		"Entrepreneur": e,
 		"Year":         year,
 		"AccBook":      accBook,
@@ -250,7 +250,7 @@ func (h *Handler) handleKPOMergeView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request) {
 	e, accBook, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if accBook.IsFinalized() {
@@ -259,16 +259,16 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 	}
 	eid, err := uuid.Parse(r.PathValue("eid"))
 	if err != nil {
-		h.renderError(w, http.StatusBadRequest)
+		h.renderError(w, r, http.StatusBadRequest)
 		return
 	}
 	if e.EntrepreneurUserID == nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	eBook, err := h.kpoBooks.FindEntrepreneurBook(r.Context(), *e.EntrepreneurUserID, year)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	eEntries, err := h.kpoBooks.ListEntries(r.Context(), eBook.ID)
@@ -284,7 +284,7 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 		}
 	}
 	if src == nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if _, err := h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
@@ -304,7 +304,7 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	e, book, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	entries, err := h.kpoBooks.ListEntries(r.Context(), book.ID)
@@ -340,16 +340,16 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOMergeMarkDone(w http.ResponseWriter, r *http.Request) {
 	e, _, year, err := h.kpoBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if e.EntrepreneurUserID == nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	eBook, err := h.kpoBooks.FindEntrepreneurBook(r.Context(), *e.EntrepreneurUserID, year)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.MarkMerged(r.Context(), eBook.ID); err != nil {

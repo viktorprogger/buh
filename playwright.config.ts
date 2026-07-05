@@ -14,6 +14,9 @@ export default defineConfig({
     headless: true,
     locale: 'sr-Latn-RS',
     timezoneId: 'Europe/Belgrade',
+    extraHTTPHeaders: {
+      'Accept-Language': 'sr',
+    },
   },
 
   projects: [

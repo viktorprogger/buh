@@ -1,10 +1,10 @@
 {{template "entrepreneur_base" .}}
 
-{{define "title"}}Нова фактура{{end}}
+{{define "title"}}{{T "invoice_new.title"}}{{end}}
 
 {{define "content"}}
 <div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
-  <a href="{{.BackURL}}" class="hover:text-primary">← Назад</a>
+  <a href="{{.BackURL}}" class="hover:text-primary">{{T "invoice_new.back"}}</a>
 </div>
 
 <div id="pausal-alert-invoice" class="hidden mb-4 rounded border px-4 py-3 text-sm leading-snug"></div>
@@ -12,10 +12,10 @@
 
 {{if not .ProfileComplete}}
 <div class="mb-4 rounded bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-  <strong>Профил није завршен.</strong>
-  Следећа поља ће бити празна на фактури (PDF): ПИБ, адреса, жиро рачун.
-  Попуните их у <a href="{{.SettingsURL}}" class="underline hover:text-amber-900">Подешавањима</a>
-  или наставите и креирајте фактуру без тих поља.
+  <strong>{{T "invoice_new.profile_incomplete_warning"}}</strong>
+  {{T "invoice_new.profile_incomplete_details"}}
+  <a href="{{.SettingsURL}}" class="underline hover:text-amber-900">{{T "invoice_new.profile_incomplete_action"}}</a>
+  {{T "invoice_new.profile_incomplete_alt"}}
 </div>
 {{end}}
 
@@ -24,50 +24,50 @@
   <div class="w-full" style="flex: 3">
     <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-200">
-        <h2 class="text-base font-semibold text-gray-900">Нова фактура</h2>
+        <h2 class="text-base font-semibold text-gray-900">{{T "invoice_new.title"}}</h2>
       </div>
 
       <form id="invoice-form" method="POST" action="{{.ActionURL}}" class="px-5 py-4 space-y-4">
 
         <!-- Invoice type -->
         <div>
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Тип фактуре</div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_type"}}</div>
           <div class="flex gap-4">
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="radio" name="invoice_type" value="standard" checked class="text-primary focus:ring-primary" onchange="updatePreview()">
-              Фактура
+              {{T "invoice_new.type_standard"}}
             </label>
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="radio" name="invoice_type" value="advance" class="text-primary focus:ring-primary" onchange="updatePreview()">
-              Авансна фактура
+              {{T "invoice_new.type_advance"}}
             </label>
           </div>
         </div>
 
         <!-- Language -->
         <div>
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Језик / Language</div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_language"}}</div>
           <div class="flex gap-2">
             <label class="flex items-center">
               <input type="radio" name="language" value="sr" checked class="sr-only peer" onchange="updatePreview()">
               <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
                            peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
-                           hover:bg-gray-50">Српски</span>
+                           hover:bg-gray-50">{{T "invoice_new.lang_sr"}}</span>
             </label>
             <label class="flex items-center">
               <input type="radio" name="language" value="en" class="sr-only peer" onchange="updatePreview()">
               <span class="px-3 py-1.5 text-sm rounded border border-gray-300 cursor-pointer
                            peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
-                           hover:bg-gray-50">English</span>
+                           hover:bg-gray-50">{{T "invoice_new.lang_en"}}</span>
             </label>
           </div>
         </div>
 
         <!-- Client -->
         <div>
-          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Клијент</label>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_client"}}</label>
           <div class="relative">
-            <input type="text" id="client-search" placeholder="Претражи клијента по имену..."
+            <input type="text" id="client-search" placeholder="{{T "invoice_new.client_search_ph"}}"
                    autocomplete="off"
                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             <input type="hidden" name="client_id" id="client-id-hidden">
@@ -80,8 +80,8 @@
 
         <!-- Invoice number -->
         <div>
-          <label for="f-invnum" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Број фактуре</label>
-          <input id="f-invnum" type="text" name="invoice_number" placeholder="нпр. 1/2026"
+          <label for="f-invnum" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_invoice_number"}}</label>
+          <input id="f-invnum" type="text" name="invoice_number" placeholder="{{T "invoice_new.ph_invoice_number"}}"
                  class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                  oninput="updatePreview()">
         </div>
@@ -89,13 +89,13 @@
         <!-- Dates -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="f-issue" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Датум издавања <span class="text-red-500">*</span></label>
+            <label for="f-issue" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_issue_date"}} <span class="text-red-500">*</span></label>
             <input id="f-issue" type="date" name="issue_date" value="{{.Today}}" required
                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                    oninput="updatePreview()">
           </div>
           <div>
-            <label for="f-due" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Датум валуте (рок)</label>
+            <label for="f-due" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_due_date"}}</label>
             <input id="f-due" type="date" name="due_date"
                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                    oninput="updatePreview()">
@@ -107,17 +107,17 @@
           <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
             <input type="checkbox" id="period-toggle" class="rounded border-gray-300 text-primary focus:ring-primary"
                    onchange="document.getElementById('period-fields').classList.toggle('hidden', !this.checked)">
-            Период промета (нпр. за континуиране услуге — IT сектор)
+            {{T "invoice_new.period_toggle"}}
           </label>
           <div id="period-fields" class="hidden grid grid-cols-2 gap-4 mt-2">
             <div>
-              <label for="f-pstart" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Промет од</label>
+              <label for="f-pstart" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_period_start"}}</label>
               <input id="f-pstart" type="date" name="period_start"
                      class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                      oninput="updatePreview()">
             </div>
             <div>
-              <label for="f-pend" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Промет до</label>
+              <label for="f-pend" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_period_end"}}</label>
               <input id="f-pend" type="date" name="period_end"
                      class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                      oninput="updatePreview()">
@@ -127,7 +127,7 @@
 
         <!-- Currency -->
         <div>
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Валута</div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_currency"}}</div>
           <div class="flex gap-2 flex-wrap">
             {{range .Currencies}}
             <label class="flex items-center">
@@ -143,16 +143,16 @@
 
         <!-- Line items -->
         <div>
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Ставке фактуре</div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_items"}}</div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm" id="items-table">
               <thead>
                 <tr class="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-200">
-                  <th class="pb-1 text-left pr-2">Опис услуге / робе</th>
-                  <th class="pb-1 text-right w-16 pr-2">Кол.</th>
-                  <th class="pb-1 text-right w-24 pr-2">Јед. цена</th>
-                  <th class="pb-1 text-right w-16 pr-2">Попуст%</th>
-                  <th class="pb-1 text-center w-16 pr-2">Роба</th>
+                  <th class="pb-1 text-left pr-2">{{T "invoice_new.item_description"}}</th>
+                  <th class="pb-1 text-right w-16 pr-2">{{T "invoice_new.item_quantity"}}</th>
+                  <th class="pb-1 text-right w-24 pr-2">{{T "invoice_new.item_unit_price"}}</th>
+                  <th class="pb-1 text-right w-16 pr-2">{{T "invoice_new.item_discount"}}</th>
+                  <th class="pb-1 text-center w-16 pr-2">{{T "invoice_new.item_is_product"}}</th>
                   <th class="pb-1 w-8"></th>
                 </tr>
               </thead>
@@ -163,39 +163,39 @@
           </div>
           <button type="button" onclick="addItem()"
                   class="mt-2 text-sm text-primary hover:text-primary-hover font-medium">
-            + Додај ставку
+            {{T "invoice_new.add_item"}}
           </button>
         </div>
 
         <!-- Total summary -->
         <div class="text-right text-sm font-semibold text-gray-900 border-t border-gray-200 pt-3">
-          За уплату: <span id="grand-total-label">0,00</span> <span id="grand-total-currency">RSD</span>
+          {{T "invoice_new.grand_total"}} <span id="grand-total-label">0,00</span> <span id="grand-total-currency">RSD</span>
         </div>
 
         <!-- Bank account -->
         {{if .BankAccounts}}
         <div>
-          <label for="f-bank-account" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Банковни рачун (опционо)</label>
+          <label for="f-bank-account" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_bank_account"}}</label>
           <select id="f-bank-account" name="bank_account_id" onchange="onBankAccountChange()"
                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-            <option value="">— без рачуна —</option>
+            <option value="">{{T "invoice_new.bank_account_empty"}}</option>
             {{range .BankAccounts}}
             <option value="{{.ID}}" data-type="{{.AccountType}}" data-label="{{.DisplayLabel}}">{{.DisplayLabel}}</option>
             {{end}}
           </select>
         </div>
         <div id="correspondent-section" class="hidden">
-          <label for="f-corr-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Коресподентна банка (опционо)</label>
+          <label for="f-corr-bank" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_correspondent"}}</label>
           <select id="f-corr-bank" name="correspondent_bank_id" onchange="updatePreview()"
                   class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-            <option value="">— без кор. банке —</option>
+            <option value="">{{T "invoice_new.correspondent_empty"}}</option>
           </select>
         </div>
         {{end}}
 
         <!-- Notes -->
         <div>
-          <label for="f-notes" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Напомена (опционо)</label>
+          <label for="f-notes" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invoice_new.label_notes"}}</label>
           <textarea id="f-notes" name="notes" rows="2"
                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     oninput="updatePreview()"></textarea>
@@ -203,17 +203,17 @@
 
         <!-- Footer notes -->
         <div>
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Напомене на фактури</div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.label_footer_notes"}}</div>
           <div class="space-y-2">
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" name="no_vat" id="no-vat" checked
                      class="rounded border-gray-300 text-primary focus:ring-primary" onchange="updatePreview()">
-              Нисам у систему ПДВ-а (члан 12 ЗПДВ)
+              {{T "invoice_new.no_vat_check"}}
             </label>
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" name="no_sign" id="no-sign" checked
                      class="rounded border-gray-300 text-primary focus:ring-primary" onchange="updatePreview()">
-              Фактура је валидна без печата и потписа
+              {{T "invoice_new.no_sign_check"}}
             </label>
           </div>
         </div>
@@ -222,11 +222,11 @@
         <div class="flex gap-3 pt-2 border-t border-gray-200">
           <button type="submit"
                   class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-            Креирај фактуру и генериши PDF
+            {{T "invoice_new.submit"}}
           </button>
           <a href="{{.BackURL}}"
              class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-            Одустани
+            {{T "invoice_new.cancel"}}
           </a>
         </div>
       </form>
@@ -236,7 +236,7 @@
   <!-- ── Right column: live preview (40%) ───────────────────────────────── -->
   <div class="w-full" style="flex: 2; min-width: 280px">
     <div class="lg:sticky lg:top-4">
-      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Преглед</div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{T "invoice_new.preview_label"}}</div>
       <div id="invoice-preview"
            class="bg-white border border-gray-300 rounded shadow-sm p-6 text-xs font-sans leading-snug"
            style="min-height: 500px">
@@ -310,7 +310,7 @@ function addItem() {
   tr.className = 'item-row border-b border-gray-100';
   tr.innerHTML =
     '<td class="py-1 pr-2">' +
-      '<input type="text" name="item_description[]" placeholder="Опис" oninput="updatePreview()"' +
+      '<input type="text" name="item_description[]" placeholder="{{T "invoice_new.item_description"}}" oninput="updatePreview()"' +
              'class="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary">' +
     '</td>' +
     '<td class="py-1 pr-2">' +
@@ -574,7 +574,7 @@ document.getElementById('client-search').addEventListener('input', function() {
         if (!items || items.length === 0) {
           ul.innerHTML = '';
           var addLi = document.createElement('li');
-          addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">+ Додај клијента</a>';
+          addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">{{T "invoice_new.client_add_new"}}</a>';
           addLi.className = 'px-3 py-2';
           ul.appendChild(addLi);
           ul.classList.remove('hidden');

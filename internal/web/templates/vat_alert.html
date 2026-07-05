@@ -6,24 +6,24 @@
   {{else if eq .Severity "high"}}bg-orange-50 border-orange-300 text-orange-900
   {{else}}bg-amber-50 border-amber-200 text-amber-800{{end}}">
   {{if eq .Severity "exceeded"}}
-    <strong>КРИТИЧНО!</strong> Достигли сте праг за ПДВ регистрацију
-    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
-    {{if .IsAccountant}}<strong>Хитно обавестите клијента.</strong>{{else}}<strong>Хитно се консултујте са вашим књиговођом.</strong>{{end}}
-    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
+    <strong>{{T "vat_alert.critical_title"}}</strong> {{T "vat_alert.critical_message"}}
+    ({{printf "%.1f" .Percent}}% — {{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    {{if .IsAccountant}}<strong>{{T "vat_alert.critical_contact_acc"}}</strong>{{else}}<strong>{{T "vat_alert.critical_contact_self"}}</strong>{{end}}
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
   {{else if eq .Severity "alert"}}
-    <strong>УПОЗОРЕЊЕ!</strong> Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
-    ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
-    {{if .IsAccountant}}<strong>Хитно обавестите клијента.</strong>{{else}}<strong>Хитно се консултујте са вашим књиговођом.</strong>{{end}}
-    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
+    <strong>{{T "vat_alert.alert_title"}}</strong> {{TWith "vat_alert.high_message" "Percent" (printf "%.1f" .Percent)}}
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    {{if .IsAccountant}}<strong>{{T "vat_alert.alert_contact_acc"}}</strong>{{else}}<strong>{{T "vat_alert.alert_contact_self"}}</strong>{{end}}
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
   {{else if eq .Severity "high"}}
-    Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
-    ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
-    Препоручујемо консултацију са вашим књиговођом.
-    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
+    {{TWith "vat_alert.high_message" "Percent" (printf "%.1f" .Percent)}}
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    {{T "vat_alert.high_recommendation"}}
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
   {{else}}
-    Достигли сте <strong>{{printf "%.1f" .Percent}}%</strong> прага за ПДВ регистрацију
-    ({{.TotalFmt}} / {{.LimitFmt}} RSD у последњих 12 месеци).
-    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>
+    {{TWith "vat_alert.minor_message" "Percent" (printf "%.1f" .Percent)}}
+    ({{.TotalFmt}} / {{.LimitFmt}} RSD {{T "vat_alert.rolling_period"}}).
+    <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">{{T "vat_alert.info_link"}}</a>
   {{end}}
 </div>
 {{end}}

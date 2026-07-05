@@ -99,16 +99,19 @@ func (imp *Importer) processFile(ctx context.Context, accountantID uuid.UUID, fh
 	if err != nil {
 		return nil, EntrepreneurResult{}, fmt.Errorf("грешка при отварању")
 	}
-
-	tmp, err := os.CreateTemp("", "buh-upload-*.pdf")
-	if err != nil {
-		f.Close()
-		return nil, EntrepreneurResult{}, fmt.Errorf("грешка при чувању")
-	}
 	var buf bytes.Buffer
 	buf.ReadFrom(f)
 	f.Close()
-	tmp.Write(buf.Bytes())
+	return imp.ProcessFileData(ctx, accountantID, fh.Filename, buf.Bytes())
+}
+
+// ProcessFileData processes a PDF given its raw bytes. Used by the async upload worker.
+func (imp *Importer) ProcessFileData(ctx context.Context, accountantID uuid.UUID, filename string, data []byte) ([]SlipResult, EntrepreneurResult, error) {
+	tmp, err := os.CreateTemp("", "buh-upload-*.pdf")
+	if err != nil {
+		return nil, EntrepreneurResult{}, fmt.Errorf("грешка при чувању")
+	}
+	tmp.Write(data)
 	tmp.Close()
 	tmpPath := tmp.Name()
 	defer os.Remove(tmpPath)

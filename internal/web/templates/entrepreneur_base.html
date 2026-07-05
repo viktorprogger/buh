@@ -1,9 +1,9 @@
 {{define "entrepreneur_base"}}<!DOCTYPE html>
-<html lang="sr">
+<html lang="{{lang}}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{block "title" .}}Паушалне уплатнице{{end}}</title>
+<title>{{block "title" .}}{{T "app.title"}}{{end}}</title>
 <link rel="stylesheet" href="/static/app.css">
 <style>{{block "style" .}}{{end}}</style>
 <script src="/static/htmx.min.js"></script>
@@ -14,8 +14,8 @@
 
   <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-56 bg-slate-800 text-white flex flex-col -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0">
     <div class="px-4 py-4 border-b border-slate-700 flex items-center justify-between">
-      <a href="/e/" class="font-semibold text-white hover:text-slate-200 text-sm">Паушалне уплатнице</a>
-      <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white lg:hidden" aria-label="Затвори мени">
+      <a href="/e/" class="font-semibold text-white hover:text-slate-200 text-sm">{{T "app.title"}}</a>
+      <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white lg:hidden" aria-label="{{T "sidebar.close_menu"}}">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
@@ -23,40 +23,46 @@
     </div>
     <nav class="flex-1 py-2 overflow-y-auto">
       <a href="/e/" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        Контролна табла
+        {{T "sidebar.dashboard"}}
       </a>
       <a href="/e/clients" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        Клијенти
+        {{T "sidebar.clients"}}
       </a>
       <a href="/e/bank-accounts" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        Банковни рачуни
+        {{T "sidebar.bank_accounts"}}
       </a>
       <a href="/e/invoices" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        Фактуре
+        {{T "sidebar.invoices"}}
       </a>
       <a href="/e/kpo/{{currentYear}}" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        КПО књига
+        {{T "sidebar.kpo"}}
       </a>
       <a href="/e/invite-accountant" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        Позови рачуновођу
+        {{T "sidebar.invite_accountant"}}
       </a>
       <a href="/e/profile" class="flex items-center px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
-        Профил
+        {{T "sidebar.profile"}}
       </a>
     </nav>
-    <div class="px-4 py-3 border-t border-slate-700">
-      <a href="/logout" class="text-sm text-slate-400 hover:text-white">Одјава</a>
+    <div class="px-4 py-3 border-t border-slate-700 space-y-2">
+      <form method="POST" action="/language" class="flex gap-1 items-center">
+        <span class="text-slate-400 text-xs mr-1">{{T "lang.switch_label"}}:</span>
+        <button type="submit" name="lang" value="sr" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "sr"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">SR</button>
+        <button type="submit" name="lang" value="en" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "en"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">EN</button>
+        <button type="submit" name="lang" value="ru" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "ru"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">RU</button>
+      </form>
+      <a href="/logout" class="text-sm text-slate-400 hover:text-white">{{T "sidebar.logout"}}</a>
     </div>
   </aside>
 
   <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
     <header class="bg-slate-800 text-white px-4 py-3 flex items-center lg:hidden shrink-0">
-      <button onclick="toggleSidebar()" class="text-slate-300 hover:text-white mr-3" aria-label="Мени">
+      <button onclick="toggleSidebar()" class="text-slate-300 hover:text-white mr-3" aria-label="{{T "sidebar.open_menu"}}">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
-      <span class="font-semibold text-sm">Паушалне уплатнице</span>
+      <span class="font-semibold text-sm">{{T "app.title"}}</span>
     </header>
 
     <main class="flex-1 overflow-y-auto px-4 py-6 lg:px-6">
@@ -64,9 +70,9 @@
     </main>
     <footer class="border-t border-gray-200 bg-white shrink-0">
       <div class="px-4 py-3 text-sm text-gray-500">
-        <a href="/privacy" class="hover:text-gray-700">Политика приватности</a>
+        <a href="/privacy" class="hover:text-gray-700">{{T "footer.privacy"}}</a>
         &middot;
-        <a href="/terms" class="hover:text-gray-700">Услови коришћења</a>
+        <a href="/terms" class="hover:text-gray-700">{{T "footer.terms"}}</a>
       </div>
     </footer>
   </div>

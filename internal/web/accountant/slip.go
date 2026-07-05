@@ -113,12 +113,12 @@ func (h *Handler) logSlipHistory(ctx context.Context, slipID uuid.UUID, event sl
 func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.UUID) (sliprecord.SlipRecord, bool) {
 	accountantID, ok := h.accountantFromSession(r)
 	if !ok {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return sliprecord.SlipRecord{}, false
 	}
 	s, err := h.slips.FindByID(r.Context(), id)
 	if errors.Is(err, sliprecord.ErrNotFound) {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return sliprecord.SlipRecord{}, false
 	}
 	if err != nil {
@@ -127,7 +127,7 @@ func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.
 	}
 	e, err := h.entrepreneurs.FindByID(r.Context(), s.EntrepreneurID)
 	if errors.Is(err, entrepreneur.ErrNotFound) {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return sliprecord.SlipRecord{}, false
 	}
 	if err != nil {
@@ -135,7 +135,7 @@ func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.
 		return sliprecord.SlipRecord{}, false
 	}
 	if e.AccountantID != accountantID {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return sliprecord.SlipRecord{}, false
 	}
 	return s, true
@@ -161,7 +161,7 @@ func slipFormToRecord(r *http.Request, existing sliprecord.SlipRecord) sliprecor
 func (h *Handler) handleSlip(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	s, ok := h.findOwnedSlip(w, r, id)
@@ -174,7 +174,7 @@ func (h *Handler) handleSlip(w http.ResponseWriter, r *http.Request) {
 			historyEntries = buildHistoryEntries(records)
 		}
 	}
-	shared.RenderTemplate(w, h.tmpl.Slip, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.Slip, map[string]any{
 		"Slip":        s,
 		"Saved":       r.URL.Query().Get("saved") == "1",
 		"Downloading": r.URL.Query().Get("download") == "1",
@@ -186,7 +186,7 @@ func (h *Handler) handleSlipSave(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, ok := h.findOwnedSlip(w, r, id)
@@ -211,7 +211,7 @@ func (h *Handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, ok := h.findOwnedSlip(w, r, id)
@@ -235,7 +235,7 @@ func (h *Handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	s, ok := h.findOwnedSlip(w, r, id)
@@ -256,7 +256,7 @@ func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleSlipPDF(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	s, ok := h.findOwnedSlip(w, r, id)
@@ -304,14 +304,14 @@ func (h *Handler) handleSlipPDF(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleSlipNewForm(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	e, ok := h.findOwnedEntrepreneur(w, r, id)
 	if !ok {
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.SlipNew, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.SlipNew, map[string]any{
 		"Entrepreneur": e,
 		"Form":         shared.SlipNewForm{SF: "253", Currency: "RSD", P: e.Name, Year: time.Now().Year()},
 	})
@@ -320,7 +320,7 @@ func (h *Handler) handleSlipNewForm(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	e, ok := h.findOwnedEntrepreneur(w, r, id)
@@ -346,7 +346,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderErr := func(msg string) {
-		shared.RenderTemplate(w, h.tmpl.SlipNew, map[string]any{
+		shared.RenderTemplate(w, r, h.tmpl.SlipNew, map[string]any{
 			"Entrepreneur": e,
 			"Form":         form,
 			"Error":        msg,

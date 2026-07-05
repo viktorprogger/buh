@@ -12,7 +12,7 @@ import (
 func (h *Handler) handleAccountantInviteEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	e, ok := h.findOwnedEntrepreneur(w, r, id)
@@ -20,7 +20,7 @@ func (h *Handler) handleAccountantInviteEntrepreneur(w http.ResponseWriter, r *h
 		return
 	}
 	if e.IsPaired() {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return
 	}
 	accountantID, _ := h.accountantFromSession(r)
@@ -33,7 +33,7 @@ func (h *Handler) handleAccountantInviteEntrepreneur(w http.ResponseWriter, r *h
 		http.Error(w, "Грешка при креирању позивнице", http.StatusInternalServerError)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.InviteToken, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.InviteToken, map[string]any{
 		"Token":        inv.Token,
 		"Entrepreneur": e,
 		"InviterType":  "accountant",

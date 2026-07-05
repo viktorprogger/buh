@@ -1,10 +1,10 @@
 {{template "base" .}}
 
-{{define "title"}}Прихватање позивнице{{end}}
+{{define "title"}}{{T "invite_accept.title"}}{{end}}
 
 {{define "content"}}
 <div class="max-w-lg mx-auto">
-  <h1 class="text-2xl font-bold text-gray-900 mb-4">Позивница</h1>
+  <h1 class="text-2xl font-bold text-gray-900 mb-4">{{T "invite_accept.title"}}</h1>
 
   {{if .Error}}
   <div class="mb-4 rounded bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{.Error}}</div>
@@ -21,7 +21,7 @@
     <form method="POST" action="/invite/{{.Token}}/accept">
       <button type="submit"
               class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-        Прихвати позивницу
+        {{T "invite_accept.submit"}}
       </button>
     </form>
     {{else}}
@@ -29,13 +29,13 @@
     <p class="text-sm text-gray-600 mb-4">Изаберите предузетника са ваше листе или оставите празно да аутоматски креирамо запис.</p>
     <form method="POST" action="/invite/{{.Token}}/accept" class="space-y-4">
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Предузетник (опционо)</label>
-        <input type="text" name="managed_entrepreneur_id" placeholder="UUID постојећег предузетника или оставите празно"
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "invite_accept.entrepreneur_field"}}</label>
+        <input type="text" name="managed_entrepreneur_id" placeholder="{{T "invite_accept.entrepreneur_ph"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <button type="submit"
               class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-        Прихвати позивницу
+        {{T "invite_accept.submit"}}
       </button>
     </form>
     {{end}}

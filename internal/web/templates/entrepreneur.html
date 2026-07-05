@@ -4,23 +4,23 @@
 
 {{define "content"}}
 <div class="mb-4 text-sm text-gray-500">
-  <a href="/a/" class="hover:text-primary">← Предузетници</a>
+  <a href="/a/" class="hover:text-primary">{{T "entrepreneur_detail.back"}}</a>
 </div>
 <!-- ── Entrepreneur card ──────────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
-    <h2 class="text-lg font-semibold text-gray-900">Подаци предузетника</h2>
+    <h2 class="text-lg font-semibold text-gray-900">{{T "entrepreneur_detail.section_data"}}</h2>
     <div class="flex items-center gap-4 text-sm">
       {{if .PausalalHasData}}
-        <span class="text-gray-500">Паушалац {{.PausalalYear}}:</span>
+        <span class="text-gray-500">{{T "entrepreneur_detail.pausal_label"}} {{.PausalalYear}}:</span>
         <span class="font-mono font-medium text-gray-900">{{.PausalalTotalFmt}} / {{.PausalalLimitFmt}} RSD</span>
         <span class="text-gray-500">({{printf "%.2f" .PausalalPercent}}%)</span>
       {{else}}
-        <span class="text-gray-400 text-xs">Паушалац {{.PausalalYear}}: нема података</span>
+        <span class="text-gray-400 text-xs">{{T "entrepreneur_detail.pausal_label"}} {{.PausalalYear}}: {{T "entrepreneur_detail.no_data"}}</span>
       {{end}}
       <button id="e-edit-btn" type="button" onclick="eEdit(true)"
               class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        Измени
+        {{T "entrepreneur_detail.edit"}}
       </button>
     </div>
   </div>
@@ -29,40 +29,40 @@
   <div id="e-view" class="px-6 py-4">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Назив (кратко)</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_title"}}</div>
         <div class="text-sm text-gray-900">{{if .Entrepreneur.Title}}{{.Entrepreneur.Title}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Службени назив</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_name"}}</div>
         <div class="text-sm text-gray-900">{{.Entrepreneur.Name}}</div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">МБ</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_mb"}}</div>
         <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.MB}}{{.Entrepreneur.MB}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">ПИБ</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_pib"}}</div>
         <div class="text-sm font-mono text-gray-900">{{.Entrepreneur.PIB}}</div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Адреса</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_address"}}</div>
         <div class="text-sm text-gray-900">{{if .Entrepreneur.Address}}{{.Entrepreneur.Address}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
       </div>
       <div class="sm:col-span-2">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Жиро рачун</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_account"}}</div>
         <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.BankAccount}}{{.Entrepreneur.BankAccount}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Шифра пореског обвезника</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_taxpayer_code"}}</div>
         <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.TaxpayerCode}}{{.Entrepreneur.TaxpayerCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Шифра делатности</div>
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{T "entrepreneur_detail.label_activity_code"}}</div>
         <div class="text-sm font-mono text-gray-900">{{if .Entrepreneur.ActivityCode}}{{.Entrepreneur.ActivityCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</div>
       </div>
     </div>
     {{if .Entrepreneur.IsPaired}}
-    <div class="mt-3 text-xs text-gray-400">Клијенти, банковни рачуни и фактуре се управљају преко налога предузетника.</div>
+    <div class="mt-3 text-xs text-gray-400">{{T "entrepreneur_detail.managed_note"}}</div>
     {{end}}
   </div>
 
@@ -71,60 +71,60 @@
         class="hidden px-6 py-4">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-title">Назив (кратко)</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-title">{{T "entrepreneur_detail.label_title"}}</label>
         <input id="f-title" type="text" name="title" value="{{.Entrepreneur.Title}}"
-               placeholder="нпр. Милан водоинсталатер"
+               placeholder="{{T "entrepreneur_detail.ph_title"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-name">Службени назив</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-name">{{T "entrepreneur_detail.label_name"}}</label>
         <input id="f-name" type="text" name="name" value="{{.Entrepreneur.Name}}" required
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-mb">МБ</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-mb">{{T "entrepreneur_detail.label_mb"}}</label>
         <input id="f-mb" type="text" name="mb" value="{{.Entrepreneur.MB}}"
-               placeholder="нпр. 12345678"
+               placeholder="{{T "entrepreneur_detail.ph_mb"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-pib">ПИБ</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-pib">{{T "entrepreneur_detail.label_pib"}}</label>
         <input id="f-pib" type="text" name="pib" value="{{.Entrepreneur.PIB}}" required
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-address">Адреса</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-address">{{T "entrepreneur_detail.label_address"}}</label>
         <input id="f-address" type="text" name="address" value="{{.Entrepreneur.Address}}"
-               placeholder="нпр. Нушићева 11, Београд"
+               placeholder="{{T "entrepreneur_detail.ph_address"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div class="sm:col-span-2">
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-bank">Жиро рачун</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-bank">{{T "entrepreneur_detail.label_account"}}</label>
         <input id="f-bank" type="text" name="bank_account" value="{{.Entrepreneur.BankAccount}}"
-               placeholder="нпр. 265-1234567890123-56"
+               placeholder="{{T "entrepreneur_detail.ph_account"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-taxpayer-code">Шифра пореског обвезника</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-taxpayer-code">{{T "entrepreneur_detail.label_taxpayer_code"}}</label>
         <input id="f-taxpayer-code" type="text" name="taxpayer_code" value="{{.Entrepreneur.TaxpayerCode}}"
-               placeholder="нпр. 5060"
+               placeholder="{{T "entrepreneur_detail.ph_taxpayer_code"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-activity-code">Шифра делатности</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-activity-code">{{T "entrepreneur_detail.label_activity_code"}}</label>
         <input id="f-activity-code" type="text" name="activity_code" value="{{.Entrepreneur.ActivityCode}}"
-               placeholder="нпр. 6201"
+               placeholder="{{T "entrepreneur_detail.ph_activity_code"}}"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
     </div>
     <div class="mt-4 flex gap-2">
       <button type="submit"
               class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-        Сачувај
+        {{T "entrepreneur_detail.save"}}
       </button>
       <button type="button" onclick="eEdit(false)"
               class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-        Откажи
+        {{T "entrepreneur_detail.cancel"}}
       </button>
     </div>
   </form>
@@ -146,18 +146,18 @@ function eEdit(on) {
 <!-- ── KPO section ───────────────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6" id="kpo">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
-    <h2 class="text-lg font-semibold text-gray-900">КПО — Књига прихода</h2>
+    <h2 class="text-lg font-semibold text-gray-900">{{T "kpo.section_title"}}</h2>
     <div class="flex flex-wrap gap-2 items-center">
       <!-- Invoices are created by the entrepreneur on /e/invoices/new -->
       {{if .Entrepreneur.IsPaired}}
       <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/merge"
          class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        Преузми КПО
+        {{T "kpo.download_kpo"}}
       </a>
       {{end}}
       <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/pdf"
          class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        ↓ PDF
+        {{T "kpo.download_pdf"}}
       </a>
       {{if .KPOBooks}}
       <select id="year-select"
@@ -171,16 +171,16 @@ function eEdit(on) {
       <button type="button"
               onclick="var f=document.getElementById('add-year-form');f.style.display=f.style.display==='none'?'flex':'none'"
               class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        + Додај годину
+        {{T "kpo.add_year"}}
       </button>
       <form id="add-year-form" method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/open-year"
             style="display:none" class="flex gap-2 items-center">
-        <input type="number" name="year" min="2000" max="2100" placeholder="Год."
+        <input type="number" name="year" min="2000" max="2100" placeholder="{{T "kpo.add_year_ph"}}"
                class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-               title="Унесите годину и притисните Отвори">
+               title="{{T "kpo.add_year_title"}}">
         <button type="submit"
                 class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
-          Отвори
+          {{T "kpo.add_year_submit"}}
         </button>
       </form>
     </div>
@@ -191,7 +191,7 @@ function eEdit(on) {
     <!-- Forms outside the table (inputs reference them via form="…") -->
     <form id="kpo-new" method="POST"
           action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/entries"
-          aria-label="Нова ставка КПО"></form>
+          aria-label="{{T "kpo.new_entry_aria"}}"></form>
     {{if not .CurrentBook.IsFinalized}}
     {{range .KPORows}}{{if not .IsAdvanceInvoice}}<form id="edit-{{.EntryID}}" method="POST"
           action="/a/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/update"></form>
@@ -201,13 +201,13 @@ function eEdit(on) {
     <table class="w-full text-sm" aria-label="КПО {{.SelectedYear}}">
       <thead>
         <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          <th class="px-3 py-2 text-center w-10">#</th>
-          <th class="px-3 py-2 text-left">Датум</th>
-          <th class="px-3 py-2 text-left">Бр. рачуна</th>
-          <th class="px-3 py-2 text-left">Опис</th>
-          <th class="px-3 py-2 text-right">Продаја роба</th>
-          <th class="px-3 py-2 text-right">Услуге</th>
-          <th class="px-3 py-2 text-right">Укупно</th>
+          <th class="px-3 py-2 text-center w-10">{{T "kpo.col_num"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_date"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_invoice"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_description"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_product"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_service"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_total"}}</th>
           {{if not .CurrentBook.IsFinalized}}<th class="w-10"></th>{{end}}
         </tr>
       </thead>
@@ -217,8 +217,8 @@ function eEdit(on) {
         {{if .IsAdvanceInvoice}}
         <!-- Advance invoice row — muted, not counted in KPO totals -->
         <tr class="opacity-50 hover:opacity-70"
-            title="Ова фактура се не узима у обзир у КПО">
-          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">А</td>
+            title="{{T "kpo.advance_tooltip"}}">
+          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">{{T "kpo.advance_label"}}</td>
           <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
           <td class="px-3 py-2 text-gray-500">
             <span>{{.InvoiceNum}}</span>
@@ -241,7 +241,7 @@ function eEdit(on) {
             <span class="view-val text-gray-600">{{.Date.Format "02.01.2006."}}</span>
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="collection_date"
-                   value="{{.Date.Format "02.01"}}" maxlength="5" placeholder="дд.мм"
+                   value="{{.Date.Format "02.01"}}" maxlength="5" placeholder="{{T "kpo.ph_date"}}"
                    style="display:none"
                    class="edit-input w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
@@ -290,20 +290,20 @@ function eEdit(on) {
           <td class="px-2 py-2 text-center">
             <div class="view-actions flex gap-1 items-center justify-center">
               <button type="button" onclick="rowEdit('{{.EntryID}}', true)"
-                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="Измени">✎</button>
+                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="{{T "kpo.row_edit"}}">✎</button>
               <form method="POST"
                     action="/a/entrepreneurs/{{$.Entrepreneur.ID}}/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/delete"
-                    onsubmit="return confirm('Обрисати ставку?')">
+                    onsubmit="return confirm('{{T "kpo.row_delete_confirm"}}')">
                 <button type="submit"
                         class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
-                        title="Обриши ставку" aria-label="Обриши">✕</button>
+                        title="{{T "kpo.row_delete"}}" aria-label="{{T "kpo.row_delete_label"}}">✕</button>
               </form>
             </div>
             <div class="edit-actions flex gap-1 items-center justify-center" style="display:none">
               <button form="edit-{{.EntryID}}" type="submit"
-                      class="text-green-600 hover:text-green-800 px-1 py-1" title="Сачувај">✓</button>
+                      class="text-green-600 hover:text-green-800 px-1 py-1" title="{{T "kpo.row_save"}}">✓</button>
               <button type="button" onclick="rowEdit('{{.EntryID}}', false)"
-                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="Откажи">✕</button>
+                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="{{T "kpo.row_cancel"}}">✕</button>
             </div>
           </td>
           {{end}}
@@ -314,7 +314,7 @@ function eEdit(on) {
         <!-- Totals row (shown only when there are regular KPO entries) -->
         {{if .KPOEntries}}
         <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
-          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">Укупно:</td>
+          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
           <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalProduct}}</td>
           <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalService}}</td>
           <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalAll}}</td>
@@ -329,33 +329,33 @@ function eEdit(on) {
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="collection_date" required
                    id="kpo-date" autofocus
-                   maxlength="5" placeholder="дд.мм"
+                   maxlength="5" placeholder="{{T "kpo.ph_date"}}"
                    class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Датум">
+                   aria-label="{{T "kpo.field_date"}}">
           </td>
           <td class="px-1 py-1">
-            <input form="kpo-new" type="text" name="invoice_number" placeholder="нпр. 2026/1"
+            <input form="kpo-new" type="text" name="invoice_number" placeholder="{{T "kpo.ph_invoice"}}"
                    id="kpo-invoice"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Број рачуна">
+                   aria-label="{{T "kpo.field_invoice"}}">
           </td>
           <td class="px-1 py-1">
-            <input form="kpo-new" type="text" name="description" placeholder="клијент / опис"
+            <input form="kpo-new" type="text" name="description" placeholder="{{T "kpo.ph_description"}}"
                    id="kpo-description"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Опис">
+                   aria-label="{{T "kpo.field_description"}}">
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="product_revenue" value="0"
                    id="kpo-product"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Приход од продаје роба">
+                   aria-label="{{T "kpo.field_product"}}">
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="service_revenue" value="0"
                    id="kpo-service"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Приход од услуга">
+                   aria-label="{{T "kpo.field_service"}}">
           </td>
           <td class="px-3 py-1 text-right font-mono text-sm font-medium text-gray-700 tabular-nums"
               id="kpo-row-total">0.00</td>
@@ -363,7 +363,7 @@ function eEdit(on) {
             <button form="kpo-new" type="submit"
                     class="rounded bg-primary px-2 py-1 text-xs font-medium text-white hover:bg-primary-hover whitespace-nowrap"
                     aria-label="Унеси ставку">
-              Унеси ↵
+              {{T "kpo.new_entry_submit"}}
             </button>
           </td>
         </tr>
@@ -376,21 +376,21 @@ function eEdit(on) {
   <!-- Finalize / unfinalize bar -->
   <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-end gap-4">
     {{if .CurrentBook.IsFinalized}}
-      <span class="text-sm text-green-700 font-medium">✓ Укњижено {{.CurrentBook.FinalizedAtStr}}</span>
+      <span class="text-sm text-green-700 font-medium">{{T "kpo.finalized_at"}} {{.CurrentBook.FinalizedAtStr}}</span>
       <form method="POST"
             action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/unfinalize">
         <button type="submit"
                 class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-          Откључај
+          {{T "kpo.unlock"}}
         </button>
       </form>
     {{else}}
       <form method="POST"
             action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/finalize"
-            onsubmit="return confirm('Финализовати КПО за {{.SelectedYear}} годину? Ова акција закључава књигу. Накнадне измене захтевају откључавање.')">
+            onsubmit="return confirm('{{T "kpo.finalize_confirm_q"}} {{.SelectedYear}} {{T "kpo.finalize_confirm_year"}} {{T "kpo.finalize_confirm_detail"}}')">
         <button type="submit"
                 class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Укњижи
+          {{T "kpo.finalize"}}
         </button>
       </form>
     {{end}}
@@ -400,10 +400,10 @@ function eEdit(on) {
 <!-- ── Payment slips section ─────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-900">Уплатнице</h2>
+    <h2 class="text-lg font-semibold text-gray-900">{{T "slips.section_title"}}</h2>
     <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/slips/new"
        class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-      + Нова уплатница
+      {{T "slips.add_new"}}
     </a>
   </div>
 
@@ -412,11 +412,11 @@ function eEdit(on) {
   <div class="border-b border-gray-200 flex">
     <button id="slip-tab-latest-btn" onclick="slipTab('latest')"
             class="px-5 py-2.5 text-sm font-medium text-primary border-b-2 border-primary -mb-px">
-      Текуће
+      {{T "slips.tab_current"}}
     </button>
     <button id="slip-tab-prev-btn" onclick="slipTab('prev')"
             class="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent -mb-px">
-      Претходне
+      {{T "slips.tab_previous"}}
     </button>
   </div>
 
@@ -428,13 +428,13 @@ function eEdit(on) {
     {{if .LatestSlipYear.Regular}}
     {{template "slip_table" (slipTableArgs .Entrepreneur.ID .LatestSlipYear.Regular)}}
     {{else}}
-    <div class="px-6 py-4 text-sm text-gray-400">Нема редовних уплатница.</div>
+    <div class="px-6 py-4 text-sm text-gray-400">{{T "slips.no_regular"}}</div>
     {{end}}
     {{if .LatestSlipYear.Advance}}
     <details class="border-t border-gray-100">
       <summary class="px-6 py-3 text-sm font-medium text-gray-700 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
         <span class="text-gray-400 text-xs">▶</span>
-        Аванс ({{len .LatestSlipYear.Advance}})
+        {{T "slips.advance_label"}} ({{len .LatestSlipYear.Advance}})
       </summary>
       {{template "slip_table" (slipTableArgs .Entrepreneur.ID .LatestSlipYear.Advance)}}
     </details>
@@ -451,7 +451,7 @@ function eEdit(on) {
       <details open>
         <summary class="px-6 py-2 text-sm font-medium text-gray-600 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
           <span class="text-gray-400 text-xs accordion-arrow">▶</span>
-          Редовне ({{len .Regular}})
+          {{T "slips.regular_label"}} ({{len .Regular}})
         </summary>
         {{template "slip_table" (slipTableArgs $.Entrepreneur.ID .Regular)}}
       </details>
@@ -460,7 +460,7 @@ function eEdit(on) {
       <details>
         <summary class="px-6 py-2 text-sm font-medium text-gray-600 cursor-pointer select-none hover:bg-gray-50 list-none flex items-center gap-2">
           <span class="text-gray-400 text-xs accordion-arrow">▶</span>
-          Аванс ({{len .Advance}})
+          {{T "slips.advance_label"}} ({{len .Advance}})
         </summary>
         {{template "slip_table" (slipTableArgs $.Entrepreneur.ID .Advance)}}
       </details>
@@ -468,12 +468,12 @@ function eEdit(on) {
     </div>
     {{end}}
     {{else}}
-    <div class="px-6 py-8 text-sm text-gray-500 text-center">Нема претходних уплатница.</div>
+    <div class="px-6 py-8 text-sm text-gray-500 text-center">{{T "slips.no_previous"}}</div>
     {{end}}
   </div>
 
   {{else}}
-  <div class="px-6 py-8 text-sm text-gray-500 text-center">Нема сачуваних уплатница.</div>
+  <div class="px-6 py-8 text-sm text-gray-500 text-center">{{T "slips.no_saved"}}</div>
   {{end}}
 </div>
 
@@ -566,7 +566,7 @@ function initDateInput(el) {
     if (!m) return;
     var d = +m[1], mo = +m[2];
     if (d < 1 || d > 31 || mo < 1 || mo > 12) {
-      this.setCustomValidity('Дан 1–31, месец 1–12');
+      this.setCustomValidity('{{T "kpo.date_hint"}}');
       this.reportValidity();
       this.style.borderColor = '#ef4444';
     }

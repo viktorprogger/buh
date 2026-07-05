@@ -20,7 +20,7 @@ func (h *Handler) handleInviteForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/e/", http.StatusFound)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurInviteAcc, nil)
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurInviteAcc, nil)
 }
 
 func (h *Handler) handleSendInvite(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func (h *Handler) handleSendInvite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Грешка при креирању позивнице", http.StatusInternalServerError)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.InviteToken, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.InviteToken, map[string]any{
 		"Token":       inv.Token,
 		"InviterType": "entrepreneur",
 	})

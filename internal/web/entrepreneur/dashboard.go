@@ -11,7 +11,7 @@ import (
 )
 
 func (h *Handler) HandleRegisterForm(w http.ResponseWriter, r *http.Request) {
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurRegister, nil)
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurRegister, nil)
 }
 
 func (h *Handler) HandleRegisterSubmit(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +21,7 @@ func (h *Handler) HandleRegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	confirm := r.FormValue("confirm_password")
 
 	renderErr := func(msg string) {
-		shared.RenderTemplate(w, h.tmpl.EntrepreneurRegister, map[string]any{"Error": msg, "Email": email})
+		shared.RenderTemplate(w, r, h.tmpl.EntrepreneurRegister, map[string]any{"Error": msg, "Email": email})
 	}
 	if email == "" || password == "" {
 		renderErr("Е-пошта и лозинка су обавезни.")
@@ -45,7 +45,7 @@ func (h *Handler) HandleRegisterSubmit(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	userID, ok := h.entrepreneurUserFromSession(r)
@@ -54,7 +54,7 @@ func (h *Handler) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	paired, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurDashboard, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurDashboard, map[string]any{
 		"Paired":      paired.ID != uuid.Nil,
 		"Managed":     paired,
 		"CurrentYear": time.Now().Year(),

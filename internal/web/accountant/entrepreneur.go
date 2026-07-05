@@ -3,6 +3,8 @@ package accountant
 import (
 	"context"
 	"errors"
+	"io"
+	"log"
 	"math"
 	"net/http"
 	"sort"
@@ -21,12 +23,12 @@ import (
 func (h *Handler) findOwnedEntrepreneur(w http.ResponseWriter, r *http.Request, id uuid.UUID) (entrepreneur.Entrepreneur, bool) {
 	accountantID, ok := h.accountantFromSession(r)
 	if !ok {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return entrepreneur.Entrepreneur{}, false
 	}
 	e, err := h.entrepreneurs.FindByID(r.Context(), id)
 	if errors.Is(err, entrepreneur.ErrNotFound) {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return entrepreneur.Entrepreneur{}, false
 	}
 	if err != nil {
@@ -34,7 +36,7 @@ func (h *Handler) findOwnedEntrepreneur(w http.ResponseWriter, r *http.Request, 
 		return entrepreneur.Entrepreneur{}, false
 	}
 	if e.AccountantID != accountantID {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return entrepreneur.Entrepreneur{}, false
 	}
 	return e, true
@@ -57,7 +59,7 @@ func entrepreneurDisplayName(e entrepreneur.Entrepreneur) string {
 
 func (h *Handler) handleAccountantIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	accountantID, ok := h.accountantFromSession(r)
@@ -141,16 +143,16 @@ func (h *Handler) handleAccountantIndex(w http.ResponseWriter, r *http.Request) 
 		"List": list,
 	}
 	if r.Header.Get("HX-Request") == "true" {
-		shared.RenderNamedTemplate(w, h.tmpl.Index, "index-list", data)
+		shared.RenderNamedTemplate(w, r, h.tmpl.Index, "index-list", data)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.Index, data)
+	shared.RenderTemplate(w, r, h.tmpl.Index, data)
 }
 
 func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	e, ok := h.findOwnedEntrepreneur(w, r, id)
@@ -288,7 +290,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		vatAlert.IsAccountant = true
 	}
 
-	shared.RenderTemplate(w, h.tmpl.Entrepreneur, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.Entrepreneur, map[string]any{
 		"Entrepreneur":     e,
 		"KPOBooks":         books,
 		"CurrentBook":      currentBook,
@@ -311,7 +313,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleEntrepreneurNewForm(w http.ResponseWriter, r *http.Request) {
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurNew, nil)
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurNew, nil)
 }
 
 func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Request) {
@@ -320,7 +322,7 @@ func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 	pib := strings.TrimSpace(r.FormValue("pib"))
 
 	if name == "" || pib == "" {
-		shared.RenderTemplate(w, h.tmpl.EntrepreneurNew, map[string]any{
+		shared.RenderTemplate(w, r, h.tmpl.EntrepreneurNew, map[string]any{
 			"Error":        "Оба поља су обавезна.",
 			"Name":         name,
 			"PIB":          pib,
@@ -361,7 +363,7 @@ func (h *Handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 	idStr := r.PathValue("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	e, ok := h.findOwnedEntrepreneur(w, r, id)
@@ -393,17 +395,55 @@ func (h *Handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) handleProcess(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(32 << 20)
-	files := r.MultipartForm.File["pdfs"]
-	if len(files) == 0 {
-		http.Redirect(w, r, "/", http.StatusFound)
+	if err := r.ParseMultipartForm(64 << 20); err != nil {
+		h.renderError(w, r, http.StatusBadRequest)
 		return
 	}
-	const maxUploadFiles = 4
-	if len(files) > maxUploadFiles {
-		files = files[:maxUploadFiles]
+	files := r.MultipartForm.File["pdfs"]
+	if len(files) == 0 {
+		http.Redirect(w, r, "/a/", http.StatusFound)
+		return
 	}
 	accountantID, _ := h.accountantFromSession(r)
-	result := h.importer.ProcessFiles(r.Context(), accountantID, files)
-	shared.RenderTemplate(w, h.tmpl.Results, result)
+
+	batchID, err := h.uploadQueue.CreateBatch(r.Context(), accountantID)
+	if err != nil {
+		log.Printf("handleProcess: create batch: %v", err)
+		h.renderError(w, r, http.StatusInternalServerError)
+		return
+	}
+
+	for _, fh := range files {
+		f, err := fh.Open()
+		if err != nil {
+			log.Printf("handleProcess: open %s: %v", fh.Filename, err)
+			continue
+		}
+		data, err := io.ReadAll(f)
+		f.Close()
+		if err != nil {
+			log.Printf("handleProcess: read %s: %v", fh.Filename, err)
+			continue
+		}
+		if err := h.uploadQueue.Enqueue(r.Context(), batchID, accountantID, fh.Filename, data); err != nil {
+			log.Printf("handleProcess: enqueue %s: %v", fh.Filename, err)
+		}
+	}
+
+	http.Redirect(w, r, "/a/import/batches/"+batchID.String(), http.StatusFound)
+}
+
+func (h *Handler) handleBatchStatus(w http.ResponseWriter, r *http.Request) {
+	batchID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		h.renderError(w, r, http.StatusNotFound)
+		return
+	}
+	summary, err := h.uploadQueue.BatchSummary(r.Context(), batchID)
+	if err != nil {
+		log.Printf("handleBatchStatus: %v", err)
+		h.renderError(w, r, http.StatusInternalServerError)
+		return
+	}
+	shared.RenderTemplate(w, r, h.tmpl.UploadBatch, summary)
 }

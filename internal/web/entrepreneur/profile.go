@@ -16,7 +16,7 @@ func (h *Handler) handleProfileForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	managed, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurProfile, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurProfile, map[string]any{
 		"Paired":  managed.ID != uuid.Nil,
 		"Managed": managed,
 	})
@@ -30,7 +30,7 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	managed, err := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
 	if err != nil {
-		h.renderError(w, http.StatusForbidden)
+		h.renderError(w, r, http.StatusForbidden)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 		managed.BankAccount = strings.TrimSpace(r.FormValue("bank_account"))
 		managed.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
 		managed.ActivityCode = strings.TrimSpace(r.FormValue("activity_code"))
-		shared.RenderTemplate(w, h.tmpl.EntrepreneurProfile, map[string]any{
+		shared.RenderTemplate(w, r, h.tmpl.EntrepreneurProfile, map[string]any{
 			"Paired":   true,
 			"Managed":  managed,
 			"EditMode": true,
@@ -64,7 +64,7 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 	managed.ActivityCode = strings.TrimSpace(r.FormValue("activity_code"))
 
 	if err := h.entrepreneurs.Update(r.Context(), managed); err != nil {
-		h.renderError(w, http.StatusInternalServerError)
+		h.renderError(w, r, http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/profile", http.StatusFound)

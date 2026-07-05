@@ -28,6 +28,7 @@ type Templates struct {
 	CorrespondentForm *template.Template
 	InvoiceNew        *template.Template
 	InvoiceDetail     *template.Template
+	UploadBatch *template.Template
 	// Entrepreneur-side templates
 	EntrepreneurRegister     *template.Template
 	EntrepreneurDashboard    *template.Template
@@ -42,11 +43,33 @@ type Templates struct {
 	EntrepreneurProfile      *template.Template
 }
 
-func mustPageTmpl(tfs fs.FS, name string, funcs template.FuncMap, extra ...string) *template.Template {
-	t := template.New(name)
-	if funcs != nil {
-		t = t.Funcs(funcs)
+// i18nPlaceholder is a stub T function used at parse time.
+// At render time it is replaced with the real localizer via CloneWithT.
+func i18nPlaceholder(key string) string { return key }
+
+// i18nPlaceholderWith is a stub TWith function used at parse time.
+func i18nPlaceholderWith(key string, _ ...interface{}) string { return key }
+
+// baseFuncs are always included in every template's FuncMap.
+var baseFuncs = template.FuncMap{
+	"T":     i18nPlaceholder,
+	"TWith": i18nPlaceholderWith,
+	"lang":  func() string { return "sr" },
+}
+
+func mergedFuncs(extra template.FuncMap) template.FuncMap {
+	m := make(template.FuncMap, len(baseFuncs)+len(extra))
+	for k, v := range baseFuncs {
+		m[k] = v
 	}
+	for k, v := range extra {
+		m[k] = v
+	}
+	return m
+}
+
+func mustPageTmpl(tfs fs.FS, name string, funcs template.FuncMap, extra ...string) *template.Template {
+	t := template.New(name).Funcs(mergedFuncs(funcs))
 	files := append([]string{"templates/base.html", "templates/" + name}, extra...)
 	return template.Must(t.ParseFS(tfs, files...))
 }
@@ -56,7 +79,7 @@ var entrepreneurBaseFuncs = template.FuncMap{
 }
 
 func mustEntrepreneurPageTmpl(tfs fs.FS, name string, extra ...string) *template.Template {
-	t := template.New(name).Funcs(entrepreneurBaseFuncs)
+	t := template.New(name).Funcs(mergedFuncs(entrepreneurBaseFuncs))
 	files := append([]string{"templates/entrepreneur_base.html", "templates/" + name}, extra...)
 	return template.Must(t.ParseFS(tfs, files...))
 }
@@ -72,11 +95,12 @@ func ParseTemplates(tfs fs.FS) Templates {
 		},
 	}
 	return Templates{
-		Login:           template.Must(template.New("login.html").ParseFS(tfs, "templates/login.html")),
+		Login:           template.Must(template.New("login.html").Funcs(baseFuncs).ParseFS(tfs, "templates/login.html")),
 		Index:           mustPageTmpl(tfs, "index.html", nil),
 		Entrepreneur:    mustPageTmpl(tfs, "entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html", "templates/pausal_alert.html", "templates/vat_alert.html"),
 		EntrepreneurNew: mustPageTmpl(tfs, "entrepreneur_new.html", nil),
 		Results:         mustPageTmpl(tfs, "results.html", nil),
+		UploadBatch:     mustPageTmpl(tfs, "upload_batch.html", nil),
 		Slip:            mustPageTmpl(tfs, "slip.html", nil, slipExtra...),
 		SlipNew:         mustPageTmpl(tfs, "slip_new.html", nil, slipExtra...),
 		Placeholder:     mustPageTmpl(tfs, "placeholder.html", nil),
@@ -88,7 +112,7 @@ func ParseTemplates(tfs fs.FS) Templates {
 		CorrespondentForm:        mustEntrepreneurPageTmpl(tfs, "correspondent_form.html"),
 		InvoiceNew:               mustEntrepreneurPageTmpl(tfs, "invoice_new.html"),
 		InvoiceDetail:            mustEntrepreneurPageTmpl(tfs, "invoice.html"),
-		EntrepreneurRegister:     template.Must(template.New("entrepreneur_register.html").ParseFS(tfs, "templates/entrepreneur_register.html")),
+		EntrepreneurRegister:     template.Must(template.New("entrepreneur_register.html").Funcs(baseFuncs).ParseFS(tfs, "templates/entrepreneur_register.html")),
 		EntrepreneurDashboard:    mustEntrepreneurPageTmpl(tfs, "entrepreneur_dashboard.html"),
 		InviteToken:              mustPageTmpl(tfs, "invite_token.html", nil),
 		InviteAccept:             mustPageTmpl(tfs, "invite_accept.html", nil),

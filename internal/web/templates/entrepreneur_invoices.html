@@ -1,13 +1,13 @@
 {{template "entrepreneur_base" .}}
 
-{{define "title"}}Фактуре{{end}}
+{{define "title"}}{{T "invoices.page_title"}}{{end}}
 
 {{define "content"}}
 <div class="mb-4 flex items-center justify-between">
-  <div class="text-sm text-gray-500"><a href="/e/" class="hover:text-primary">← Почетна</a></div>
+  <div class="text-sm text-gray-500"><a href="/e/" class="hover:text-primary">{{T "invoices.back"}}</a></div>
   <a href="/e/invoices/new"
      class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-    + Нова фактура
+    {{T "invoices.add_new"}}
   </a>
 </div>
 
@@ -17,7 +17,7 @@
 {{define "invoices-list"}}
 <div id="invoices-list" class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200">
-    <h2 class="text-lg font-semibold text-gray-900">Фактуре</h2>
+    <h2 class="text-lg font-semibold text-gray-900">{{T "invoices.section_title"}}</h2>
   </div>
   {{if .Invoices}}
   <table class="w-full text-sm">
@@ -28,7 +28,7 @@
              hx-get="{{.List.SortLink "number"}}"
              hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
              class="hover:text-gray-700">
-            Број {{.List.SortIcon "number"}}
+            {{T "invoices.col_number"}} {{.List.SortIcon "number"}}
           </a>
         </th>
         <th class="px-4 py-2 text-left">
@@ -36,7 +36,7 @@
              hx-get="{{.List.SortLink "client"}}"
              hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
              class="hover:text-gray-700">
-            Клијент {{.List.SortIcon "client"}}
+            {{T "invoices.col_client"}} {{.List.SortIcon "client"}}
           </a>
         </th>
         <th class="px-4 py-2 text-left">
@@ -44,7 +44,7 @@
              hx-get="{{.List.SortLink "type"}}"
              hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
              class="hover:text-gray-700">
-            Тип {{.List.SortIcon "type"}}
+            {{T "invoices.col_type"}} {{.List.SortIcon "type"}}
           </a>
         </th>
         <th class="px-4 py-2 text-left">
@@ -52,7 +52,7 @@
              hx-get="{{.List.SortLink "date"}}"
              hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
              class="hover:text-gray-700">
-            Датум {{.List.SortIcon "date"}}
+            {{T "invoices.col_date"}} {{.List.SortIcon "date"}}
           </a>
         </th>
         <th class="px-4 py-2 text-right">
@@ -60,7 +60,7 @@
              hx-get="{{.List.SortLink "amount"}}"
              hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
              class="hover:text-gray-700">
-            Износ (RSD) {{.List.SortIcon "amount"}}
+            {{T "invoices.col_amount"}} {{.List.SortIcon "amount"}}
           </a>
         </th>
         <th class="px-4 py-2"></th>
@@ -72,12 +72,12 @@
         <td class="px-4 py-2 font-mono text-gray-700">{{if .InvoiceNumber}}{{.InvoiceNumber}}{{else}}<span class="text-gray-400">—</span>{{end}}</td>
         <td class="px-4 py-2 text-gray-900">{{if .ClientName}}{{.ClientName}}{{else}}<span class="text-gray-400">—</span>{{end}}</td>
         <td class="px-4 py-2">
-          {{if eq (printf "%s" .InvoiceType) "advance"}}<span class="text-xs text-amber-600">Аванс</span>{{else}}<span class="text-xs text-gray-600">Стандард</span>{{end}}
+          {{if eq (printf "%s" .InvoiceType) "advance"}}<span class="text-xs text-amber-600">{{T "invoices.type_advance"}}</span>{{else}}<span class="text-xs text-gray-600">{{T "invoices.type_standard"}}</span>{{end}}
         </td>
         <td class="px-4 py-2 text-gray-600">{{.IssueDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-right font-mono">{{printf "%.2f" .TotalRSD}}</td>
         <td class="px-4 py-2 text-right">
-          <a href="/e/invoices/{{.ID}}" class="text-xs text-primary hover:underline">Прегледај</a>
+          <a href="/e/invoices/{{.ID}}" class="text-xs text-primary hover:underline">{{T "invoices.view"}}</a>
         </td>
       </tr>
       {{end}}
@@ -85,24 +85,24 @@
   </table>
   {{if or .List.HasPrev .List.HasNext}}
   <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm">
-    <span class="text-gray-500">Страна {{.List.Page}} од {{.List.LastPage}} (укупно {{.List.Total}})</span>
+    <span class="text-gray-500">{{TWith "invoices.page_info" "Page" .List.Page "LastPage" .List.LastPage "Total" .List.Total}}</span>
     <div class="flex gap-2">
       {{if .List.HasPrev}}
       <a href="{{.List.PrevURL}}"
          hx-get="{{.List.PrevURL}}" hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
-         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">← Претходна</a>
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">{{T "invoices.prev"}}</a>
       {{end}}
       {{if .List.HasNext}}
       <a href="{{.List.NextURL}}"
          hx-get="{{.List.NextURL}}" hx-target="#invoices-list" hx-swap="outerHTML" hx-push-url="true"
-         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">Следећа →</a>
+         class="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">{{T "invoices.next"}}</a>
       {{end}}
     </div>
   </div>
   {{end}}
   {{else}}
   <div class="px-6 py-8 text-center text-gray-400 text-sm">
-    Нема фактура. <a href="/e/invoices/new" class="text-primary hover:underline">Креирај прву фактуру</a>.
+    {{T "invoices.empty"}} <a href="/e/invoices/new" class="text-primary hover:underline">{{T "invoices.empty_create"}}</a>.
   </div>
   {{end}}
 </div>

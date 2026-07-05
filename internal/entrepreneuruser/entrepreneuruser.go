@@ -19,6 +19,7 @@ type User struct {
 	ID           uuid.UUID
 	Email        string
 	PasswordHash string
+	Language     string
 	CreatedAt    time.Time
 }
 
@@ -44,8 +45,8 @@ func (r *Repo) Create(ctx context.Context, email, password string) (User, error)
 func (r *Repo) FindByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, email, password_hash, created_at FROM entrepreneur_users WHERE email = $1`, email,
-	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt)
+		`SELECT id, email, password_hash, language, created_at FROM entrepreneur_users WHERE email = $1`, email,
+	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Language, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return User{}, ErrNotFound
 	}
@@ -55,12 +56,28 @@ func (r *Repo) FindByEmail(ctx context.Context, email string) (User, error) {
 func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (User, error) {
 	var u User
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, email, password_hash, created_at FROM entrepreneur_users WHERE id = $1`, id,
-	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt)
+		`SELECT id, email, password_hash, language, created_at FROM entrepreneur_users WHERE id = $1`, id,
+	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Language, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return User{}, ErrNotFound
 	}
 	return u, err
+}
+
+// SetLanguage persists the preferred UI language for an entrepreneur user.
+func (r *Repo) SetLanguage(ctx context.Context, id uuid.UUID, lang string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE entrepreneur_users SET language = $1 WHERE id = $2`, lang, id)
+	return err
+}
+
+// GetLanguage returns the stored language preference for an entrepreneur user.
+func (r *Repo) GetLanguage(ctx context.Context, id uuid.UUID) (string, error) {
+	var lang string
+	err := r.db.QueryRowContext(ctx, `SELECT language FROM entrepreneur_users WHERE id = $1`, id).Scan(&lang)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "sr", nil
+	}
+	return lang, err
 }
 
 func (r *Repo) UpdatePasswordHash(ctx context.Context, id uuid.UUID, password string) error {

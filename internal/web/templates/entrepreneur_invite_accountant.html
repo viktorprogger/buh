@@ -1,23 +1,23 @@
 {{template "entrepreneur_base" .}}
 
-{{define "title"}}Позови рачуновођу{{end}}
+{{define "title"}}{{T "invite_accountant.title"}}{{end}}
 
 {{define "content"}}
 <div class="max-w-lg mx-auto">
   <div class="mb-4 text-sm text-gray-500">
-    <a href="/e/" class="hover:text-primary">← Почетна</a>
+    <a href="/e/" class="hover:text-primary">{{T "clients.back"}}</a>
   </div>
 
-  <h1 class="text-2xl font-bold text-gray-900 mb-4">Позови рачуновођу</h1>
+  <h1 class="text-2xl font-bold text-gray-900 mb-4">{{T "invite_accountant.title"}}</h1>
 
   <div class="bg-white border border-gray-200 rounded-lg shadow-xs p-6">
     <p class="text-sm text-gray-600 mb-6">
-      Кликните на дугме испод да генеришете позивницу. Добијени линк поделите са вашим рачуновођом.
+      {{T "invite_accountant.desc"}}
     </p>
     <form method="POST" action="/e/invite-accountant">
       <button type="submit"
               class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-        Генериши позивницу
+        {{T "invite_accountant.generate"}}
       </button>
     </form>
   </div>

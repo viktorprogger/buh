@@ -130,7 +130,7 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 	}
 	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
 
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurKPO, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurKPO, map[string]any{
 		"CurrentBook":  currentBook,
 		"KPOBooks":     books,
 		"KPOEntries":   entries,
@@ -147,7 +147,7 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
@@ -179,7 +179,7 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
@@ -188,7 +188,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	entryID, err := uuid.Parse(r.PathValue("entryID"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	r.ParseForm()
@@ -217,7 +217,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request) {
 	_, book, _, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
@@ -242,7 +242,7 @@ func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request
 func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if book.IsFinalized() {
@@ -251,7 +251,7 @@ func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	entryID, err := uuid.Parse(r.PathValue("entryID"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.DeleteEntry(r.Context(), book.ID, entryID); err != nil {
@@ -264,7 +264,7 @@ func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
@@ -277,7 +277,7 @@ func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 	_, book, year, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.kpoBooks.Unfinalize(r.Context(), book.ID); err != nil {
@@ -290,7 +290,7 @@ func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	userID, book, year, err := h.eKPOBookFromPath(r)
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	entries, err := h.kpoBooks.ListEntries(r.Context(), book.ID)

@@ -1,21 +1,28 @@
 {{define "base"}}<!DOCTYPE html>
-<html lang="sr">
+<html lang="{{lang}}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{block "title" .}}Паушалне уплатнице{{end}}</title>
+<title>{{block "title" .}}{{T "app.title"}}{{end}}</title>
 <link rel="stylesheet" href="/static/app.css">
 <style>{{block "style" .}}{{end}}</style>
+{{block "head_extra" .}}{{end}}
 <script src="/static/htmx.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
 {{block "nav" .}}
 <header class="bg-slate-800 text-white shadow">
   <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-    <a href="/" class="font-semibold text-white hover:text-slate-200">Паушалне уплатнице</a>
+    <a href="/" class="font-semibold text-white hover:text-slate-200">{{T "app.title"}}</a>
     <nav class="flex gap-4 items-center">
-      <a href="/" class="text-slate-300 hover:text-white text-sm">Предузетници</a>
-      <a href="/logout" class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1 rounded text-sm">Одјава</a>
+      <a href="/" class="text-slate-300 hover:text-white text-sm">{{T "nav.entrepreneurs"}}</a>
+      <form method="POST" action="/language" class="flex gap-1 items-center">
+        <span class="text-slate-400 text-xs mr-1">{{T "lang.switch_label"}}:</span>
+        <button type="submit" name="lang" value="sr" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "sr"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">SR</button>
+        <button type="submit" name="lang" value="en" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "en"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">EN</button>
+        <button type="submit" name="lang" value="ru" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "ru"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">RU</button>
+      </form>
+      <a href="/logout" class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1 rounded text-sm">{{T "nav.logout"}}</a>
     </nav>
   </div>
 </header>
@@ -25,9 +32,9 @@
 </main>
 <footer class="border-t border-gray-200 bg-white mt-auto">
   <div class="max-w-5xl mx-auto px-4 py-3 text-sm text-gray-500">
-    <a href="/privacy" class="hover:text-gray-700">Политика приватности</a>
+    <a href="/privacy" class="hover:text-gray-700">{{T "footer.privacy"}}</a>
     &middot;
-    <a href="/terms" class="hover:text-gray-700">Услови коришћења</a>
+    <a href="/terms" class="hover:text-gray-700">{{T "footer.terms"}}</a>
   </div>
 </footer>
 </body>

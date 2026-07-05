@@ -61,8 +61,8 @@ func (h *Handler) entrepreneurUserFromSession(r *http.Request) (uuid.UUID, bool)
 	return id, err == nil
 }
 
-func (h *Handler) renderError(w http.ResponseWriter, code int) {
-	shared.RenderError(w, h.tmpl.ErrPage, code)
+func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, code int) {
+	shared.RenderError(w, r, h.tmpl.ErrPage, code)
 }
 
 func (h *Handler) Routes() http.Handler {

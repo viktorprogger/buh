@@ -46,10 +46,10 @@ func (h *Handler) handleClientList(w http.ResponseWriter, r *http.Request) {
 		"List":    list,
 	}
 	if r.Header.Get("HX-Request") == "true" {
-		shared.RenderNamedTemplate(w, h.tmpl.EntrepreneurClients, "clients-list", data)
+		shared.RenderNamedTemplate(w, r, h.tmpl.EntrepreneurClients, "clients-list", data)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurClients, data)
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurClients, data)
 }
 
 func (h *Handler) handleClientSearch(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +97,7 @@ func (h *Handler) handleClientNewForm(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("return_to") != "" {
 		actionURL += "?return_to=" + r.URL.Query().Get("return_to")
 	}
-	shared.RenderTemplate(w, h.tmpl.ClientForm, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.ClientForm, map[string]any{
 		"Client":    client.Client{},
 		"IsNew":     true,
 		"ActionURL": actionURL,
@@ -119,7 +119,7 @@ func (h *Handler) handleClientNewSubmit(w http.ResponseWriter, r *http.Request) 
 	}
 	c := clientFromForm(r, userID)
 	if errMsg := validateClient(c); errMsg != "" {
-		shared.RenderTemplate(w, h.tmpl.ClientForm, map[string]any{
+		shared.RenderTemplate(w, r, h.tmpl.ClientForm, map[string]any{
 			"Client":    c,
 			"IsNew":     true,
 			"Error":     errMsg,
@@ -143,15 +143,15 @@ func (h *Handler) handleClientEditForm(w http.ResponseWriter, r *http.Request) {
 	}
 	cid, err := uuid.Parse(r.PathValue("cid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	c, err := h.clients.FindByID(r.Context(), cid)
 	if err != nil || c.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.ClientForm, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.ClientForm, map[string]any{
 		"Client":    c,
 		"IsNew":     false,
 		"ActionURL": "/e/clients/" + cid.String(),
@@ -167,7 +167,7 @@ func (h *Handler) handleClientUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	cid, err := uuid.Parse(r.PathValue("cid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, err := h.clients.FindByID(r.Context(), cid)
@@ -176,14 +176,14 @@ func (h *Handler) handleClientUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	r.ParseForm()
 	updated := clientFromForm(r, userID)
 	updated.ID = cid
 	if errMsg := validateClient(updated); errMsg != "" {
-		shared.RenderTemplate(w, h.tmpl.ClientForm, map[string]any{
+		shared.RenderTemplate(w, r, h.tmpl.ClientForm, map[string]any{
 			"Client":    updated,
 			"IsNew":     false,
 			"Error":     errMsg,
@@ -207,7 +207,7 @@ func (h *Handler) handleClientDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	cid, err := uuid.Parse(r.PathValue("cid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, err := h.clients.FindByID(r.Context(), cid)
@@ -216,7 +216,7 @@ func (h *Handler) handleClientDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.clients.Delete(r.Context(), cid); err != nil {

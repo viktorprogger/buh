@@ -59,10 +59,10 @@ func (h *Handler) handleInvoiceList(w http.ResponseWriter, r *http.Request) {
 		"List":     list,
 	}
 	if r.Header.Get("HX-Request") == "true" {
-		shared.RenderNamedTemplate(w, h.tmpl.EntrepreneurInvoices, "invoices-list", data)
+		shared.RenderNamedTemplate(w, r, h.tmpl.EntrepreneurInvoices, "invoices-list", data)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurInvoices, data)
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurInvoices, data)
 }
 
 func (h *Handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +101,7 @@ func (h *Handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
 	}
 	vatDailyJSON, _ := json.Marshal(vatDailyRevenue)
 
-	shared.RenderTemplate(w, h.tmpl.InvoiceNew, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.InvoiceNew, map[string]any{
 		"BackURL":             "/e/invoices",
 		"ActionURL":           "/e/invoices",
 		"SettingsURL":         "/e/",
@@ -260,12 +260,12 @@ func (h *Handler) handleInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 	iid, err := uuid.Parse(r.PathValue("iid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	inv, items, err := h.invoices.FindByID(r.Context(), iid)
 	if err != nil || inv.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 
@@ -299,7 +299,7 @@ func (h *Handler) handleInvoice(w http.ResponseWriter, r *http.Request) {
 			data["Client"] = c
 		}
 	}
-	shared.RenderTemplate(w, h.tmpl.InvoiceDetail, data)
+	shared.RenderTemplate(w, r, h.tmpl.InvoiceDetail, data)
 }
 
 func (h *Handler) handleInvoicePDF(w http.ResponseWriter, r *http.Request) {
@@ -310,12 +310,12 @@ func (h *Handler) handleInvoicePDF(w http.ResponseWriter, r *http.Request) {
 	}
 	iid, err := uuid.Parse(r.PathValue("iid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	inv, items, err := h.invoices.FindByID(r.Context(), iid)
 	if err != nil || inv.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 

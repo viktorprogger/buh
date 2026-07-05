@@ -20,6 +20,7 @@ type Accountant struct {
 	ID           string
 	Email        string
 	PasswordHash string
+	Language     string
 	CreatedAt    time.Time
 }
 
@@ -56,9 +57,9 @@ func (r *Repo) Create(ctx context.Context, email, password string) (*Accountant,
 func (r *Repo) FindByEmail(ctx context.Context, email string) (*Accountant, error) {
 	var a Accountant
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, email, password_hash, created_at FROM accountants WHERE email = $1`,
+		`SELECT id, email, password_hash, language, created_at FROM accountants WHERE email = $1`,
 		email,
-	).Scan(&a.ID, &a.Email, &a.PasswordHash, &a.CreatedAt)
+	).Scan(&a.ID, &a.Email, &a.PasswordHash, &a.Language, &a.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -73,6 +74,22 @@ func (r *Repo) Count(ctx context.Context) (int, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM accountants`).Scan(&n)
 	return n, err
+}
+
+// SetLanguage persists the preferred UI language for an accountant.
+func (r *Repo) SetLanguage(ctx context.Context, id, lang string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE accountants SET language = $1 WHERE id = $2`, lang, id)
+	return err
+}
+
+// GetLanguage returns the stored language preference for an accountant.
+func (r *Repo) GetLanguage(ctx context.Context, id string) (string, error) {
+	var lang string
+	err := r.db.QueryRowContext(ctx, `SELECT language FROM accountants WHERE id = $1`, id).Scan(&lang)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "sr", nil
+	}
+	return lang, err
 }
 
 // UpdatePasswordHash replaces the stored password for the given accountant ID.

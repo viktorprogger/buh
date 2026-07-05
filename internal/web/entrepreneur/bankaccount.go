@@ -15,12 +15,12 @@ import (
 func (h *Handler) eOwnedBankAccount(w http.ResponseWriter, r *http.Request, userID uuid.UUID) (bankaccount.BankAccount, bool) {
 	aid, err := uuid.Parse(r.PathValue("aid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return bankaccount.BankAccount{}, false
 	}
 	a, err := h.bankAccounts.FindByID(r.Context(), aid)
 	if err != nil || a.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return bankaccount.BankAccount{}, false
 	}
 	return a, true
@@ -65,10 +65,10 @@ func (h *Handler) handleBankAccountList(w http.ResponseWriter, r *http.Request) 
 		"List":     list,
 	}
 	if r.Header.Get("HX-Request") == "true" {
-		shared.RenderNamedTemplate(w, h.tmpl.EntrepreneurBankAccounts, "accounts-list", data)
+		shared.RenderNamedTemplate(w, r, h.tmpl.EntrepreneurBankAccounts, "accounts-list", data)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.EntrepreneurBankAccounts, data)
+	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurBankAccounts, data)
 }
 
 func (h *Handler) handleBankAccountNewForm(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,7 @@ func (h *Handler) handleBankAccountNewForm(w http.ResponseWriter, r *http.Reques
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.BankAccountForm, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.BankAccountForm, map[string]any{
 		"IsNew":     true,
 		"Account":   bankaccount.BankAccount{},
 		"ActionURL": "/e/bank-accounts/new",
@@ -110,7 +110,7 @@ func (h *Handler) handleBankAccountEditForm(w http.ResponseWriter, r *http.Reque
 	}
 	aid, err := uuid.Parse(r.PathValue("aid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	a, err := h.bankAccounts.FindByID(r.Context(), aid)
@@ -119,12 +119,12 @@ func (h *Handler) handleBankAccountEditForm(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err != nil || a.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	cbs, _ := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), aid)
 	a.CorrespondentBanks = cbs
-	shared.RenderTemplate(w, h.tmpl.BankAccountForm, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.BankAccountForm, map[string]any{
 		"IsNew":                false,
 		"Account":              a,
 		"ActionURL":            "/e/bank-accounts/" + aid.String(),
@@ -141,7 +141,7 @@ func (h *Handler) handleBankAccountUpdate(w http.ResponseWriter, r *http.Request
 	}
 	aid, err := uuid.Parse(r.PathValue("aid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
@@ -150,7 +150,7 @@ func (h *Handler) handleBankAccountUpdate(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
@@ -174,7 +174,7 @@ func (h *Handler) handleBankAccountDelete(w http.ResponseWriter, r *http.Request
 	}
 	aid, err := uuid.Parse(r.PathValue("aid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
@@ -183,7 +183,7 @@ func (h *Handler) handleBankAccountDelete(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.bankAccounts.Delete(r.Context(), aid); err != nil {
@@ -218,7 +218,7 @@ func (h *Handler) handleCorrespondentNewForm(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.CorrespondentForm, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.CorrespondentForm, map[string]any{
 		"BankAccount":   a,
 		"IsNew":         true,
 		"Correspondent": bankaccount.CorrespondentBank{},
@@ -266,15 +266,15 @@ func (h *Handler) handleCorrespondentEditForm(w http.ResponseWriter, r *http.Req
 	}
 	cid, err := uuid.Parse(r.PathValue("cid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	cb, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
 	if err != nil || cb.BankAccountID != a.ID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	shared.RenderTemplate(w, h.tmpl.CorrespondentForm, map[string]any{
+	shared.RenderTemplate(w, r, h.tmpl.CorrespondentForm, map[string]any{
 		"BankAccount":   a,
 		"IsNew":         false,
 		"Correspondent": cb,
@@ -295,12 +295,12 @@ func (h *Handler) handleCorrespondentUpdate(w http.ResponseWriter, r *http.Reque
 	}
 	cid, err := uuid.Parse(r.PathValue("cid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
 	if err != nil || existing.BankAccountID != a.ID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
@@ -332,12 +332,12 @@ func (h *Handler) handleCorrespondentDelete(w http.ResponseWriter, r *http.Reque
 	}
 	cid, err := uuid.Parse(r.PathValue("cid"))
 	if err != nil {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	existing, err := h.bankAccounts.FindCorrespondentByID(r.Context(), cid)
 	if err != nil || existing.BankAccountID != a.ID {
-		h.renderError(w, http.StatusNotFound)
+		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
 	if err := h.bankAccounts.DeleteCorrespondent(r.Context(), cid); err != nil {

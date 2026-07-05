@@ -4,7 +4,7 @@
 
 {{define "content"}}
 <div class="mb-4 text-sm text-gray-500">
-  <a href="/e/" class="hover:text-primary">← Почетна</a>
+  <a href="/e/" class="hover:text-primary">{{T "clients.back"}}</a>
 </div>
 
 {{template "pausal_alert" .PausalAlert}}
@@ -12,15 +12,15 @@
 
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6" id="kpo">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
-    <h2 class="text-lg font-semibold text-gray-900">КПО — Књига прихода</h2>
+    <h2 class="text-lg font-semibold text-gray-900">{{T "kpo.section_title"}}</h2>
     <div class="flex flex-wrap gap-2 items-center">
       <a href="/e/invoices/new"
          class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
-        + Нова фактура
+        {{T "kpo.invoice_link"}}
       </a>
       <a href="/e/kpo/{{.SelectedYear}}/pdf"
          class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        ↓ PDF
+        {{T "kpo.download_pdf"}}
       </a>
       {{if .KPOBooks}}
       <select id="year-select"
@@ -34,17 +34,17 @@
       <button type="button"
               onclick="var f=document.getElementById('add-year-form');f.style.display=f.style.display==='none'?'flex':'none'"
               class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
-        + Додај годину
+        {{T "kpo.add_year"}}
       </button>
       <form id="add-year-form" method="GET" action="/e/kpo/{{.SelectedYear}}"
             style="display:none" class="flex gap-2 items-center"
             onsubmit="window.location.href='/e/kpo/'+this.querySelector('[name=year]').value+'#kpo';return false">
-        <input type="number" name="year" min="2000" max="2100" placeholder="Год."
+        <input type="number" name="year" min="2000" max="2100" placeholder="{{T "kpo.add_year_ph"}}"
                class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-               title="Унесите годину и притисните Отвори">
+               title="{{T "kpo.add_year_title"}}">
         <button type="submit"
                 class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
-          Отвори
+          {{T "kpo.add_year_submit"}}
         </button>
       </form>
     </div>
@@ -54,7 +54,7 @@
   <div class="overflow-x-auto">
     <form id="kpo-new" method="POST"
           action="/e/kpo/{{.SelectedYear}}/entries"
-          aria-label="Нова ставка КПО"></form>
+          aria-label="{{T "kpo.new_entry_aria"}}"></form>
     {{if not .CurrentBook.IsFinalized}}
     {{range .KPORows}}{{if not .IsAdvanceInvoice}}<form id="edit-{{.EntryID}}" method="POST"
           action="/e/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/update"></form>
@@ -64,13 +64,13 @@
     <table class="w-full text-sm" aria-label="КПО {{.SelectedYear}}">
       <thead>
         <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          <th class="px-3 py-2 text-center w-10">#</th>
-          <th class="px-3 py-2 text-left">Датум</th>
-          <th class="px-3 py-2 text-left">Бр. рачуна</th>
-          <th class="px-3 py-2 text-left">Опис</th>
-          <th class="px-3 py-2 text-right">Продаја роба</th>
-          <th class="px-3 py-2 text-right">Услуге</th>
-          <th class="px-3 py-2 text-right">Укупно</th>
+          <th class="px-3 py-2 text-center w-10">{{T "kpo.col_num"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_date"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_invoice"}}</th>
+          <th class="px-3 py-2 text-left">{{T "kpo.col_description"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_product"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_service"}}</th>
+          <th class="px-3 py-2 text-right">{{T "kpo.col_total"}}</th>
           {{if not .CurrentBook.IsFinalized}}<th class="w-10"></th>{{end}}
         </tr>
       </thead>
@@ -79,8 +79,8 @@
         {{range .KPORows}}
         {{if .IsAdvanceInvoice}}
         <tr class="opacity-50 hover:opacity-70"
-            title="Ова фактура се не узима у обзир у КПО">
-          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">А</td>
+            title="{{T "kpo.advance_tooltip"}}">
+          <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">{{T "kpo.advance_label"}}</td>
           <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
           <td class="px-3 py-2 text-gray-500">
             <a href="/e/invoices/{{.InvoiceID}}"
@@ -144,20 +144,20 @@
           <td class="px-2 py-2 text-center">
             <div class="view-actions flex gap-1 items-center justify-center">
               <button type="button" onclick="rowEdit('{{.EntryID}}', true)"
-                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="Измени">✎</button>
+                      class="text-gray-400 hover:text-gray-600 px-1 py-1" title="{{T "kpo.row_edit"}}">✎</button>
               <form method="POST"
                     action="/e/kpo/{{$.SelectedYear}}/entries/{{.EntryID}}/delete"
-                    onsubmit="return confirm('Обрисати ставку?')">
+                    onsubmit="return confirm('{{T "kpo.row_delete_confirm"}}')">
                 <button type="submit"
                         class="text-red-400 hover:text-red-600 text-xs leading-none px-1 py-1"
-                        title="Обриши ставку" aria-label="Обриши">✕</button>
+                        title="{{T "kpo.row_delete"}}" aria-label="{{T "kpo.row_delete_label"}}">✕</button>
               </form>
             </div>
             <div class="edit-actions flex gap-1 items-center justify-center" style="display:none">
               <button form="edit-{{.EntryID}}" type="submit"
-                      class="text-green-600 hover:text-green-800 px-1 py-1" title="Сачувај">✓</button>
+                      class="text-green-600 hover:text-green-800 px-1 py-1" title="{{T "kpo.row_save"}}">✓</button>
               <button type="button" onclick="rowEdit('{{.EntryID}}', false)"
-                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="Откажи">✕</button>
+                      class="text-gray-400 hover:text-gray-600 text-xs px-1 py-1" title="{{T "kpo.row_cancel"}}">✕</button>
             </div>
           </td>
           {{end}}
@@ -167,7 +167,7 @@
 
         {{if .KPOEntries}}
         <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
-          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">Укупно:</td>
+          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
           <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalProduct}}</td>
           <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalService}}</td>
           <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalAll}}</td>
@@ -181,41 +181,41 @@
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="collection_date" required
                    id="kpo-date" autofocus
-                   maxlength="5" placeholder="дд.мм"
+                   maxlength="5" placeholder="{{T "kpo.ph_date"}}"
                    class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Датум">
+                   aria-label="{{T "kpo.field_date"}}">
           </td>
           <td class="px-1 py-1">
-            <input form="kpo-new" type="text" name="invoice_number" placeholder="нпр. 2026/1"
+            <input form="kpo-new" type="text" name="invoice_number" placeholder="{{T "kpo.ph_invoice"}}"
                    id="kpo-invoice"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Број рачуна">
+                   aria-label="{{T "kpo.field_invoice"}}">
           </td>
           <td class="px-1 py-1">
-            <input form="kpo-new" type="text" name="description" placeholder="клијент / опис"
+            <input form="kpo-new" type="text" name="description" placeholder="{{T "kpo.ph_description"}}"
                    id="kpo-description"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Опис">
+                   aria-label="{{T "kpo.field_description"}}">
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="product_revenue" value="0"
                    id="kpo-product"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Приход од продаје роба">
+                   aria-label="{{T "kpo.field_product"}}">
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="service_revenue" value="0"
                    id="kpo-service"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                   aria-label="Приход од услуга">
+                   aria-label="{{T "kpo.field_service"}}">
           </td>
           <td class="px-3 py-1 text-right font-mono text-sm font-medium text-gray-700 tabular-nums"
               id="kpo-row-total">0.00</td>
           <td class="px-1 py-1">
             <button form="kpo-new" type="submit"
                     class="rounded bg-primary px-2 py-1 text-xs font-medium text-white hover:bg-primary-hover whitespace-nowrap"
-                    aria-label="Унеси ставку">
-              Унеси ↵
+                    aria-label="{{T "kpo.new_entry_aria"}}">
+              {{T "kpo.new_entry_submit"}}
             </button>
           </td>
         </tr>
@@ -228,18 +228,18 @@
   <!-- Finalize / unfinalize bar -->
   <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-end gap-4">
     {{if .CurrentBook.IsFinalized}}
-      <span class="text-sm text-green-700 font-medium">✓ Укњижено {{.CurrentBook.FinalizedAtStr}}</span>
+      <span class="text-sm text-green-700 font-medium">{{T "kpo.finalized_at"}} {{.CurrentBook.FinalizedAtStr}}</span>
       <form method="POST" action="/e/kpo/{{.SelectedYear}}/unfinalize">
         <button type="submit"
                 class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-          Откључај
+          {{T "kpo.unlock"}}
         </button>
       </form>
     {{else}}
       <form method="POST" action="/e/kpo/{{.SelectedYear}}/finalize">
         <button type="submit"
                 class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Укњижи
+          {{T "kpo.finalize"}}
         </button>
       </form>
     {{end}}
@@ -299,7 +299,7 @@ function initDateInput(el) {
     if (!m) return;
     var d = +m[1], mo = +m[2];
     if (d < 1 || d > 31 || mo < 1 || mo > 12) {
-      this.setCustomValidity('Дан 1–31, месец 1–12');
+      this.setCustomValidity('{{T "kpo.date_hint"}}');
       this.reportValidity();
       this.style.borderColor = '#ef4444';
     }

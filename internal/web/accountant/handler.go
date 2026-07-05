@@ -8,12 +8,12 @@ import (
 	"buh/internal/auth"
 	"buh/internal/entrepreneur"
 	"buh/internal/entrepreneuruser"
-	"buh/internal/importer"
 	"buh/internal/invitation"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
 	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
+	"buh/internal/uploadqueue"
 	"buh/internal/web/shared"
 )
 
@@ -23,7 +23,7 @@ type Handler struct {
 	slips             *sliprecord.Repo
 	slipHistory       *sliphistory.Repo
 	kpoBooks          *kpo.Repo
-	importer          *importer.Importer
+	uploadQueue       *uploadqueue.Repo
 	entrepreneurUsers *entrepreneuruser.Repo
 	invitations       *invitation.Repo
 	invoices          *invoice.Repo
@@ -36,7 +36,7 @@ func NewHandler(
 	slips *sliprecord.Repo,
 	slipHistory *sliphistory.Repo,
 	kpoBooks *kpo.Repo,
-	imp *importer.Importer,
+	uploadQueue *uploadqueue.Repo,
 	entrepreneurUsers *entrepreneuruser.Repo,
 	invitations *invitation.Repo,
 	invoices *invoice.Repo,
@@ -48,7 +48,7 @@ func NewHandler(
 		slips:             slips,
 		slipHistory:       slipHistory,
 		kpoBooks:          kpoBooks,
-		importer:          imp,
+		uploadQueue:       uploadQueue,
 		entrepreneurUsers: entrepreneurUsers,
 		invitations:       invitations,
 		invoices:          invoices,
@@ -65,13 +65,14 @@ func (h *Handler) accountantFromSession(r *http.Request) (uuid.UUID, bool) {
 	return id, err == nil
 }
 
-func (h *Handler) renderError(w http.ResponseWriter, code int) {
-	shared.RenderError(w, h.tmpl.ErrPage, code)
+func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, code int) {
+	shared.RenderError(w, r, h.tmpl.ErrPage, code)
 }
 
 func (h *Handler) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /process", h.handleProcess)
+	mux.HandleFunc("GET /import/batches/{id}", h.handleBatchStatus)
 	mux.HandleFunc("GET /entrepreneurs/new", h.handleEntrepreneurNewForm)
 	mux.HandleFunc("POST /entrepreneurs/new", h.handleEntrepreneurNewSubmit)
 	mux.HandleFunc("GET /entrepreneurs/{id}", h.handleEntrepreneur)
