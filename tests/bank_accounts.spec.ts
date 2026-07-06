@@ -4,7 +4,7 @@ import { registerEntrepreneur, loginEntrepreneur, uniquePib, CURRENT_YEAR } from
 const email = `ba-${Date.now()}@test.local`;
 const password = 'ba-test-pass-123';
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll({ timeout: 15000 }, async ({ browser }) => {
   const page = await browser.newPage();
   await registerEntrepreneur(page, email, password);
   await page.close();
