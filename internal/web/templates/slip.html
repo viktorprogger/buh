@@ -102,13 +102,10 @@
     </div>
 
     <div class="slip-actions slip-actions--between mt-4">
-      <form method="POST" action="/a/slips/{{.Slip.ID}}/delete"
-            onsubmit="return confirm('{{T "slip.delete_confirm"}}')">
-        <button type="submit"
-                class="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
-          {{T "slip.delete"}}
-        </button>
-      </form>
+      <button type="submit" form="slip-delete-form"
+              class="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+        {{T "slip.delete"}}
+      </button>
       <div style="display:flex;gap:0.5rem">
         <button type="submit" formaction="/a/slips/{{.Slip.ID}}/save"
                 class="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -122,6 +119,9 @@
     </div>
   </form>
 </div>
+
+<form id="slip-delete-form" method="POST" action="/a/slips/{{.Slip.ID}}/delete"
+      onsubmit="return confirm('{{T "slip.delete_confirm"}}')"></form>
 
 {{if .History}}
 <div class="mt-8">
