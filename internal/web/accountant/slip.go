@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/entrepreneur"
+	"buh/internal/i18n"
 	"buh/internal/ips"
 	"buh/internal/slip"
 	"buh/internal/sliphistory"
@@ -21,29 +22,29 @@ import (
 	"buh/internal/web/shared"
 )
 
-var fieldLabels = map[string]string{
-	"amount":       "Износ",
-	"currency":     "Валута",
-	"purpose":      "Сврха",
-	"payee":        "Прималац",
-	"payeeAccount": "Рачун примаоца",
-	"reference":    "Позив на број",
-	"payer":        "Уплатилац",
-	"paymentCode":  "Шифра плаћања",
-	"year":         "Година",
-	"advance":      "Аванс",
+var fieldKeys = map[string]string{
+	"amount":       "slip_history.field_amount",
+	"currency":     "slip_history.field_currency",
+	"purpose":      "slip_history.field_purpose",
+	"payee":        "slip_history.field_payee",
+	"payeeAccount": "slip_history.field_payeeAccount",
+	"reference":    "slip_history.field_reference",
+	"payer":        "slip_history.field_payer",
+	"paymentCode":  "slip_history.field_paymentCode",
+	"year":         "slip_history.field_year",
+	"advance":      "slip_history.field_advance",
 }
 
-var eventLabels = map[sliphistory.Event]string{
-	sliphistory.EventCreated:  "Уплатница је креирана",
-	sliphistory.EventImported: "Уплатница је увезена",
-	sliphistory.EventUpdated:  "Уплатница је ажурирана",
-	sliphistory.EventDeleted:  "Уплатница је обрисана",
+var eventKeys = map[sliphistory.Event]string{
+	sliphistory.EventCreated:  "slip_history.event_created",
+	sliphistory.EventImported: "slip_history.event_imported",
+	sliphistory.EventUpdated:  "slip_history.event_updated",
+	sliphistory.EventDeleted:  "slip_history.event_deleted",
 }
 
-var actorLabels = map[string]string{
-	"accountant":   "Рачуновођа",
-	"entrepreneur": "Предузетник",
+var actorKeys = map[string]string{
+	"accountant":   "slip_history.actor_accountant",
+	"entrepreneur": "slip_history.actor_entrepreneur",
 }
 
 // HistoryChange is one field change for display in the slip history timeline.
@@ -61,25 +62,27 @@ type HistoryEntry struct {
 	Changes    []HistoryChange
 }
 
-func buildHistoryEntries(records []sliphistory.Record) []HistoryEntry {
+func buildHistoryEntries(records []sliphistory.Record, l *i18n.Localizer) []HistoryEntry {
 	entries := make([]HistoryEntry, 0, len(records))
 	for _, rec := range records {
+		eventLabel := string(rec.Event)
+		if k, ok := eventKeys[rec.Event]; ok {
+			eventLabel = l.T(k)
+		}
+		actorLabel := rec.ActorType
+		if k, ok := actorKeys[rec.ActorType]; ok {
+			actorLabel = l.T(k)
+		}
 		entry := HistoryEntry{
-			EventLabel: eventLabels[rec.Event],
-			ActorLabel: actorLabels[rec.ActorType],
+			EventLabel: eventLabel,
+			ActorLabel: actorLabel,
 			At:         rec.ChangedAt,
-		}
-		if entry.EventLabel == "" {
-			entry.EventLabel = string(rec.Event)
-		}
-		if entry.ActorLabel == "" {
-			entry.ActorLabel = rec.ActorType
 		}
 
 		for key, val := range rec.Changes {
-			label := fieldLabels[key]
-			if label == "" {
-				label = key
+			label := key
+			if k, ok := fieldKeys[key]; ok {
+				label = l.T(k)
 			}
 			// diff entry: {"old": X, "new": Y}
 			if m, ok := val.(map[string]interface{}); ok {
@@ -122,7 +125,7 @@ func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.
 		return sliprecord.SlipRecord{}, false
 	}
 	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return sliprecord.SlipRecord{}, false
 	}
 	e, err := h.entrepreneurs.FindByID(r.Context(), s.EntrepreneurID)
@@ -131,7 +134,7 @@ func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.
 		return sliprecord.SlipRecord{}, false
 	}
 	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return sliprecord.SlipRecord{}, false
 	}
 	if e.AccountantID != accountantID {
@@ -171,7 +174,7 @@ func (h *Handler) handleSlip(w http.ResponseWriter, r *http.Request) {
 	var historyEntries []HistoryEntry
 	if h.slipHistory != nil {
 		if records, err := h.slipHistory.ListBySlip(r.Context(), id); err == nil {
-			historyEntries = buildHistoryEntries(records)
+			historyEntries = buildHistoryEntries(records, i18n.FromContext(r.Context()))
 		}
 	}
 	shared.RenderTemplate(w, r, h.tmpl.Slip, map[string]any{
@@ -196,7 +199,7 @@ func (h *Handler) handleSlipSave(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	updated := slipFormToRecord(r, existing)
 	if err := h.slips.Update(r.Context(), updated); err != nil {
-		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if actorID, ok := h.accountantFromSession(r); ok {
@@ -221,7 +224,7 @@ func (h *Handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	updated := slipFormToRecord(r, existing)
 	if err := h.slips.Update(r.Context(), updated); err != nil {
-		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if actorID, ok := h.accountantFromSession(r); ok {
@@ -247,7 +250,7 @@ func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 		h.logSlipHistory(r.Context(), id, sliphistory.EventDeleted, actorID, sliprecord.Snapshot(s))
 	}
 	if err := h.slips.Delete(r.Context(), id); err != nil {
-		http.Error(w, "Грешка при брисању уплатнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/a/entrepreneurs/"+entrepreneurID.String(), http.StatusFound)
@@ -279,7 +282,7 @@ func (h *Handler) handleSlipPDF(w http.ResponseWriter, r *http.Request) {
 
 	tmp, err := os.CreateTemp("", "buh-slip-*.pdf")
 	if err != nil {
-		http.Error(w, "Грешка при креирању фајла", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	tmp.Close()
@@ -287,12 +290,12 @@ func (h *Handler) handleSlipPDF(w http.ResponseWriter, r *http.Request) {
 	defer os.Remove(tmpPath)
 
 	if err := slip.GeneratePDF(pay, tmpPath); err != nil {
-		http.Error(w, fmt.Sprintf("Грешка при генерисању PDF: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("%s: %v", i18n.FromContext(r.Context()).T("error.server_error"), err), http.StatusInternalServerError)
 		return
 	}
 	pdfBytes, err := os.ReadFile(tmpPath)
 	if err != nil {
-		http.Error(w, "Грешка при читању PDF", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	filename := fmt.Sprintf("uplatnica-%s.pdf", shared.SanitizeFilename(pay.N))
@@ -345,6 +348,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 		Advance:  r.FormValue("advance") == "on",
 	}
 
+	l := i18n.FromContext(r.Context())
 	renderErr := func(msg string) {
 		shared.RenderTemplate(w, r, h.tmpl.SlipNew, map[string]any{
 			"Entrepreneur": e,
@@ -354,7 +358,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if form.S == "" || form.N == "" || form.R == "" || form.SF == "" || form.Amount == "" {
-		renderErr("Молимо попуните сва обавезна поља.")
+		renderErr(l.T("slip.error_required_fields"))
 		return
 	}
 
@@ -374,7 +378,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	tmp, err := os.CreateTemp("", "buh-slip-*.pdf")
 	if err != nil {
-		http.Error(w, "Грешка при креирању фајла", http.StatusInternalServerError)
+		http.Error(w, l.T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	tmp.Close()
@@ -382,7 +386,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	defer os.Remove(tmpPath)
 
 	if err := slip.GeneratePDF(pay, tmpPath); err != nil {
-		renderErr(fmt.Sprintf("Грешка при генерисању PDF: %v", err))
+		renderErr(fmt.Sprintf("%s: %v", l.T("error.server_error"), err))
 		return
 	}
 
@@ -401,7 +405,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	saved, err := h.slips.Save(context.Background(), rec)
 	if err != nil {
-		http.Error(w, "Грешка при чувању уплатнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if actorID, ok := h.accountantFromSession(r); ok {

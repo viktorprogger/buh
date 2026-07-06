@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/client"
+	"buh/internal/i18n"
 	"buh/internal/web/shared"
 )
 
@@ -21,7 +22,7 @@ func (h *Handler) handleClientList(w http.ResponseWriter, r *http.Request) {
 	}
 	clients, err := h.clients.ListByEntrepreneurUser(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању клијената", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -55,13 +56,13 @@ func (h *Handler) handleClientList(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleClientSearch(w http.ResponseWriter, r *http.Request) {
 	userID, ok := h.entrepreneurUserFromSession(r)
 	if !ok {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.forbidden_message"), http.StatusForbidden)
 		return
 	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	results, err := h.clients.Search(r.Context(), userID, q)
 	if err != nil {
-		http.Error(w, "Грешка при претрази", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	type item struct {
@@ -118,7 +119,8 @@ func (h *Handler) handleClientNewSubmit(w http.ResponseWriter, r *http.Request) 
 		actionURL += "?return_to=" + r.URL.Query().Get("return_to")
 	}
 	c := clientFromForm(r, userID)
-	if errMsg := validateClient(c); errMsg != "" {
+	l := i18n.FromContext(r.Context())
+	if errMsg := validateClient(c, l); errMsg != "" {
 		shared.RenderTemplate(w, r, h.tmpl.ClientForm, map[string]any{
 			"Client":    c,
 			"IsNew":     true,
@@ -129,7 +131,7 @@ func (h *Handler) handleClientNewSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if _, err := h.clients.Create(r.Context(), c); err != nil {
-		http.Error(w, "Грешка при чувању клијента", http.StatusInternalServerError)
+		http.Error(w, l.T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, returnTo, http.StatusFound)
@@ -172,7 +174,7 @@ func (h *Handler) handleClientUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	existing, err := h.clients.FindByID(r.Context(), cid)
 	if err != nil && !errors.Is(err, client.ErrNotFound) {
-		http.Error(w, "Грешка при учитавању клијента", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
@@ -182,7 +184,8 @@ func (h *Handler) handleClientUpdate(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	updated := clientFromForm(r, userID)
 	updated.ID = cid
-	if errMsg := validateClient(updated); errMsg != "" {
+	l := i18n.FromContext(r.Context())
+	if errMsg := validateClient(updated, l); errMsg != "" {
 		shared.RenderTemplate(w, r, h.tmpl.ClientForm, map[string]any{
 			"Client":    updated,
 			"IsNew":     false,
@@ -193,7 +196,7 @@ func (h *Handler) handleClientUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.clients.Update(r.Context(), updated); err != nil {
-		http.Error(w, "Грешка при чувању клијента", http.StatusInternalServerError)
+		http.Error(w, l.T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/clients", http.StatusFound)
@@ -212,7 +215,7 @@ func (h *Handler) handleClientDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	existing, err := h.clients.FindByID(r.Context(), cid)
 	if err != nil && !errors.Is(err, client.ErrNotFound) {
-		http.Error(w, "Грешка при учитавању клијента", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
@@ -220,7 +223,7 @@ func (h *Handler) handleClientDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.clients.Delete(r.Context(), cid); err != nil {
-		http.Error(w, "Грешка при брисању клијента", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/clients", http.StatusFound)
@@ -245,20 +248,20 @@ func clientFromForm(r *http.Request, userID uuid.UUID) client.Client {
 	}
 }
 
-func validateClient(c client.Client) string {
+func validateClient(c client.Client, l *i18n.Localizer) string {
 	if c.Name == "" {
-		return "Назив клијента је обавезан."
+		return l.T("client_form.error_name_required")
 	}
 	if c.IsForeign {
 		if c.RegistrationNumber == "" {
-			return "Порески / регистрациони број је обавезан за стране клијенте."
+			return l.T("client_form.error_tax_id_required")
 		}
 	} else {
 		if c.PIB == "" {
-			return "ПИБ је обавезан за домаће клијенте."
+			return l.T("client_form.error_pib_required")
 		}
 		if c.RegistrationNumber == "" {
-			return "Матични број је обавезан за домаће клијенте."
+			return l.T("client_form.error_mb_required")
 		}
 	}
 	return ""

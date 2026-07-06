@@ -29,6 +29,9 @@
   "login.email": {"other": "Email"},
   "login.password": {"other": "Password"},
   "login.submit": {"other": "Sign in"},
+  "login.error_invalid_credentials": {"other": "Wrong email or password."},
+  "login.error_server": {"other": "Login error"},
+  "login.error_session": {"other": "Session error"},
 
   "entrepreneur_list.title": {"other": "Entrepreneurs"},
   "entrepreneur_list.subtitle": {"other": "List of entrepreneurs in your account"},
@@ -79,6 +82,8 @@
   "entrepreneur_detail.no_data": {"other": "no data"},
 
   "kpo.section_title": {"other": "KPO — Income Book"},
+  "kpo.error_finalized": {"other": "KPO is finalized"},
+  "kpo.error_bad_date": {"other": "Invalid date (expected dd.mm)"},
   "kpo.download_pdf": {"other": "↓ PDF"},
   "kpo.download_kpo": {"other": "Download KPO"},
   "kpo.add_year": {"other": "+ Add Year"},
@@ -140,6 +145,7 @@
   "slip_table.delete_confirm": {"other": "Delete this slip?"},
 
   "entrepreneur_new.title": {"other": "New Entrepreneur"},
+  "entrepreneur_new.error_required_fields": {"other": "Both fields are required."},
   "entrepreneur_new.subtitle": {"other": "Enter entrepreneur details manually"},
   "entrepreneur_new.label_title": {"other": "Short name"},
   "entrepreneur_new.label_name": {"other": "Name"},
@@ -161,6 +167,7 @@
   "entrepreneur_new.ph_activity_code": {"other": "e.g. 6201"},
 
   "profile.title": {"other": "My Profile"},
+  "profile.error_required_fields": {"other": "Official name and Tax ID are required."},
   "profile.section_data": {"other": "Entrepreneur data"},
   "profile.unpaired_alert": {"other": "Connect your account with an accountant to manage your business data."},
   "profile.unpaired_invite": {"other": "Invite an accountant"},
@@ -202,6 +209,10 @@
   "clients.next": {"other": "Next →"},
 
   "client_form.title_new": {"other": "New Client"},
+  "client_form.error_name_required": {"other": "Client name is required."},
+  "client_form.error_tax_id_required": {"other": "Tax/registration number is required for foreign clients."},
+  "client_form.error_pib_required": {"other": "Tax ID is required for local clients."},
+  "client_form.error_mb_required": {"other": "Registration number is required for local clients."},
   "client_form.title_edit": {"other": "Edit Client"},
   "client_form.back": {"other": "← Back"},
   "client_form.label_name": {"other": "Client name"},
@@ -379,6 +390,7 @@
   "kpo_merge.no_entries_acc": {"other": "Your KPO for this year is empty."},
 
   "slip.title": {"other": "Payment Slip"},
+  "slip.error_required_fields": {"other": "Please fill in all required fields."},
   "slip.back": {"other": "← Back to entrepreneur"},
   "slip.saved": {"other": "Slip saved."},
   "slip.saved_downloading": {"other": "Slip saved. Download starting..."},
@@ -399,6 +411,23 @@
   "slip.download": {"other": "Download PDF"},
   "slip.delete_confirm": {"other": "Delete this slip?"},
   "slip.history_title": {"other": "Change history"},
+
+  "slip_history.field_amount": {"other": "Amount"},
+  "slip_history.field_currency": {"other": "Currency"},
+  "slip_history.field_purpose": {"other": "Purpose"},
+  "slip_history.field_payee": {"other": "Payee"},
+  "slip_history.field_payeeAccount": {"other": "Payee account"},
+  "slip_history.field_reference": {"other": "Reference"},
+  "slip_history.field_payer": {"other": "Payer"},
+  "slip_history.field_paymentCode": {"other": "Payment code"},
+  "slip_history.field_year": {"other": "Year"},
+  "slip_history.field_advance": {"other": "Advance"},
+  "slip_history.event_created": {"other": "Slip created"},
+  "slip_history.event_imported": {"other": "Slip imported"},
+  "slip_history.event_updated": {"other": "Slip updated"},
+  "slip_history.event_deleted": {"other": "Slip deleted"},
+  "slip_history.actor_accountant": {"other": "Accountant"},
+  "slip_history.actor_entrepreneur": {"other": "Entrepreneur"},
 
   "slip_new.title": {"other": "New Payment Slip"},
   "slip_new.label_payer": {"other": "Payer / Uplatilac"},
@@ -437,6 +466,8 @@
   "error.not_found_message": {"other": "The requested page does not exist."},
   "error.forbidden_title": {"other": "Access denied"},
   "error.forbidden_message": {"other": "You do not have permission to access this page."},
+  "error.server_error": {"other": "Server error"},
+  "error.bad_request": {"other": "Bad request"},
   "results.pib_label": {"other": "Tax ID:"},
 
   "placeholder.under_construction": {"other": "This page is under construction."},
@@ -505,6 +536,11 @@
   "invite_token.back_home": {"other": "← Home"},
 
   "invite_accept.title": {"other": "Invitation"},
+  "invite_accept.expired": {"other": "The invitation has expired or has already been used."},
+  "invite_accept.already_paired": {"other": "You are already connected to an accountant."},
+  "invite_accept.error_pairing": {"other": "Pairing error"},
+  "invite_accept.error_create_entrepreneur": {"other": "Error creating entrepreneur"},
+  "invite_accept.default_entrepreneur_name": {"other": "Entrepreneur"},
   "invite_accept.entrepreneur_field": {"other": "Entrepreneur (optional)"},
   "invite_accept.entrepreneur_ph": {"other": "UUID of existing entrepreneur or leave blank"},
   "invite_accept.submit": {"other": "Accept invitation"},
@@ -516,6 +552,9 @@
   "entrepreneur_register.submit": {"other": "Register"},
   "entrepreneur_register.has_account": {"other": "Already have an account?"},
   "entrepreneur_register.login_link": {"other": "Sign in"},
+  "entrepreneur_register.error_required": {"other": "Email and password are required."},
+  "entrepreneur_register.error_password_mismatch": {"other": "Passwords do not match."},
+  "entrepreneur_register.error_email_taken": {"other": "That email is already in use."},
 
   "invite_entrepreneur.title": {"other": "Invite Entrepreneur"},
   "invite_entrepreneur.desc": {"other": "Send the following link to the entrepreneur."},
@@ -532,6 +571,7 @@
   "batch.processing": {"other": "Files are being processed, page will refresh automatically…"},
   "batch.done": {"other": "Processing complete"},
   "batch.files_pending": {"other": "Files in queue:"},
+  "batch.navigate_away": {"other": "You can close this page or navigate away — processing will finish in the background."},
   "batch.col_file": {"other": "File"},
   "results.col_entrepreneur": {"other": "Entrepreneur"}
 }

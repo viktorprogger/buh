@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/i18n"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
 )
@@ -49,22 +50,22 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 
 	currentBook, err := h.kpoBooks.FindOrCreateForEntrepreneur(r.Context(), userID, selectedYear)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	entries, err := h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	books, err := h.kpoBooks.ListByEntrepreneurUser(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО књига", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	advanceInvoices, err := h.invoices.ListAdvanceByEntrepreneurUserYear(r.Context(), userID, selectedYear)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању авансних фактура", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -110,7 +111,7 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 	} else {
 		pausalTotal, _, err = h.kpoBooks.SumForEntrepreneurUser(r.Context(), userID, currentYear)
 		if err != nil {
-			http.Error(w, "Грешка при учитавању паушалног прага", http.StatusInternalServerError)
+			http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -125,7 +126,7 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 	vatLimit := shared.VATLimitForDate(vatNow)
 	vatTotal, err := h.kpoBooks.RollingSumForEntrepreneurUser(r.Context(), userID, vatFrom, vatNow)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању ПДВ прага", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
@@ -151,13 +152,13 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if book.IsFinalized() {
-		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_finalized"), http.StatusForbidden)
 		return
 	}
 	r.ParseForm()
 	date, err := shared.ParseDayMonth(r.FormValue("collection_date"), year)
 	if err != nil {
-		http.Error(w, "Неисправан датум", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_bad_date"), http.StatusBadRequest)
 		return
 	}
 	prodRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
@@ -170,7 +171,7 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 		ProductRevenue: prodRev,
 		ServiceRevenue: svcRev,
 	}); err != nil {
-		http.Error(w, "Грешка при уносу", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -183,7 +184,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if book.IsFinalized() {
-		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_finalized"), http.StatusForbidden)
 		return
 	}
 	entryID, err := uuid.Parse(r.PathValue("entryID"))
@@ -194,7 +195,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	date, err := shared.ParseDayMonth(r.FormValue("collection_date"), year)
 	if err != nil {
-		http.Error(w, "Неисправан датум", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_bad_date"), http.StatusBadRequest)
 		return
 	}
 	prodRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
@@ -208,7 +209,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		ProductRevenue: prodRev,
 		ServiceRevenue: svcRev,
 	}); err != nil {
-		http.Error(w, "Грешка при чувању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -221,7 +222,7 @@ func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if book.IsFinalized() {
-		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_finalized"), http.StatusForbidden)
 		return
 	}
 	r.ParseForm()
@@ -233,7 +234,7 @@ func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request
 		}
 	}
 	if err := h.kpoBooks.ReorderEntries(r.Context(), book.ID, ids); err != nil {
-		http.Error(w, "Грешка при промени редоследа", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -246,7 +247,7 @@ func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if book.IsFinalized() {
-		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_finalized"), http.StatusForbidden)
 		return
 	}
 	entryID, err := uuid.Parse(r.PathValue("entryID"))
@@ -255,7 +256,7 @@ func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.DeleteEntry(r.Context(), book.ID, entryID); err != nil {
-		http.Error(w, "Грешка при брисању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -268,7 +269,7 @@ func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
-		http.Error(w, "Грешка при финализацији", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -281,7 +282,7 @@ func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.Unfinalize(r.Context(), book.ID); err != nil {
-		http.Error(w, "Грешка при поништавању финализације", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -295,7 +296,7 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	}
 	entries, err := h.kpoBooks.ListEntries(r.Context(), book.ID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 

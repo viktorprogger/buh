@@ -29,6 +29,9 @@
   "login.email": {"other": "Е-пошта"},
   "login.password": {"other": "Лозинка"},
   "login.submit": {"other": "Пријави се"},
+  "login.error_invalid_credentials": {"other": "Погрешна е-пошта или лозинка."},
+  "login.error_server": {"other": "Грешка при пријави"},
+  "login.error_session": {"other": "Грешка при постављању сесије"},
 
   "entrepreneur_list.title": {"other": "Предузетници"},
   "entrepreneur_list.subtitle": {"other": "Листа предузетника за ваш налог"},
@@ -79,6 +82,8 @@
   "entrepreneur_detail.no_data": {"other": "нема података"},
 
   "kpo.section_title": {"other": "КПО — Књига прихода"},
+  "kpo.error_finalized": {"other": "КПО је финализована"},
+  "kpo.error_bad_date": {"other": "Неисправан датум (очекује се дд.мм)"},
   "kpo.download_pdf": {"other": "↓ PDF"},
   "kpo.download_kpo": {"other": "Преузми КПО"},
   "kpo.add_year": {"other": "+ Додај годину"},
@@ -140,6 +145,7 @@
   "slip_table.delete_confirm": {"other": "Обрисати уплатницу?"},
 
   "entrepreneur_new.title": {"other": "Нови предузетник"},
+  "entrepreneur_new.error_required_fields": {"other": "Оба поља су обавезна."},
   "entrepreneur_new.subtitle": {"other": "Ручно унесите предузетника"},
   "entrepreneur_new.label_title": {"other": "Назив (кратко)"},
   "entrepreneur_new.label_name": {"other": "Назив"},
@@ -161,6 +167,7 @@
   "entrepreneur_new.ph_activity_code": {"other": "нпр. 6201"},
 
   "profile.title": {"other": "Мој профил"},
+  "profile.error_required_fields": {"other": "Службени назив и ПИБ су обавезни."},
   "profile.section_data": {"other": "Подаци предузетника"},
   "profile.unpaired_alert": {"other": "Повежите налог са рачуновођом да бисте управљали подацима о предузећу."},
   "profile.unpaired_invite": {"other": "Позовите рачуновођу"},
@@ -202,6 +209,10 @@
   "clients.next": {"other": "Следећа →"},
 
   "client_form.title_new": {"other": "Нови клијент"},
+  "client_form.error_name_required": {"other": "Назив клијента је обавезан."},
+  "client_form.error_tax_id_required": {"other": "Порески / регистрациони број је обавезан за стране клијенте."},
+  "client_form.error_pib_required": {"other": "ПИБ је обавезан за домаће клијенте."},
+  "client_form.error_mb_required": {"other": "Матични број је обавезан за домаће клијенте."},
   "client_form.title_edit": {"other": "Измена клијента"},
   "client_form.back": {"other": "← Назад"},
   "client_form.label_name": {"other": "Назив клијента"},
@@ -379,6 +390,7 @@
   "kpo_merge.no_entries_acc": {"other": "Ваша КПО за ову годину је празна."},
 
   "slip.title": {"other": "Уплатница"},
+  "slip.error_required_fields": {"other": "Молимо попуните сва обавезна поља."},
   "slip.back": {"other": "← Назад на предузетника"},
   "slip.saved": {"other": "Уплатница је сачувана."},
   "slip.saved_downloading": {"other": "Уплатница је сачувана. Преузимање почиње..."},
@@ -399,6 +411,23 @@
   "slip.download": {"other": "Преузми PDF"},
   "slip.delete_confirm": {"other": "Обрисати уплатницу?"},
   "slip.history_title": {"other": "Историја промена"},
+
+  "slip_history.field_amount": {"other": "Износ"},
+  "slip_history.field_currency": {"other": "Валута"},
+  "slip_history.field_purpose": {"other": "Сврха"},
+  "slip_history.field_payee": {"other": "Прималац"},
+  "slip_history.field_payeeAccount": {"other": "Рачун примаоца"},
+  "slip_history.field_reference": {"other": "Позив на број"},
+  "slip_history.field_payer": {"other": "Уплатилац"},
+  "slip_history.field_paymentCode": {"other": "Шифра плаћања"},
+  "slip_history.field_year": {"other": "Година"},
+  "slip_history.field_advance": {"other": "Аванс"},
+  "slip_history.event_created": {"other": "Уплатница је креирана"},
+  "slip_history.event_imported": {"other": "Уплатница је увезена"},
+  "slip_history.event_updated": {"other": "Уплатница је ажурирана"},
+  "slip_history.event_deleted": {"other": "Уплатница је обрисана"},
+  "slip_history.actor_accountant": {"other": "Рачуновођа"},
+  "slip_history.actor_entrepreneur": {"other": "Предузетник"},
 
   "slip_new.title": {"other": "Нова уплатница"},
   "slip_new.label_payer": {"other": "Уплатилац / Uplatilac"},
@@ -437,6 +466,8 @@
   "error.not_found_message": {"other": "Тражена страница не постоји."},
   "error.forbidden_title": {"other": "Забрањен приступ"},
   "error.forbidden_message": {"other": "Немате право приступа овој страни."},
+  "error.server_error": {"other": "Грешка на серверу"},
+  "error.bad_request": {"other": "Неисправан захтев"},
   "results.pib_label": {"other": "ПИБ:"},
 
   "placeholder.under_construction": {"other": "Ова страница је у изради."},
@@ -505,6 +536,11 @@
   "invite_token.back_home": {"other": "← На почетну"},
 
   "invite_accept.title": {"other": "Позивница"},
+  "invite_accept.expired": {"other": "Позивница је истекла или је већ искоришћена."},
+  "invite_accept.already_paired": {"other": "Већ сте повезани са рачуновођом."},
+  "invite_accept.error_pairing": {"other": "Грешка при повезивању"},
+  "invite_accept.error_create_entrepreneur": {"other": "Грешка при креирању предузетника"},
+  "invite_accept.default_entrepreneur_name": {"other": "Предузетник"},
   "invite_accept.entrepreneur_field": {"other": "Предузетник (опционо)"},
   "invite_accept.entrepreneur_ph": {"other": "UUID постојећег предузетника или оставите празно"},
   "invite_accept.submit": {"other": "Прихвати позивницу"},
@@ -516,6 +552,9 @@
   "entrepreneur_register.submit": {"other": "Региструј се"},
   "entrepreneur_register.has_account": {"other": "Већ имате налог?"},
   "entrepreneur_register.login_link": {"other": "Пријавите се"},
+  "entrepreneur_register.error_required": {"other": "Е-пошта и лозинка су обавезни."},
+  "entrepreneur_register.error_password_mismatch": {"other": "Лозинке се не подударају."},
+  "entrepreneur_register.error_email_taken": {"other": "Та е-пошта је већ у употреби."},
 
   "invite_entrepreneur.title": {"other": "Позови предузетника"},
   "invite_entrepreneur.desc": {"other": "Пошаљите следећи линк предузетнику."},
@@ -532,6 +571,7 @@
   "batch.processing": {"other": "Фајлови се обрађују, страница ће се освежити аутоматски…"},
   "batch.done": {"other": "Обрада завршена"},
   "batch.files_pending": {"other": "Фајлова у реду:"},
+  "batch.navigate_away": {"other": "Можете затворити ову страницу или прећи на другу — обрада ће се завршити у позадини."},
   "batch.col_file": {"other": "Фајл"},
   "results.col_entrepreneur": {"other": "Предузетник"}
 }

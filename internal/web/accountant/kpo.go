@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/entrepreneur"
+	"buh/internal/i18n"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
 )
@@ -54,7 +55,7 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	collectionDate, err := shared.ParseDayMonth(r.FormValue("collection_date"), year)
 	if err != nil {
-		http.Error(w, "Неисправан датум (очекује се дд.мм)", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_bad_date"), http.StatusBadRequest)
 		return
 	}
 	productRev := shared.Round2(shared.ParseAmount(r.FormValue("product_revenue")))
@@ -68,7 +69,7 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 		ProductRevenue: productRev,
 		ServiceRevenue: serviceRev,
 	}); err != nil {
-		http.Error(w, "Грешка при уносу ставке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo-new", r.PathValue("id"), year), http.StatusFound)
@@ -92,7 +93,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	collectionDate, err := shared.ParseDayMonth(r.FormValue("collection_date"), year)
 	if err != nil {
-		http.Error(w, "Неисправан датум (очекује се дд.мм)", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_bad_date"), http.StatusBadRequest)
 		return
 	}
 	productRev := shared.Round2(shared.ParseAmount(r.FormValue("product_revenue")))
@@ -107,7 +108,7 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		ProductRevenue: productRev,
 		ServiceRevenue: serviceRev,
 	}); err != nil {
-		http.Error(w, "Грешка при измени ставке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo", r.PathValue("id"), year), http.StatusFound)
@@ -124,7 +125,7 @@ func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err = r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 	rawIDs := r.Form["ids"]
@@ -132,13 +133,13 @@ func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request
 	for _, s := range rawIDs {
 		id, err := uuid.Parse(s)
 		if err != nil {
-			http.Error(w, "Неисправан ID", http.StatusBadRequest)
+			http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 			return
 		}
 		ids = append(ids, id)
 	}
 	if err = h.kpoBooks.ReorderEntries(r.Context(), book.ID, ids); err != nil {
-		http.Error(w, "Грешка при преуређивању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -160,7 +161,7 @@ func (h *Handler) handleKPODeleteEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.DeleteEntry(r.Context(), book.ID, entryID); err != nil {
-		http.Error(w, "Грешка при брисању ставке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
@@ -173,7 +174,7 @@ func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
-		http.Error(w, "Грешка при укњижавању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
@@ -186,7 +187,7 @@ func (h *Handler) handleKPOUnfinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.Unfinalize(r.Context(), book.ID); err != nil {
-		http.Error(w, "Грешка при откључавању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d", r.PathValue("id"), year), http.StatusFound)
@@ -205,11 +206,11 @@ func (h *Handler) handleKPOOpenYear(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	year, err := strconv.Atoi(r.FormValue("year"))
 	if err != nil || year < 2000 || year > 2100 {
-		http.Error(w, "Неисправна година", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 	if _, err := h.kpoBooks.FindOrCreateForAccountant(r.Context(), e.ID, year); err != nil {
-		http.Error(w, "Грешка при отварању КПО", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo", id, year), http.StatusFound)
@@ -223,7 +224,7 @@ func (h *Handler) handleKPOMergeView(w http.ResponseWriter, r *http.Request) {
 	}
 	accEntries, err := h.kpoBooks.ListEntries(r.Context(), accBook.ID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -254,7 +255,7 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if accBook.IsFinalized() {
-		http.Error(w, "КПО је финализована", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_finalized"), http.StatusForbidden)
 		return
 	}
 	eid, err := uuid.Parse(r.PathValue("eid"))
@@ -273,7 +274,7 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 	}
 	eEntries, err := h.kpoBooks.ListEntries(r.Context(), eBook.ID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	var src *kpo.Entry
@@ -295,7 +296,7 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 		ProductRevenue: src.ProductRevenue,
 		ServiceRevenue: src.ServiceRevenue,
 	}); err != nil {
-		http.Error(w, "Грешка при копирању ставке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String()+"/kpo/"+strconv.Itoa(year)+"/merge", http.StatusFound)
@@ -309,7 +310,7 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	}
 	entries, err := h.kpoBooks.ListEntries(r.Context(), book.ID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -353,7 +354,7 @@ func (h *Handler) handleKPOMergeMarkDone(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if err := h.kpoBooks.MarkMerged(r.Context(), eBook.ID); err != nil {
-		http.Error(w, "Грешка при обележавању", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String()+"/kpo/"+strconv.Itoa(year)+"/merge", http.StatusFound)

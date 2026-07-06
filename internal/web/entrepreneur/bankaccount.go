@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/bankaccount"
+	"buh/internal/i18n"
 	"buh/internal/web/shared"
 )
 
@@ -34,7 +35,7 @@ func (h *Handler) handleBankAccountList(w http.ResponseWriter, r *http.Request) 
 	}
 	accounts, err := h.bankAccounts.ListByEntrepreneurUser(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -91,12 +92,12 @@ func (h *Handler) handleBankAccountCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 	a := bankAccountFromForm(r, userID)
 	if _, err := h.bankAccounts.Create(r.Context(), a); err != nil {
-		http.Error(w, "Грешка при чувању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/bank-accounts", http.StatusFound)
@@ -115,7 +116,7 @@ func (h *Handler) handleBankAccountEditForm(w http.ResponseWriter, r *http.Reque
 	}
 	a, err := h.bankAccounts.FindByID(r.Context(), aid)
 	if err != nil && !errors.Is(err, bankaccount.ErrNotFound) {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if err != nil || a.EntrepreneurUserID != userID {
@@ -146,7 +147,7 @@ func (h *Handler) handleBankAccountUpdate(w http.ResponseWriter, r *http.Request
 	}
 	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
 	if err != nil && !errors.Is(err, bankaccount.ErrNotFound) {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
@@ -154,13 +155,13 @@ func (h *Handler) handleBankAccountUpdate(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 	a := bankAccountFromForm(r, userID)
 	a.ID = aid
 	if err := h.bankAccounts.Update(r.Context(), a); err != nil {
-		http.Error(w, "Грешка при чувању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/bank-accounts/"+aid.String()+"/edit", http.StatusFound)
@@ -179,7 +180,7 @@ func (h *Handler) handleBankAccountDelete(w http.ResponseWriter, r *http.Request
 	}
 	existing, err := h.bankAccounts.FindByID(r.Context(), aid)
 	if err != nil && !errors.Is(err, bankaccount.ErrNotFound) {
-		http.Error(w, "Грешка при учитавању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	if err != nil || existing.EntrepreneurUserID != userID {
@@ -187,7 +188,7 @@ func (h *Handler) handleBankAccountDelete(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err := h.bankAccounts.Delete(r.Context(), aid); err != nil {
-		http.Error(w, "Грешка при брисању рачуна", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/bank-accounts", http.StatusFound)
@@ -238,7 +239,7 @@ func (h *Handler) handleCorrespondentCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 	cb := bankaccount.CorrespondentBank{
@@ -248,7 +249,7 @@ func (h *Handler) handleCorrespondentCreate(w http.ResponseWriter, r *http.Reque
 		BankAddress:   r.FormValue("bank_address"),
 	}
 	if _, err := h.bankAccounts.CreateCorrespondent(r.Context(), cb); err != nil {
-		http.Error(w, "Грешка при чувању кор. банке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/bank-accounts/"+a.ID.String()+"/edit", http.StatusFound)
@@ -304,7 +305,7 @@ func (h *Handler) handleCorrespondentUpdate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 	cb := bankaccount.CorrespondentBank{
@@ -314,7 +315,7 @@ func (h *Handler) handleCorrespondentUpdate(w http.ResponseWriter, r *http.Reque
 		BankAddress: r.FormValue("bank_address"),
 	}
 	if err := h.bankAccounts.UpdateCorrespondent(r.Context(), cb); err != nil {
-		http.Error(w, "Грешка при чувању кор. банке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/bank-accounts/"+a.ID.String()+"/edit", http.StatusFound)
@@ -341,7 +342,7 @@ func (h *Handler) handleCorrespondentDelete(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err := h.bankAccounts.DeleteCorrespondent(r.Context(), cid); err != nil {
-		http.Error(w, "Грешка при брисању кор. банке", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/bank-accounts/"+a.ID.String()+"/edit", http.StatusFound)
@@ -350,7 +351,7 @@ func (h *Handler) handleCorrespondentDelete(w http.ResponseWriter, r *http.Reque
 func (h *Handler) handleCorrespondentsByAccount(w http.ResponseWriter, r *http.Request) {
 	userID, ok := h.entrepreneurUserFromSession(r)
 	if !ok {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.forbidden_message"), http.StatusForbidden)
 		return
 	}
 	a, ok := h.eOwnedBankAccount(w, r, userID)
@@ -359,7 +360,7 @@ func (h *Handler) handleCorrespondentsByAccount(w http.ResponseWriter, r *http.R
 	}
 	cbs, err := h.bankAccounts.ListCorrespondentsByAccount(r.Context(), a.ID)
 	if err != nil {
-		http.Error(w, "error", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	type cbItem struct {

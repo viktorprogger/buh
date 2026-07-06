@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/auth"
+	"buh/internal/i18n"
 	"buh/internal/web/shared"
 )
 
@@ -20,24 +21,25 @@ func (h *Handler) HandleRegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	confirm := r.FormValue("confirm_password")
 
+	l := i18n.FromContext(r.Context())
 	renderErr := func(msg string) {
 		shared.RenderTemplate(w, r, h.tmpl.EntrepreneurRegister, map[string]any{"Error": msg, "Email": email})
 	}
 	if email == "" || password == "" {
-		renderErr("Е-пошта и лозинка су обавезни.")
+		renderErr(l.T("entrepreneur_register.error_required"))
 		return
 	}
 	if password != confirm {
-		renderErr("Лозинке се не подударају.")
+		renderErr(l.T("entrepreneur_register.error_password_mismatch"))
 		return
 	}
 	u, err := h.entrepreneurUsers.Create(r.Context(), email, password)
 	if err != nil {
-		renderErr("Та е-пошта је већ у употреби.")
+		renderErr(l.T("entrepreneur_register.error_email_taken"))
 		return
 	}
 	if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeEntrepreneur, UserID: u.ID.String()}); err != nil {
-		http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
+		http.Error(w, l.T("login.error_session"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/e/", http.StatusFound)

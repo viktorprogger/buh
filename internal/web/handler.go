@@ -179,8 +179,9 @@ func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 		userType := r.FormValue("user_type")
 
+		l := i18n.FromContext(r.Context())
 		renderErr := func() {
-			shared.RenderTemplate(w, r, h.tmpl.Login, map[string]any{"Error": "Погрешна е-пошта или лозинка.", "UserType": userType})
+			shared.RenderTemplate(w, r, h.tmpl.Login, map[string]any{"Error": l.T("login.error_invalid_credentials"), "UserType": userType})
 		}
 
 		if userType == "entrepreneur" {
@@ -193,11 +194,11 @@ func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if err != nil {
-				http.Error(w, "Грешка при пријави", http.StatusInternalServerError)
+				http.Error(w, l.T("login.error_server"), http.StatusInternalServerError)
 				return
 			}
 			if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeEntrepreneur, UserID: u.ID.String()}); err != nil {
-				http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
+				http.Error(w, l.T("login.error_session"), http.StatusInternalServerError)
 				return
 			}
 			// Persist the user's language preference to cookie.
@@ -223,11 +224,11 @@ func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err != nil {
-			http.Error(w, "Грешка при пријави", http.StatusInternalServerError)
+			http.Error(w, l.T("login.error_server"), http.StatusInternalServerError)
 			return
 		}
 		if err := h.sessions.Set(w, auth.Session{UserType: auth.UserTypeAccountant, UserID: a.ID}); err != nil {
-			http.Error(w, "Грешка при постављању сесије", http.StatusInternalServerError)
+			http.Error(w, l.T("login.error_session"), http.StatusInternalServerError)
 			return
 		}
 		// Persist the accountant's language preference to cookie.
@@ -252,11 +253,13 @@ func (h *handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handlePrivacy(w http.ResponseWriter, r *http.Request) {
-	shared.RenderTemplate(w, r, h.tmpl.Placeholder, map[string]any{"Title": "Политика приватности"})
+	l := i18n.FromContext(r.Context())
+	shared.RenderTemplate(w, r, h.tmpl.Placeholder, map[string]any{"Title": l.T("footer.privacy")})
 }
 
 func (h *handler) handleTerms(w http.ResponseWriter, r *http.Request) {
-	shared.RenderTemplate(w, r, h.tmpl.Placeholder, map[string]any{"Title": "Услови коришћења"})
+	l := i18n.FromContext(r.Context())
+	shared.RenderTemplate(w, r, h.tmpl.Placeholder, map[string]any{"Title": l.T("footer.terms")})
 }
 
 func (h *handler) handlePausalLimitInfo(w http.ResponseWriter, r *http.Request) {
@@ -275,7 +278,8 @@ func (h *handler) handleInviteToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := inv.Validate(); err != nil {
-		shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": "Позивница је истекла или је већ искоришћена."})
+		l := i18n.FromContext(r.Context())
+		shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": l.T("invite_accept.expired")})
 		return
 	}
 	data := map[string]any{
@@ -298,8 +302,9 @@ func (h *handler) handleInviteAccept(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
+	l := i18n.FromContext(r.Context())
 	if err := inv.Validate(); err != nil {
-		shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": "Позивница је истекла или је већ искоришћена."})
+		shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": l.T("invite_accept.expired")})
 		return
 	}
 
@@ -318,11 +323,11 @@ func (h *handler) handleInviteAccept(w http.ResponseWriter, r *http.Request) {
 		managedID := *inv.ManagedEntrepreneurID
 
 		if existing, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), entrepreneurUserID); existing.ID != uuid.Nil {
-			shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": "Већ сте повезани са рачуновођом."})
+			shared.RenderTemplate(w, r, h.tmpl.InviteAccept, map[string]any{"Error": l.T("invite_accept.already_paired")})
 			return
 		}
 		if err := h.entrepreneurs.Pair(r.Context(), managedID, entrepreneurUserID); err != nil {
-			http.Error(w, "Грешка при повезивању", http.StatusInternalServerError)
+			http.Error(w, l.T("invite_accept.error_pairing"), http.StatusInternalServerError)
 			return
 		}
 		h.invitations.Accept(r.Context(), inv.ID)
@@ -343,13 +348,13 @@ func (h *handler) handleInviteAccept(w http.ResponseWriter, r *http.Request) {
 	var managedID uuid.UUID
 	if managedIDStr == "" || managedIDStr == "new" {
 		u, err := h.entrepreneurUsers.FindByID(r.Context(), entrepreneurUserID)
-		name := "Предузетник"
+		name := l.T("invite_accept.default_entrepreneur_name")
 		if err == nil && u.Email != "" {
 			name = u.Email
 		}
 		e, _, err := h.entrepreneurs.FindOrCreate(r.Context(), accountantID, "0000000000", name)
 		if err != nil {
-			http.Error(w, "Грешка при креирању предузетника", http.StatusInternalServerError)
+			http.Error(w, l.T("invite_accept.error_create_entrepreneur"), http.StatusInternalServerError)
 			return
 		}
 		managedID = e.ID
@@ -360,7 +365,7 @@ func (h *handler) handleInviteAccept(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if err := h.entrepreneurs.Pair(r.Context(), managedID, entrepreneurUserID); err != nil {
-		http.Error(w, "Грешка при повезивању", http.StatusInternalServerError)
+		http.Error(w, l.T("invite_accept.error_pairing"), http.StatusInternalServerError)
 		return
 	}
 	h.invitations.Accept(r.Context(), inv.ID)

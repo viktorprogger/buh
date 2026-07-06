@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/i18n"
 	"buh/internal/invitation"
 	"buh/internal/web/shared"
 )
@@ -34,7 +35,7 @@ func (h *Handler) handleSendInvite(w http.ResponseWriter, r *http.Request) {
 		InviterID:   userID,
 	})
 	if err != nil {
-		http.Error(w, "Грешка при креирању позивнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	shared.RenderTemplate(w, r, h.tmpl.InviteToken, map[string]any{

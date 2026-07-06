@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/i18n"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
@@ -26,7 +27,7 @@ func (h *Handler) handleInvoiceList(w http.ResponseWriter, r *http.Request) {
 	}
 	invoices, err := h.invoices.ListByEntrepreneurUser(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању фактура", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -132,7 +133,7 @@ func (h *Handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Неисправан захтев", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 
@@ -148,7 +149,7 @@ func (h *Handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
 
 	currency := r.FormValue("currency")
 	if _, ok := invoice.FXRates[currency]; !ok {
-		http.Error(w, "Непозната валута", http.StatusBadRequest)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
 		return
 	}
 
@@ -223,7 +224,7 @@ func (h *Handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.invoices.Create(r.Context(), inv, items)
 	if err != nil {
-		http.Error(w, "Грешка при чувању фактуре", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -305,7 +306,7 @@ func (h *Handler) handleInvoice(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleInvoicePDF(w http.ResponseWriter, r *http.Request) {
 	userID, ok := h.entrepreneurUserFromSession(r)
 	if !ok {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.forbidden_message"), http.StatusForbidden)
 		return
 	}
 	iid, err := uuid.Parse(r.PathValue("iid"))

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/i18n"
 	"buh/internal/web/shared"
 )
 
@@ -50,7 +51,7 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 			"Paired":   true,
 			"Managed":  managed,
 			"EditMode": true,
-			"Error":    "Службени назив и ПИБ су обавезни.",
+			"Error":    i18n.FromContext(r.Context()).T("profile.error_required_fields"),
 		})
 		return
 	}

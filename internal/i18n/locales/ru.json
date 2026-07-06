@@ -29,6 +29,9 @@
   "login.email": {"other": "Эл. почта"},
   "login.password": {"other": "Пароль"},
   "login.submit": {"other": "Войти"},
+  "login.error_invalid_credentials": {"other": "Неверный адрес эл. почты или пароль."},
+  "login.error_server": {"other": "Ошибка входа"},
+  "login.error_session": {"other": "Ошибка сессии"},
 
   "entrepreneur_list.title": {"other": "Предприниматели"},
   "entrepreneur_list.subtitle": {"other": "Список предпринимателей вашего аккаунта"},
@@ -79,6 +82,8 @@
   "entrepreneur_detail.no_data": {"other": "нет данных"},
 
   "kpo.section_title": {"other": "КПО — Книга доходов"},
+  "kpo.error_finalized": {"other": "КПО финализована"},
+  "kpo.error_bad_date": {"other": "Неверный формат даты (ожидается дд.мм)"},
   "kpo.download_pdf": {"other": "↓ PDF"},
   "kpo.download_kpo": {"other": "Скачать КПО"},
   "kpo.add_year": {"other": "+ Добавить год"},
@@ -140,6 +145,7 @@
   "slip_table.delete_confirm": {"other": "Удалить это поручение?"},
 
   "entrepreneur_new.title": {"other": "Новый предприниматель"},
+  "entrepreneur_new.error_required_fields": {"other": "Оба поля обязательны."},
   "entrepreneur_new.subtitle": {"other": "Введите данные вручную"},
   "entrepreneur_new.label_title": {"other": "Краткое название"},
   "entrepreneur_new.label_name": {"other": "Название"},
@@ -161,6 +167,7 @@
   "entrepreneur_new.ph_activity_code": {"other": "напр. 6201"},
 
   "profile.title": {"other": "Мой профиль"},
+  "profile.error_required_fields": {"other": "Официальное название и ИНН обязательны."},
   "profile.section_data": {"other": "Данные предпринимателя"},
   "profile.unpaired_alert": {"other": "Свяжите аккаунт с бухгалтером для управления данными предприятия."},
   "profile.unpaired_invite": {"other": "Пригласить бухгалтера"},
@@ -202,6 +209,10 @@
   "clients.next": {"other": "Следующая →"},
 
   "client_form.title_new": {"other": "Новый клиент"},
+  "client_form.error_name_required": {"other": "Название клиента обязательно."},
+  "client_form.error_tax_id_required": {"other": "Налоговый/регистрационный номер обязателен для иностранных клиентов."},
+  "client_form.error_pib_required": {"other": "ИНН обязателен для местных клиентов."},
+  "client_form.error_mb_required": {"other": "Регистрационный номер обязателен для местных клиентов."},
   "client_form.title_edit": {"other": "Редактировать клиента"},
   "client_form.back": {"other": "← Назад"},
   "client_form.label_name": {"other": "Название клиента"},
@@ -379,6 +390,7 @@
   "kpo_merge.no_entries_acc": {"other": "Ваша КПО за этот год пуста."},
 
   "slip.title": {"other": "Платёжное поручение"},
+  "slip.error_required_fields": {"other": "Пожалуйста, заполните все обязательные поля."},
   "slip.back": {"other": "← Назад к предпринимателю"},
   "slip.saved": {"other": "Поручение сохранено."},
   "slip.saved_downloading": {"other": "Поручение сохранено. Загрузка начинается..."},
@@ -399,6 +411,23 @@
   "slip.download": {"other": "Скачать PDF"},
   "slip.delete_confirm": {"other": "Удалить это поручение?"},
   "slip.history_title": {"other": "История изменений"},
+
+  "slip_history.field_amount": {"other": "Сумма"},
+  "slip_history.field_currency": {"other": "Валюта"},
+  "slip_history.field_purpose": {"other": "Цель"},
+  "slip_history.field_payee": {"other": "Получатель"},
+  "slip_history.field_payeeAccount": {"other": "Счёт получателя"},
+  "slip_history.field_reference": {"other": "Ссылка на номер"},
+  "slip_history.field_payer": {"other": "Плательщик"},
+  "slip_history.field_paymentCode": {"other": "Код платежа"},
+  "slip_history.field_year": {"other": "Год"},
+  "slip_history.field_advance": {"other": "Аванс"},
+  "slip_history.event_created": {"other": "Квитанция создана"},
+  "slip_history.event_imported": {"other": "Квитанция импортирована"},
+  "slip_history.event_updated": {"other": "Квитанция обновлена"},
+  "slip_history.event_deleted": {"other": "Квитанция удалена"},
+  "slip_history.actor_accountant": {"other": "Бухгалтер"},
+  "slip_history.actor_entrepreneur": {"other": "Предприниматель"},
 
   "slip_new.title": {"other": "Новое платёжное поручение"},
   "slip_new.label_payer": {"other": "Плательщик / Uplatilac"},
@@ -437,6 +466,8 @@
   "error.not_found_message": {"other": "Запрашиваемая страница не существует."},
   "error.forbidden_title": {"other": "Доступ запрещён"},
   "error.forbidden_message": {"other": "У вас нет прав для доступа к этой странице."},
+  "error.server_error": {"other": "Ошибка сервера"},
+  "error.bad_request": {"other": "Неверный запрос"},
   "results.pib_label": {"other": "ИНН:"},
 
   "placeholder.under_construction": {"other": "Эта страница находится в разработке."},
@@ -505,11 +536,19 @@
   "invite_token.back_home": {"other": "← Главная"},
 
   "invite_accept.title": {"other": "Приглашение"},
+  "invite_accept.expired": {"other": "Приглашение истекло или уже было использовано."},
+  "invite_accept.already_paired": {"other": "Вы уже связаны с бухгалтером."},
+  "invite_accept.error_pairing": {"other": "Ошибка связывания"},
+  "invite_accept.error_create_entrepreneur": {"other": "Ошибка при создании предпринимателя"},
+  "invite_accept.default_entrepreneur_name": {"other": "Предприниматель"},
   "invite_accept.entrepreneur_field": {"other": "Предприниматель (необязательно)"},
   "invite_accept.entrepreneur_ph": {"other": "UUID существующего предпринимателя или оставьте пустым"},
   "invite_accept.submit": {"other": "Принять приглашение"},
 
   "entrepreneur_register.title": {"other": "Регистрация предпринимателя"},
+  "entrepreneur_register.error_required": {"other": "Эл. почта и пароль обязательны."},
+  "entrepreneur_register.error_password_mismatch": {"other": "Пароли не совпадают."},
+  "entrepreneur_register.error_email_taken": {"other": "Этот адрес эл. почты уже используется."},
   "entrepreneur_register.label_email": {"other": "Эл. почта"},
   "entrepreneur_register.label_password": {"other": "Пароль"},
   "entrepreneur_register.label_confirm": {"other": "Подтвердите пароль"},
@@ -532,6 +571,7 @@
   "batch.processing": {"other": "Файлы обрабатываются, страница обновится автоматически…"},
   "batch.done": {"other": "Обработка завершена"},
   "batch.files_pending": {"other": "Файлов в очереди:"},
+  "batch.navigate_away": {"other": "Вы можете закрыть эту страницу или перейти в другое место — обработка завершится в фоновом режиме."},
   "batch.col_file": {"other": "Файл"},
   "results.col_entrepreneur": {"other": "Предприниматель"}
 }

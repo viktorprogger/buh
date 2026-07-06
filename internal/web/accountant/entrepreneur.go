@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/entrepreneur"
+	"buh/internal/i18n"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
@@ -32,7 +33,7 @@ func (h *Handler) findOwnedEntrepreneur(w http.ResponseWriter, r *http.Request, 
 		return entrepreneur.Entrepreneur{}, false
 	}
 	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return entrepreneur.Entrepreneur{}, false
 	}
 	if e.AccountantID != accountantID {
@@ -69,7 +70,7 @@ func (h *Handler) handleAccountantIndex(w http.ResponseWriter, r *http.Request) 
 	}
 	entrepreneurs, err := h.entrepreneurs.ListByAccountant(context.Background(), accountantID)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању предузетника", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -89,12 +90,12 @@ func (h *Handler) handleAccountantIndex(w http.ResponseWriter, r *http.Request) 
 
 	pausalSums, err := h.kpoBooks.SumForYearBulk(context.Background(), ids, currentYear)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању паушалних прагова", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	vatSums, err := h.kpoBooks.RollingSumBulk(context.Background(), ids, vatFrom, now)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању ПДВ прагова", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -169,7 +170,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 
 	currentBook, err := h.kpoBooks.FindByYear(r.Context(), id, selectedYear)
 	if err != nil && !errors.Is(err, kpo.ErrNotFound) {
-		http.Error(w, "Грешка при учитавању КПО", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -177,14 +178,14 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	if currentBook.ID != (uuid.UUID{}) {
 		entries, err = h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
 		if err != nil {
-			http.Error(w, "Грешка при учитавању КПО ставки", http.StatusInternalServerError)
+			http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	books, err := h.kpoBooks.ListByManagedEntrepreneur(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању КПО књига", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	// Always show at least the selected year in the year select, even before the book is created.
@@ -203,7 +204,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	if e.EntrepreneurUserID != nil {
 		advanceInvoices, err = h.invoices.ListAdvanceByEntrepreneurUserYear(r.Context(), *e.EntrepreneurUserID, selectedYear)
 		if err != nil {
-			http.Error(w, "Грешка при учитавању авансних фактура", http.StatusInternalServerError)
+			http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -238,7 +239,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 
 	slips, err := h.slips.ListByEntrepreneur(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању уплатница", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	latestSlipYear, prevSlipYears := shared.GroupSlipsByYear(slips)
@@ -259,7 +260,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	} else {
 		pausalalTotal, pausalalHasData, err = h.kpoBooks.SumForYear(r.Context(), id, currentYear)
 		if err != nil {
-			http.Error(w, "Грешка при учитавању паушалног прага", http.StatusInternalServerError)
+			http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -282,7 +283,7 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	vatLimit := shared.VATLimitForDate(vatNow)
 	vatTotal, err := h.kpoBooks.RollingSumForManagedEntrepreneur(r.Context(), id, vatFrom, vatNow)
 	if err != nil {
-		http.Error(w, "Грешка при учитавању ПДВ прага", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
@@ -323,7 +324,7 @@ func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 
 	if name == "" || pib == "" {
 		shared.RenderTemplate(w, r, h.tmpl.EntrepreneurNew, map[string]any{
-			"Error":        "Оба поља су обавезна.",
+			"Error":        i18n.FromContext(r.Context()).T("entrepreneur_new.error_required_fields"),
 			"Name":         name,
 			"PIB":          pib,
 			"Title":        strings.TrimSpace(r.FormValue("title")),
@@ -343,7 +344,7 @@ func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 	}
 	e, _, err := h.entrepreneurs.FindOrCreate(context.Background(), accountantID, pib, name)
 	if err != nil {
-		http.Error(w, "Грешка при чувању предузетника", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	e.Title = strings.TrimSpace(r.FormValue("title"))
@@ -353,7 +354,7 @@ func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 	e.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
 	e.ActivityCode = strings.TrimSpace(r.FormValue("activity_code"))
 	if err := h.entrepreneurs.Update(r.Context(), e); err != nil {
-		http.Error(w, "Грешка при чувању предузетника", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/a/entrepreneurs/"+e.ID.String(), http.StatusFound)
@@ -388,7 +389,7 @@ func (h *Handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 	e.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
 	e.ActivityCode = strings.TrimSpace(r.FormValue("activity_code"))
 	if err := h.entrepreneurs.Update(r.Context(), e); err != nil {
-		http.Error(w, "Грешка при чувању предузетника", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/a/entrepreneurs/"+idStr, http.StatusFound)

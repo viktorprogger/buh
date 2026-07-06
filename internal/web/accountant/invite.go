@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/i18n"
 	"buh/internal/invitation"
 	"buh/internal/web/shared"
 )
@@ -30,7 +31,7 @@ func (h *Handler) handleAccountantInviteEntrepreneur(w http.ResponseWriter, r *h
 		ManagedEntrepreneurID: &id,
 	})
 	if err != nil {
-		http.Error(w, "Грешка при креирању позивнице", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 	shared.RenderTemplate(w, r, h.tmpl.InviteToken, map[string]any{

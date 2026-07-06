@@ -16,7 +16,6 @@ type Templates struct {
 	Index             *template.Template
 	Entrepreneur      *template.Template
 	EntrepreneurNew   *template.Template
-	Results           *template.Template
 	Slip              *template.Template
 	SlipNew           *template.Template
 	Placeholder       *template.Template
@@ -99,7 +98,6 @@ func ParseTemplates(tfs fs.FS) Templates {
 		Index:           mustPageTmpl(tfs, "index.html", nil),
 		Entrepreneur:    mustPageTmpl(tfs, "entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html", "templates/pausal_alert.html", "templates/vat_alert.html"),
 		EntrepreneurNew: mustPageTmpl(tfs, "entrepreneur_new.html", nil),
-		Results:         mustPageTmpl(tfs, "results.html", nil),
 		UploadBatch:     mustPageTmpl(tfs, "upload_batch.html", nil),
 		Slip:            mustPageTmpl(tfs, "slip.html", nil, slipExtra...),
 		SlipNew:         mustPageTmpl(tfs, "slip_new.html", nil, slipExtra...),
