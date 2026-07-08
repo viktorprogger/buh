@@ -18,13 +18,15 @@ import (
 	"buh/internal/entrepreneur"
 	"buh/internal/entrepreneuruser"
 	"buh/internal/i18n"
+	"buh/internal/importer"
 	"buh/internal/invitation"
-	"buh/internal/uploadqueue"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
 	"buh/internal/middleware"
 	"buh/internal/sliphistory"
+	"buh/internal/slipmerge"
 	"buh/internal/sliprecord"
+	"buh/internal/uploadqueue"
 	webaccountant "buh/internal/web/accountant"
 	webentrepreneur "buh/internal/web/entrepreneur"
 	"buh/internal/web/shared"
@@ -78,11 +80,15 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 	bundle := i18n.NewBundle()
 
 	uploadQueue := uploadqueue.NewRepo(db)
+	slipMerges := slipmerge.NewRepo(db)
+	imp := importer.New(entrepreneurs, slips, slipHistory)
 	aH := webaccountant.NewHandler(
 		sessions,
+		accts,
 		entrepreneurs,
 		slips,
 		slipHistory,
+		slipMerges,
 		kpoBooks,
 		uploadQueue,
 		entrepreneurUsers,
@@ -92,6 +98,7 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 	)
 	eH := webentrepreneur.NewHandler(
 		sessions,
+		accts,
 		entrepreneurs,
 		kpoBooks,
 		clients,
@@ -99,6 +106,10 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 		bankAccounts,
 		entrepreneurUsers,
 		invitations,
+		slips,
+		slipHistory,
+		slipMerges,
+		imp,
 		tmpl,
 	)
 

@@ -484,6 +484,54 @@ CREATE TABLE IF NOT EXISTS upload_results (
 );
 CREATE INDEX IF NOT EXISTS upload_results_batch_idx ON upload_results(batch_id);`,
 		},
+		{
+			name: "035_slip_records_xor_owner",
+			sql: `ALTER TABLE slip_records RENAME COLUMN entrepreneur_id TO managed_entrepreneur_id;
+ALTER TABLE slip_records ALTER COLUMN managed_entrepreneur_id DROP NOT NULL;
+ALTER TABLE slip_records ADD COLUMN entrepreneur_user_id UUID REFERENCES entrepreneur_users(id) ON DELETE CASCADE;
+ALTER TABLE slip_records ADD CONSTRAINT slip_records_owner_xor CHECK (
+    (managed_entrepreneur_id IS NOT NULL AND entrepreneur_user_id IS NULL) OR
+    (managed_entrepreneur_id IS NULL AND entrepreneur_user_id IS NOT NULL)
+);`,
+		},
+		{
+			name: "036_create_slip_merges",
+			sql: `CREATE TABLE IF NOT EXISTS slip_merges (
+    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    managed_entrepreneur_id UUID        NOT NULL REFERENCES managed_entrepreneurs(id) ON DELETE CASCADE,
+    year                    INT         NOT NULL,
+    merged_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    merged_by               UUID        NOT NULL,
+    UNIQUE (managed_entrepreneur_id, year)
+);`,
+		},
+		{
+			name: "037_add_pending_notice_to_users",
+			sql: `ALTER TABLE accountants ADD COLUMN IF NOT EXISTS pending_notice TEXT NOT NULL DEFAULT '';
+ALTER TABLE entrepreneur_users ADD COLUMN IF NOT EXISTS pending_notice TEXT NOT NULL DEFAULT '';`,
+		},
+		{
+			name: "038_drop_not_null_managed_entrepreneur_id",
+			sql: `ALTER TABLE slip_records ALTER COLUMN managed_entrepreneur_id DROP NOT NULL;`,
+		},
+		{
+			name: "039_slip_records_user_purpose_unique",
+			sql: `DELETE FROM slip_records
+WHERE id IN (
+    SELECT id FROM (
+        SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY entrepreneur_user_id, purpose, year, advance
+            ORDER BY generated_at DESC
+        ) AS rn
+        FROM slip_records
+        WHERE entrepreneur_user_id IS NOT NULL
+    ) t
+    WHERE rn > 1
+);
+CREATE UNIQUE INDEX slip_records_user_purpose_uniq
+    ON slip_records (entrepreneur_user_id, purpose, year, advance)
+    WHERE entrepreneur_user_id IS NOT NULL;`,
+		},
 	}
 
 	// Create migrations tracking table.

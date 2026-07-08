@@ -1,577 +1,1775 @@
 {
-  "app.title": {"other": "Tax Payments"},
-  "nav.entrepreneurs": {"other": "Entrepreneurs"},
-  "nav.logout": {"other": "Log out"},
-  "nav.profile": {"other": "Profile"},
-  "footer.privacy": {"other": "Privacy Policy"},
-  "footer.terms": {"other": "Terms of Service"},
-
-  "sidebar.dashboard": {"other": "Dashboard"},
-  "sidebar.clients": {"other": "Clients"},
-  "sidebar.bank_accounts": {"other": "Bank Accounts"},
-  "sidebar.invoices": {"other": "Invoices"},
-  "sidebar.kpo": {"other": "Income Book"},
-  "sidebar.invite_accountant": {"other": "Invite Accountant"},
-  "sidebar.profile": {"other": "Profile"},
-  "sidebar.logout": {"other": "Log out"},
-  "sidebar.close_menu": {"other": "Close menu"},
-  "sidebar.open_menu": {"other": "Menu"},
-
-  "lang.switch_label": {"other": "Language"},
-  "lang.sr": {"other": "Srpski"},
-  "lang.en": {"other": "English"},
-  "lang.ru": {"other": "Русский"},
-
-  "login.title": {"other": "Tax Payments"},
-  "login.subtitle": {"other": "Sign in to continue"},
-  "login.tab_accountant": {"other": "Accountant"},
-  "login.tab_entrepreneur": {"other": "Entrepreneur"},
-  "login.email": {"other": "Email"},
-  "login.password": {"other": "Password"},
-  "login.submit": {"other": "Sign in"},
-  "login.error_invalid_credentials": {"other": "Wrong email or password."},
-  "login.error_server": {"other": "Login error"},
-  "login.error_session": {"other": "Session error"},
-
-  "entrepreneur_list.title": {"other": "Entrepreneurs"},
-  "entrepreneur_list.subtitle": {"other": "List of entrepreneurs in your account"},
-  "entrepreneur_list.add_new": {"other": "+ New Entrepreneur"},
-  "entrepreneur_list.upload_title": {"other": "Upload PDF Decision"},
-  "entrepreneur_list.upload_desc": {"other": "Select up to 4 PDF files from eTax. The entrepreneur will be recognized automatically."},
-  "entrepreneur_list.upload_submit": {"other": "Process"},
-  "entrepreneur_list.col_name": {"other": "Name / Entrepreneur"},
-  "entrepreneur_list.col_pib": {"other": "Tax ID"},
-  "entrepreneur_list.col_pausal": {"other": "Flat-rate (yr.)"},
-  "entrepreneur_list.col_vat": {"other": "VAT (12 mo.)"},
-  "entrepreneur_list.empty": {"other": "No entrepreneurs found. Upload a PDF decision from eTax to add one automatically."},
-  "entrepreneur_list.page_info": {"other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"},
-  "entrepreneur_list.prev": {"other": "← Previous"},
-  "entrepreneur_list.next": {"other": "Next →"},
-  "entrepreneur_list.pausal_dot_exceeded": {"other": "Flat-rate limit exceeded"},
-  "entrepreneur_list.pausal_dot_alert": {"other": "Critical: flat-rate"},
-  "entrepreneur_list.pausal_dot_high": {"other": "Warning: flat-rate"},
-  "entrepreneur_list.pausal_dot_minor": {"other": "Attention: flat-rate"},
-  "entrepreneur_list.vat_dot_exceeded": {"other": "VAT threshold exceeded"},
-  "entrepreneur_list.vat_dot_alert": {"other": "Critical: VAT threshold"},
-  "entrepreneur_list.vat_dot_high": {"other": "Warning: VAT threshold"},
-  "entrepreneur_list.vat_dot_minor": {"other": "Attention: VAT threshold"},
-
-  "entrepreneur_detail.back": {"other": "← Entrepreneurs"},
-  "entrepreneur_detail.section_data": {"other": "Entrepreneur data"},
-  "entrepreneur_detail.edit": {"other": "Edit"},
-  "entrepreneur_detail.save": {"other": "Save"},
-  "entrepreneur_detail.cancel": {"other": "Cancel"},
-  "entrepreneur_detail.label_title": {"other": "Short name"},
-  "entrepreneur_detail.label_name": {"other": "Official name"},
-  "entrepreneur_detail.label_mb": {"other": "Reg. No."},
-  "entrepreneur_detail.label_pib": {"other": "Tax ID"},
-  "entrepreneur_detail.label_address": {"other": "Address"},
-  "entrepreneur_detail.label_account": {"other": "Bank account"},
-  "entrepreneur_detail.label_taxpayer_code": {"other": "Taxpayer code"},
-  "entrepreneur_detail.label_activity_code": {"other": "Activity code"},
-  "entrepreneur_detail.managed_note": {"other": "Clients, bank accounts, and invoices are managed via the entrepreneur's account."},
-  "entrepreneur_detail.ph_title": {"other": "e.g. Milan Plumber"},
-  "entrepreneur_detail.ph_name": {"other": "e.g. Petar Petrovic PR"},
-  "entrepreneur_detail.ph_mb": {"other": "e.g. 12345678"},
-  "entrepreneur_detail.ph_pib": {"other": "e.g. 1234567890"},
-  "entrepreneur_detail.ph_address": {"other": "e.g. Main St 11, Belgrade"},
-  "entrepreneur_detail.ph_account": {"other": "e.g. 265-1234567890123-56"},
-  "entrepreneur_detail.ph_taxpayer_code": {"other": "e.g. 5060"},
-  "entrepreneur_detail.ph_activity_code": {"other": "e.g. 6201"},
-  "entrepreneur_detail.pausal_label": {"other": "Flat-rate"},
-  "entrepreneur_detail.no_data": {"other": "no data"},
-
-  "kpo.section_title": {"other": "KPO — Income Book"},
-  "kpo.error_finalized": {"other": "KPO is finalized"},
-  "kpo.error_bad_date": {"other": "Invalid date (expected dd.mm)"},
-  "kpo.download_pdf": {"other": "↓ PDF"},
-  "kpo.download_kpo": {"other": "Download KPO"},
-  "kpo.add_year": {"other": "+ Add Year"},
-  "kpo.add_year_ph": {"other": "Year"},
-  "kpo.add_year_title": {"other": "Enter year and press Open"},
-  "kpo.add_year_submit": {"other": "Open"},
-  "kpo.col_num": {"other": "#"},
-  "kpo.col_date": {"other": "Date"},
-  "kpo.col_invoice": {"other": "Invoice No."},
-  "kpo.col_description": {"other": "Description"},
-  "kpo.col_product": {"other": "Goods sales"},
-  "kpo.col_service": {"other": "Services"},
-  "kpo.col_total": {"other": "Total"},
-  "kpo.advance_tooltip": {"other": "This invoice is not counted in KPO"},
-  "kpo.advance_label": {"other": "A"},
-  "kpo.row_edit": {"other": "Edit"},
-  "kpo.row_delete": {"other": "Delete entry"},
-  "kpo.row_delete_label": {"other": "Delete"},
-  "kpo.row_delete_confirm": {"other": "Delete this entry?"},
-  "kpo.row_save": {"other": "Save"},
-  "kpo.row_cancel": {"other": "Cancel"},
-  "kpo.totals": {"other": "Total:"},
-  "kpo.new_entry_aria": {"other": "New KPO entry"},
-  "kpo.field_date": {"other": "Date"},
-  "kpo.field_invoice": {"other": "Invoice number"},
-  "kpo.field_description": {"other": "Description"},
-  "kpo.field_product": {"other": "Goods revenue"},
-  "kpo.field_service": {"other": "Services revenue"},
-  "kpo.new_entry_submit": {"other": "Add ↵"},
-  "kpo.finalize": {"other": "Finalize"},
-  "kpo.finalize_confirm_q": {"other": "Finalize KPO for"},
-  "kpo.finalize_confirm_year": {"other": "?"},
-  "kpo.finalize_confirm_detail": {"other": "This action locks the book. Further changes require unlocking."},
-  "kpo.finalized_at": {"other": "✓ Finalized"},
-  "kpo.unlock": {"other": "Unlock"},
-  "kpo.ph_date": {"other": "dd.mm"},
-  "kpo.ph_invoice": {"other": "e.g. 2026/1"},
-  "kpo.ph_description": {"other": "client / description"},
-  "kpo.date_hint": {"other": "Day 1–31, month 1–12"},
-  "kpo.no_book": {"other": "No income book for this year."},
-  "kpo.invoice_link": {"other": "+ New Invoice"},
-
-  "slips.section_title": {"other": "Payment Slips"},
-  "slips.add_new": {"other": "+ New Slip"},
-  "slips.tab_current": {"other": "Current"},
-  "slips.tab_previous": {"other": "Previous"},
-  "slips.no_regular": {"other": "No regular slips."},
-  "slips.no_previous": {"other": "No previous slips."},
-  "slips.no_saved": {"other": "No saved slips."},
-  "slips.regular_label": {"other": "Regular"},
-  "slips.advance_label": {"other": "Advance"},
-
-  "slip_table.col_date": {"other": "Date"},
-  "slip_table.col_purpose": {"other": "Purpose"},
-  "slip_table.col_payee": {"other": "Payee"},
-  "slip_table.col_amount": {"other": "Amount"},
-  "slip_table.delete_tooltip": {"other": "Delete slip"},
-  "slip_table.delete_label": {"other": "Delete"},
-  "slip_table.delete_confirm": {"other": "Delete this slip?"},
-
-  "entrepreneur_new.title": {"other": "New Entrepreneur"},
-  "entrepreneur_new.error_required_fields": {"other": "Both fields are required."},
-  "entrepreneur_new.subtitle": {"other": "Enter entrepreneur details manually"},
-  "entrepreneur_new.label_title": {"other": "Short name"},
-  "entrepreneur_new.label_name": {"other": "Name"},
-  "entrepreneur_new.label_mb": {"other": "Reg. No."},
-  "entrepreneur_new.label_pib": {"other": "Tax ID"},
-  "entrepreneur_new.label_address": {"other": "Address"},
-  "entrepreneur_new.label_account": {"other": "Bank account"},
-  "entrepreneur_new.label_taxpayer_code": {"other": "Taxpayer code"},
-  "entrepreneur_new.label_activity_code": {"other": "Activity code"},
-  "entrepreneur_new.save": {"other": "Save"},
-  "entrepreneur_new.cancel": {"other": "Cancel"},
-  "entrepreneur_new.ph_title": {"other": "e.g. Petar Petrovic"},
-  "entrepreneur_new.ph_name": {"other": "e.g. Petar Petrovic PR"},
-  "entrepreneur_new.ph_mb": {"other": "e.g. 12345678"},
-  "entrepreneur_new.ph_pib": {"other": "e.g. 1234567890"},
-  "entrepreneur_new.ph_address": {"other": "e.g. Main St 1, Belgrade"},
-  "entrepreneur_new.ph_account": {"other": "e.g. 123-0000000000000-00"},
-  "entrepreneur_new.ph_taxpayer_code": {"other": "e.g. 5060"},
-  "entrepreneur_new.ph_activity_code": {"other": "e.g. 6201"},
-
-  "profile.title": {"other": "My Profile"},
-  "profile.error_required_fields": {"other": "Official name and Tax ID are required."},
-  "profile.section_data": {"other": "Entrepreneur data"},
-  "profile.unpaired_alert": {"other": "Connect your account with an accountant to manage your business data."},
-  "profile.unpaired_invite": {"other": "Invite an accountant"},
-  "profile.edit": {"other": "Edit"},
-  "profile.save": {"other": "Save"},
-  "profile.cancel": {"other": "Cancel"},
-  "profile.label_name": {"other": "Official name"},
-  "profile.label_mb": {"other": "Reg. No."},
-  "profile.label_pib": {"other": "Tax ID"},
-  "profile.label_address": {"other": "Address"},
-  "profile.label_account": {"other": "Bank account"},
-  "profile.label_taxpayer_code": {"other": "Taxpayer code"},
-  "profile.label_activity_code": {"other": "Activity code"},
-  "profile.ph_name": {"other": "e.g. Petar Petrovic PR"},
-  "profile.ph_mb": {"other": "e.g. 12345678"},
-  "profile.ph_pib": {"other": "e.g. 1234567890"},
-  "profile.ph_address": {"other": "e.g. Main St 11, Belgrade"},
-  "profile.ph_account": {"other": "e.g. 265-1234567890123-56"},
-  "profile.ph_taxpayer_code": {"other": "e.g. 5060"},
-  "profile.ph_activity_code": {"other": "e.g. 6201"},
-
-  "clients.page_title": {"other": "Clients"},
-  "clients.back": {"other": "← Home"},
-  "clients.add_new": {"other": "+ New Client"},
-  "clients.section_title": {"other": "Clients"},
-  "clients.col_name": {"other": "Name"},
-  "clients.col_pib": {"other": "Tax ID"},
-  "clients.col_email": {"other": "Email"},
-  "clients.col_type": {"other": "Type"},
-  "clients.type_foreign": {"other": "Foreign"},
-  "clients.type_local": {"other": "Local"},
-  "clients.edit": {"other": "Edit"},
-  "clients.delete": {"other": "Delete"},
-  "clients.delete_confirm": {"other": "Delete this client?"},
-  "clients.empty": {"other": "No clients yet."},
-  "clients.empty_add": {"other": "Add first client"},
-  "clients.page_info": {"other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"},
-  "clients.prev": {"other": "← Previous"},
-  "clients.next": {"other": "Next →"},
-
-  "client_form.title_new": {"other": "New Client"},
-  "client_form.error_name_required": {"other": "Client name is required."},
-  "client_form.error_tax_id_required": {"other": "Tax/registration number is required for foreign clients."},
-  "client_form.error_pib_required": {"other": "Tax ID is required for local clients."},
-  "client_form.error_mb_required": {"other": "Registration number is required for local clients."},
-  "client_form.title_edit": {"other": "Edit Client"},
-  "client_form.back": {"other": "← Back"},
-  "client_form.label_name": {"other": "Client name"},
-  "client_form.name_hint": {"other": "Enter name as registered (including LLC or sole trader suffix)."},
-  "client_form.foreign_check": {"other": "Foreign client (outside Serbia)"},
-  "client_form.label_pib": {"other": "Tax ID"},
-  "client_form.pib_hint": {"other": "9 digits"},
-  "client_form.label_mb": {"other": "Registration No."},
-  "client_form.mb_hint": {"other": "8 digits"},
-  "client_form.label_tax_id": {"other": "Tax ID / Reg No."},
-  "client_form.tax_id_hint": {"other": "BIN/IIN (KZ), EIN (US), Company No. (UK), etc."},
-  "client_form.label_email": {"other": "Email"},
-  "client_form.label_address": {"other": "Address"},
-  "client_form.address_hint": {"other": "Include country in the address (e.g. \"Almaty, Kazakhstan\")."},
-  "client_form.submit_new": {"other": "Add Client"},
-  "client_form.submit_edit": {"other": "Save"},
-  "client_form.cancel": {"other": "Cancel"},
-
-  "bank_accounts.page_title": {"other": "Bank Accounts"},
-  "bank_accounts.back": {"other": "← Home"},
-  "bank_accounts.add_new": {"other": "+ New Account"},
-  "bank_accounts.section_title": {"other": "Bank Accounts"},
-  "bank_accounts.col_bank": {"other": "Bank"},
-  "bank_accounts.col_type": {"other": "Type"},
-  "bank_accounts.col_number": {"other": "Number / IBAN"},
-  "bank_accounts.type_foreign": {"other": "Foreign (FX)"},
-  "bank_accounts.type_local": {"other": "Local (RSD)"},
-  "bank_accounts.edit": {"other": "Edit"},
-  "bank_accounts.delete": {"other": "Delete"},
-  "bank_accounts.delete_confirm": {"other": "Delete this account?"},
-  "bank_accounts.empty": {"other": "No bank accounts yet."},
-  "bank_accounts.empty_add": {"other": "Add account"},
-  "bank_accounts.page_info": {"other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"},
-  "bank_accounts.prev": {"other": "← Previous"},
-  "bank_accounts.next": {"other": "Next →"},
-
-  "bank_account_form.title_new": {"other": "New Bank Account"},
-  "bank_account_form.title_edit": {"other": "Edit Bank Account"},
-  "bank_account_form.back": {"other": "← Back"},
-  "bank_account_form.label_type": {"other": "Account type"},
-  "bank_account_form.type_local": {"other": "Local (RSD)"},
-  "bank_account_form.type_foreign": {"other": "Foreign (IBAN/SWIFT)"},
-  "bank_account_form.label_bank_name": {"other": "Bank name"},
-  "bank_account_form.label_account_number": {"other": "Account number"},
-  "bank_account_form.ph_account_number": {"other": "265-1234567890-12"},
-  "bank_account_form.label_iban": {"other": "IBAN"},
-  "bank_account_form.label_swift": {"other": "SWIFT / BIC"},
-  "bank_account_form.correspondent_heading": {"other": "Correspondent Banks"},
-  "bank_account_form.correspondent_add": {"other": "+ Add"},
-  "bank_account_form.correspondent_col_bank": {"other": "Bank"},
-  "bank_account_form.correspondent_col_swift": {"other": "SWIFT"},
-  "bank_account_form.correspondent_col_address": {"other": "Address"},
-  "bank_account_form.correspondent_edit": {"other": "Edit"},
-  "bank_account_form.correspondent_delete": {"other": "Delete"},
-  "bank_account_form.correspondent_delete_confirm": {"other": "Delete correspondent bank?"},
-  "bank_account_form.correspondent_empty": {"other": "No correspondent banks."},
-  "bank_account_form.submit_new": {"other": "Add Account"},
-  "bank_account_form.submit_edit": {"other": "Save"},
-  "bank_account_form.cancel": {"other": "Cancel"},
-
-  "correspondent_form.title_new": {"other": "New Correspondent Bank"},
-  "correspondent_form.title_edit": {"other": "Edit Correspondent Bank"},
-  "correspondent_form.back": {"other": "← Back to account"},
-  "correspondent_form.label_bank_name": {"other": "Bank name"},
-  "correspondent_form.label_swift": {"other": "SWIFT / BIC"},
-  "correspondent_form.label_address": {"other": "Bank address"},
-  "correspondent_form.submit_new": {"other": "Add Bank"},
-  "correspondent_form.submit_edit": {"other": "Save"},
-  "correspondent_form.cancel": {"other": "Cancel"},
-
-  "invoices.page_title": {"other": "Invoices"},
-  "invoices.back": {"other": "← Home"},
-  "invoices.add_new": {"other": "+ New Invoice"},
-  "invoices.section_title": {"other": "Invoices"},
-  "invoices.col_number": {"other": "Number"},
-  "invoices.col_client": {"other": "Client"},
-  "invoices.col_type": {"other": "Type"},
-  "invoices.col_date": {"other": "Date"},
-  "invoices.col_amount": {"other": "Amount (RSD)"},
-  "invoices.type_advance": {"other": "Advance"},
-  "invoices.type_standard": {"other": "Standard"},
-  "invoices.view": {"other": "View"},
-  "invoices.empty": {"other": "No invoices yet."},
-  "invoices.empty_create": {"other": "Create first invoice"},
-  "invoices.page_info": {"other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"},
-  "invoices.prev": {"other": "← Previous"},
-  "invoices.next": {"other": "Next →"},
-
-  "invoice_new.title": {"other": "New Invoice"},
-  "invoice_new.back": {"other": "← Back"},
-  "invoice_new.profile_incomplete_warning": {"other": "Profile incomplete."},
-  "invoice_new.profile_incomplete_details": {"other": "The following fields will be blank on the invoice PDF: Tax ID, address, bank account."},
-  "invoice_new.profile_incomplete_action": {"other": "Fill them in Settings"},
-  "invoice_new.profile_incomplete_alt": {"other": "or continue and create the invoice without those fields."},
-  "invoice_new.label_type": {"other": "Invoice type"},
-  "invoice_new.type_standard": {"other": "Invoice"},
-  "invoice_new.type_advance": {"other": "Advance invoice"},
-  "invoice_new.label_language": {"other": "Language"},
-  "invoice_new.lang_sr": {"other": "Serbian"},
-  "invoice_new.lang_en": {"other": "English"},
-  "invoice_new.label_client": {"other": "Client"},
-  "invoice_new.client_search_ph": {"other": "Search client by name..."},
-  "invoice_new.client_add_new": {"other": "+ Add client"},
-  "invoice_new.label_invoice_number": {"other": "Invoice number"},
-  "invoice_new.ph_invoice_number": {"other": "e.g. 1/2026"},
-  "invoice_new.label_issue_date": {"other": "Issue date"},
-  "invoice_new.label_due_date": {"other": "Due date"},
-  "invoice_new.period_toggle": {"other": "Service period (e.g. for continuous services — IT sector)"},
-  "invoice_new.label_period_start": {"other": "Period from"},
-  "invoice_new.label_period_end": {"other": "Period to"},
-  "invoice_new.label_currency": {"other": "Currency"},
-  "invoice_new.label_items": {"other": "Line items"},
-  "invoice_new.item_description": {"other": "Service / goods description"},
-  "invoice_new.item_quantity": {"other": "Qty."},
-  "invoice_new.item_unit_price": {"other": "Unit price"},
-  "invoice_new.item_discount": {"other": "Discount%"},
-  "invoice_new.item_is_product": {"other": "Goods"},
-  "invoice_new.add_item": {"other": "+ Add item"},
-  "invoice_new.grand_total": {"other": "Total due:"},
-  "invoice_new.label_bank_account": {"other": "Bank account (optional)"},
-  "invoice_new.bank_account_empty": {"other": "— no account —"},
-  "invoice_new.label_correspondent": {"other": "Correspondent bank (optional)"},
-  "invoice_new.correspondent_empty": {"other": "— no correspondent bank —"},
-  "invoice_new.label_notes": {"other": "Notes (optional)"},
-  "invoice_new.label_footer_notes": {"other": "Invoice footer notes"},
-  "invoice_new.no_vat_check": {"other": "Not registered for VAT (Article 12 VAT Law)"},
-  "invoice_new.no_sign_check": {"other": "Invoice valid without stamp or signature"},
-  "invoice_new.submit": {"other": "Create invoice and generate PDF"},
-  "invoice_new.cancel": {"other": "Cancel"},
-  "invoice_new.preview_label": {"other": "Preview"},
-  "invoice_new.pausal_alert_prefix": {"other": "With this invoice your total turnover will be"},
-  "invoice_new.pausal_alert_of": {"other": "of"},
-  "invoice_new.pausal_alert_limit": {"other": "flat-rate limit."},
-
-  "invoice_detail.back": {"other": "← Back"},
-  "invoice_detail.title_standard": {"other": "Invoice"},
-  "invoice_detail.title_advance": {"other": "Advance Invoice"},
-  "invoice_detail.download": {"other": "↓ Download PDF"},
-  "invoice_detail.issuer": {"other": "Issuer"},
-  "invoice_detail.client": {"other": "Client"},
-  "invoice_detail.issue_date": {"other": "Issue date:"},
-  "invoice_detail.due_date": {"other": "Due date:"},
-  "invoice_detail.period": {"other": "Service period:"},
-  "invoice_detail.currency": {"other": "Currency:"},
-  "invoice_detail.amount_rsd": {"other": "Amount in RSD:"},
-  "invoice_detail.col_description": {"other": "Description"},
-  "invoice_detail.col_qty": {"other": "Qty."},
-  "invoice_detail.col_unit_price": {"other": "Unit price"},
-  "invoice_detail.col_discount": {"other": "Discount"},
-  "invoice_detail.col_amount": {"other": "Amount"},
-  "invoice_detail.product_label": {"other": "(goods)"},
-  "invoice_detail.total_label": {"other": "Total due:"},
-  "invoice_detail.payment_account": {"other": "Payment account"},
-  "invoice_detail.notes_label": {"other": "Notes:"},
-  "invoice_detail.corr_bank": {"other": "Corr. bank:"},
-
-  "kpo_merge.title": {"other": "Download KPO"},
-  "kpo_merge.back": {"other": "← Back to entrepreneur"},
-  "kpo_merge.no_ebook": {"other": "This entrepreneur has no linked account or no KPO for this year."},
-  "kpo_merge.already_merged": {"other": "✓ KPO has already been marked as downloaded."},
-  "kpo_merge.entrepreneur_kpo_title": {"other": "Entrepreneur's KPO (source)"},
-  "kpo_merge.mark_downloaded": {"other": "Mark as downloaded"},
-  "kpo_merge.col_num": {"other": "#"},
-  "kpo_merge.col_date": {"other": "Date"},
-  "kpo_merge.col_invoice": {"other": "Invoice No."},
-  "kpo_merge.col_description": {"other": "Description"},
-  "kpo_merge.col_product": {"other": "Goods"},
-  "kpo_merge.col_service": {"other": "Services"},
-  "kpo_merge.col_total": {"other": "Total"},
-  "kpo_merge.copy": {"other": "Copy →"},
-  "kpo_merge.no_entries_ent": {"other": "Entrepreneur has no KPO entries for this year."},
-  "kpo_merge.accountant_kpo_title": {"other": "Your KPO (destination)"},
-  "kpo_merge.accountant_finalized": {"other": "✓ Finalized"},
-  "kpo_merge.open_accountant_kpo": {"other": "Open KPO →"},
-  "kpo_merge.no_entries_acc": {"other": "Your KPO for this year is empty."},
-
-  "slip.title": {"other": "Payment Slip"},
-  "slip.error_required_fields": {"other": "Please fill in all required fields."},
-  "slip.back": {"other": "← Back to entrepreneur"},
-  "slip.saved": {"other": "Slip saved."},
-  "slip.saved_downloading": {"other": "Slip saved. Download starting..."},
-  "slip.label_payer": {"other": "Payer / Uplatilac"},
-  "slip.label_purpose": {"other": "Payment purpose / Svrha uplate"},
-  "slip.label_payee": {"other": "Payee / Primalac"},
-  "slip.label_payment_code": {"other": "Payment code"},
-  "slip.label_currency": {"other": "Currency"},
-  "slip.label_amount": {"other": "Amount / Iznos"},
-  "slip.label_account": {"other": "Payee account / Racun primaoca"},
-  "slip.label_reference": {"other": "Reference / Poziv na broj"},
-  "slip.label_year": {"other": "Year"},
-  "slip.year_tooltip": {"other": "Tax year this slip applies to — from the Tax Authority decision."},
-  "slip.label_advance": {"other": "Advance"},
-  "slip.advance_tooltip": {"other": "Check if this is an advance payment for the next year."},
-  "slip.delete": {"other": "Delete"},
-  "slip.save": {"other": "Save"},
-  "slip.download": {"other": "Download PDF"},
-  "slip.delete_confirm": {"other": "Delete this slip?"},
-  "slip.history_title": {"other": "Change history"},
-
-  "slip_history.field_amount": {"other": "Amount"},
-  "slip_history.field_currency": {"other": "Currency"},
-  "slip_history.field_purpose": {"other": "Purpose"},
-  "slip_history.field_payee": {"other": "Payee"},
-  "slip_history.field_payeeAccount": {"other": "Payee account"},
-  "slip_history.field_reference": {"other": "Reference"},
-  "slip_history.field_payer": {"other": "Payer"},
-  "slip_history.field_paymentCode": {"other": "Payment code"},
-  "slip_history.field_year": {"other": "Year"},
-  "slip_history.field_advance": {"other": "Advance"},
-  "slip_history.event_created": {"other": "Slip created"},
-  "slip_history.event_imported": {"other": "Slip imported"},
-  "slip_history.event_updated": {"other": "Slip updated"},
-  "slip_history.event_deleted": {"other": "Slip deleted"},
-  "slip_history.actor_accountant": {"other": "Accountant"},
-  "slip_history.actor_entrepreneur": {"other": "Entrepreneur"},
-
-  "slip_new.title": {"other": "New Payment Slip"},
-  "slip_new.label_payer": {"other": "Payer / Uplatilac"},
-  "slip_new.label_purpose": {"other": "Payment purpose / Svrha uplate"},
-  "slip_new.label_payee": {"other": "Payee / Primalac"},
-  "slip_new.label_payment_code": {"other": "Payment code"},
-  "slip_new.label_currency": {"other": "Currency"},
-  "slip_new.label_amount": {"other": "Amount / Iznos"},
-  "slip_new.label_account": {"other": "Payee account / Racun primaoca"},
-  "slip_new.label_reference": {"other": "Reference / Poziv na broj"},
-  "slip_new.label_year": {"other": "Year"},
-  "slip_new.year_tooltip": {"other": "Tax year this slip applies to — from the Tax Authority decision."},
-  "slip_new.label_advance": {"other": "Advance"},
-  "slip_new.advance_tooltip": {"other": "Check if this is an advance payment for the next year."},
-  "slip_new.cancel": {"other": "Cancel"},
-  "slip_new.submit": {"other": "Save and download PDF"},
-
-  "results.title": {"other": "Import Results"},
-  "results.subtitle": {"other": "Uploaded PDF files have been processed and saved"},
-  "results.back": {"other": "← Entrepreneur list"},
-  "results.no_results": {"other": "No entrepreneurs or slips found in the uploaded files."},
-  "results.badge_new": {"other": "New entrepreneur"},
-  "results.badge_existing": {"other": "Existing entrepreneur"},
-  "results.col_purpose": {"other": "Purpose"},
-  "results.col_payee": {"other": "Payee"},
-  "results.col_amount": {"other": "Amount"},
-  "results.col_status": {"other": "Status"},
-  "results.status_created": {"other": "New"},
-  "results.status_updated": {"other": "Updated"},
-  "results.status_unchanged": {"other": "Unchanged"},
-  "results.details_link": {"other": "Details"},
-  "results.no_slips": {"other": "No slips found in this file."},
-
-  "error.home": {"other": "Go to home page"},
-  "error.not_found_title": {"other": "Page not found"},
-  "error.not_found_message": {"other": "The requested page does not exist."},
-  "error.forbidden_title": {"other": "Access denied"},
-  "error.forbidden_message": {"other": "You do not have permission to access this page."},
-  "error.server_error": {"other": "Server error"},
-  "error.bad_request": {"other": "Bad request"},
-  "results.pib_label": {"other": "Tax ID:"},
-
-  "placeholder.under_construction": {"other": "This page is under construction."},
-
-  "pausal_alert.critical_title": {"other": "CRITICAL!"},
-  "pausal_alert.critical_message": {"other": "Flat-rate income limit reached"},
-  "pausal_alert.critical_contact_acc": {"other": "Notify the client immediately."},
-  "pausal_alert.critical_contact_self": {"other": "Consult your accountant immediately."},
-  "pausal_alert.high_message": {"other": "You have reached {{.Percent}}% of the flat-rate limit"},
-  "pausal_alert.high_recommendation": {"other": "We recommend consulting your accountant."},
-  "pausal_alert.alert_title": {"other": "WARNING!"},
-  "pausal_alert.alert_contact_acc": {"other": "Notify the client immediately."},
-  "pausal_alert.alert_contact_self": {"other": "Consult your accountant immediately."},
-  "pausal_alert.minor_message": {"other": "You have reached {{.Percent}}% of the flat-rate limit"},
-  "pausal_alert.info_link": {"other": "What does this mean?"},
-
-  "vat_alert.critical_title": {"other": "CRITICAL!"},
-  "vat_alert.critical_message": {"other": "VAT registration threshold reached"},
-  "vat_alert.rolling_period": {"other": "in the last 12 months"},
-  "vat_alert.critical_contact_acc": {"other": "Notify the client immediately."},
-  "vat_alert.critical_contact_self": {"other": "Consult your accountant immediately."},
-  "vat_alert.alert_title": {"other": "WARNING!"},
-  "vat_alert.high_message": {"other": "You have reached {{.Percent}}% of the VAT threshold"},
-  "vat_alert.high_recommendation": {"other": "We recommend consulting your accountant."},
-  "vat_alert.minor_message": {"other": "You have reached {{.Percent}}% of the VAT threshold"},
-  "vat_alert.info_link": {"other": "What does this mean?"},
-
-  "pausal_limit_info.title": {"other": "Flat-rate Income Limit"},
-  "pausal_limit_info.subtitle": {"other": "What the flat-rate limit means and what happens if you exceed it"},
-  "pausal_limit_info.limit_q": {"other": "What is the limit?"},
-  "pausal_limit_info.limit_intro": {"other": "Flat-rate entrepreneurs are exempt from full business bookkeeping, but only up to a certain annual income:"},
-  "pausal_limit_info.until_2026": {"other": "Until 2026 (inclusive): RSD 6,000,000"},
-  "pausal_limit_info.from_2027": {"other": "From 2027: RSD 8,000,000"},
-  "pausal_limit_info.limit_note": {"other": "The limit is based on turnover — total income from goods and service sales in the calendar year."},
-  "pausal_limit_info.consequences_q": {"other": "What happens if you exceed the limit?"},
-  "pausal_limit_info.consequences_intro": {"other": "If your annual turnover exceeds the prescribed amount, you lose the right to flat-rate taxation and switch to actual income taxation. In practice this means:"},
-  "pausal_limit_info.con_bookkeeping": {"other": "Mandatory business records (KEP, business account, invoices)"},
-  "pausal_limit_info.con_tax_payments": {"other": "Quarterly advance tax payments based on actual income"},
-  "pausal_limit_info.con_tax_return": {"other": "Filing an annual tax return with final settlement"},
-  "pausal_limit_info.con_burden": {"other": "Significantly higher administrative burden and accounting costs"},
-  "pausal_limit_info.consequences_note": {"other": "Switching from flat-rate to actual income taxation can be financially unfavorable — especially if you haven't planned expenses in advance."},
-  "pausal_limit_info.planning_q": {"other": "What can you do?"},
-  "pausal_limit_info.planning_intro": {"other": "There are various legal options for expense planning before reaching the limit — equipment purchases, investments, prepaid services, and more."},
-  "pausal_limit_info.planning_rec": {"other": "Consult a qualified accountant early — they will recommend a solution tailored to your specific situation."},
-
-  "vat_limit_info.title": {"other": "VAT Registration Threshold"},
-  "vat_limit_info.subtitle": {"other": "What the VAT threshold means and what happens if you exceed it"},
-  "vat_limit_info.limit_q": {"other": "What is the threshold?"},
-  "vat_limit_info.limit_intro": {"other": "An entrepreneur must register for VAT if their total turnover in the last 12 months has exceeded:"},
-  "vat_limit_info.current_limit": {"other": "Current: RSD 8,000,000"},
-  "vat_limit_info.limit_note": {"other": "Unlike the flat-rate limit (calendar year), the VAT threshold is calculated on a rolling window — turnover in the last 365 days."},
-  "vat_limit_info.consequences_q": {"other": "What happens if you exceed the threshold?"},
-  "vat_limit_info.consequences_intro": {"other": "If your turnover in the last 12 months exceeds RSD 8,000,000, you must file a VAT registration request. In practice this means:"},
-  "vat_limit_info.con_calculation": {"other": "Mandatory VAT calculation on every invoice you issue"},
-  "vat_limit_info.con_filing": {"other": "Filing monthly or quarterly VAT returns"},
-  "vat_limit_info.con_credit": {"other": "Right to deduct input tax (VAT on purchases)"},
-  "vat_limit_info.con_burden": {"other": "Significantly higher administrative burden and accounting costs"},
-  "vat_limit_info.con_pricing": {"other": "VAT registration changes how you do business — prices charged to clients must include VAT, or your margin shrinks."},
-  "vat_limit_info.planning_q": {"other": "What can you do?"},
-  "vat_limit_info.planning_intro": {"other": "There are various legal options for expense planning before reaching the threshold."},
-  "vat_limit_info.planning_rec": {"other": "Consult a qualified accountant early — they will recommend a solution tailored to your specific situation."},
-
-  "invite_token.title": {"other": "Invitation created"},
-  "invite_token.desc": {"other": "Send the following link to the person you want to connect. The link is valid for 7 days."},
-  "invite_token.back_entrepreneur": {"other": "← Back to entrepreneur"},
-  "invite_token.back_home": {"other": "← Home"},
-
-  "invite_accept.title": {"other": "Invitation"},
-  "invite_accept.expired": {"other": "The invitation has expired or has already been used."},
-  "invite_accept.already_paired": {"other": "You are already connected to an accountant."},
-  "invite_accept.error_pairing": {"other": "Pairing error"},
-  "invite_accept.error_create_entrepreneur": {"other": "Error creating entrepreneur"},
-  "invite_accept.default_entrepreneur_name": {"other": "Entrepreneur"},
-  "invite_accept.entrepreneur_field": {"other": "Entrepreneur (optional)"},
-  "invite_accept.entrepreneur_ph": {"other": "UUID of existing entrepreneur or leave blank"},
-  "invite_accept.submit": {"other": "Accept invitation"},
-
-  "entrepreneur_register.title": {"other": "Entrepreneur Registration"},
-  "entrepreneur_register.label_email": {"other": "Email"},
-  "entrepreneur_register.label_password": {"other": "Password"},
-  "entrepreneur_register.label_confirm": {"other": "Confirm password"},
-  "entrepreneur_register.submit": {"other": "Register"},
-  "entrepreneur_register.has_account": {"other": "Already have an account?"},
-  "entrepreneur_register.login_link": {"other": "Sign in"},
-  "entrepreneur_register.error_required": {"other": "Email and password are required."},
-  "entrepreneur_register.error_password_mismatch": {"other": "Passwords do not match."},
-  "entrepreneur_register.error_email_taken": {"other": "That email is already in use."},
-
-  "invite_entrepreneur.title": {"other": "Invite Entrepreneur"},
-  "invite_entrepreneur.desc": {"other": "Send the following link to the entrepreneur."},
-  "invite_entrepreneur.generate": {"other": "Generate invitation"},
-  "invite_entrepreneur.back": {"other": "← Back to entrepreneur"},
-
-  "invite_accountant.title": {"other": "Invite Accountant"},
-  "invite_accountant.desc": {"other": "Click the button below to generate an invitation. Share the resulting link with your accountant."},
-  "invite_accountant.generate": {"other": "Generate invitation"},
-
-  "entrepreneur_dashboard.title": {"other": "Dashboard"},
-
-  "batch.title": {"other": "File Processing"},
-  "batch.processing": {"other": "Files are being processed, page will refresh automatically…"},
-  "batch.done": {"other": "Processing complete"},
-  "batch.files_pending": {"other": "Files in queue:"},
-  "batch.navigate_away": {"other": "You can close this page or navigate away — processing will finish in the background."},
-  "batch.col_file": {"other": "File"},
-  "results.col_entrepreneur": {"other": "Entrepreneur"}
+  "app.title": {
+    "other": "Tax Payments"
+  },
+  "nav.entrepreneurs": {
+    "other": "Entrepreneurs"
+  },
+  "nav.logout": {
+    "other": "Log out"
+  },
+  "nav.profile": {
+    "other": "Profile"
+  },
+  "footer.privacy": {
+    "other": "Privacy Policy"
+  },
+  "footer.terms": {
+    "other": "Terms of Service"
+  },
+  "sidebar.dashboard": {
+    "other": "Dashboard"
+  },
+  "sidebar.clients": {
+    "other": "Clients"
+  },
+  "sidebar.bank_accounts": {
+    "other": "Bank Accounts"
+  },
+  "sidebar.invoices": {
+    "other": "Invoices"
+  },
+  "sidebar.kpo": {
+    "other": "Income Book"
+  },
+  "sidebar.invite_accountant": {
+    "other": "Invite Accountant"
+  },
+  "sidebar.profile": {
+    "other": "Profile"
+  },
+  "sidebar.logout": {
+    "other": "Log out"
+  },
+  "sidebar.close_menu": {
+    "other": "Close menu"
+  },
+  "sidebar.open_menu": {
+    "other": "Menu"
+  },
+  "lang.switch_label": {
+    "other": "Language"
+  },
+  "lang.sr": {
+    "other": "Srpski"
+  },
+  "lang.en": {
+    "other": "English"
+  },
+  "lang.ru": {
+    "other": "Русский"
+  },
+  "login.title": {
+    "other": "Tax Payments"
+  },
+  "login.subtitle": {
+    "other": "Sign in to continue"
+  },
+  "login.tab_accountant": {
+    "other": "Accountant"
+  },
+  "login.tab_entrepreneur": {
+    "other": "Entrepreneur"
+  },
+  "login.email": {
+    "other": "Email"
+  },
+  "login.password": {
+    "other": "Password"
+  },
+  "login.submit": {
+    "other": "Sign in"
+  },
+  "login.error_invalid_credentials": {
+    "other": "Wrong email or password."
+  },
+  "login.error_server": {
+    "other": "Login error"
+  },
+  "login.error_session": {
+    "other": "Session error"
+  },
+  "entrepreneur_list.title": {
+    "other": "Entrepreneurs"
+  },
+  "entrepreneur_list.subtitle": {
+    "other": "List of entrepreneurs in your account"
+  },
+  "entrepreneur_list.add_new": {
+    "other": "+ New Entrepreneur"
+  },
+  "entrepreneur_list.upload_title": {
+    "other": "Upload PDF Decision"
+  },
+  "entrepreneur_list.upload_desc": {
+    "other": "Select up to 4 PDF files from eTax. The entrepreneur will be recognized automatically."
+  },
+  "entrepreneur_list.upload_submit": {
+    "other": "Process"
+  },
+  "entrepreneur_list.col_name": {
+    "other": "Name / Entrepreneur"
+  },
+  "entrepreneur_list.col_pib": {
+    "other": "Tax ID"
+  },
+  "entrepreneur_list.col_pausal": {
+    "other": "Flat-rate (yr.)"
+  },
+  "entrepreneur_list.col_vat": {
+    "other": "VAT (12 mo.)"
+  },
+  "entrepreneur_list.empty": {
+    "other": "No entrepreneurs found. Upload a PDF decision from eTax to add one automatically."
+  },
+  "entrepreneur_list.page_info": {
+    "other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"
+  },
+  "entrepreneur_list.prev": {
+    "other": "← Previous"
+  },
+  "entrepreneur_list.next": {
+    "other": "Next →"
+  },
+  "entrepreneur_list.pausal_dot_exceeded": {
+    "other": "Flat-rate limit exceeded"
+  },
+  "entrepreneur_list.pausal_dot_alert": {
+    "other": "Critical: flat-rate"
+  },
+  "entrepreneur_list.pausal_dot_high": {
+    "other": "Warning: flat-rate"
+  },
+  "entrepreneur_list.pausal_dot_minor": {
+    "other": "Attention: flat-rate"
+  },
+  "entrepreneur_list.vat_dot_exceeded": {
+    "other": "VAT threshold exceeded"
+  },
+  "entrepreneur_list.vat_dot_alert": {
+    "other": "Critical: VAT threshold"
+  },
+  "entrepreneur_list.vat_dot_high": {
+    "other": "Warning: VAT threshold"
+  },
+  "entrepreneur_list.vat_dot_minor": {
+    "other": "Attention: VAT threshold"
+  },
+  "entrepreneur_detail.back": {
+    "other": "← Entrepreneurs"
+  },
+  "entrepreneur_detail.section_data": {
+    "other": "Entrepreneur data"
+  },
+  "entrepreneur_detail.error_required_fields": {
+    "other": "Official name and Tax ID are required."
+  },
+  "entrepreneur_detail.error_invalid_pib": {
+    "other": "Tax ID must be exactly 9 digits with a valid check digit."
+  },
+  "entrepreneur_detail.error_invalid_mb": {
+    "other": "Registration number must be exactly 8 digits."
+  },
+  "entrepreneur_detail.edit": {
+    "other": "Edit"
+  },
+  "entrepreneur_detail.save": {
+    "other": "Save"
+  },
+  "entrepreneur_detail.cancel": {
+    "other": "Cancel"
+  },
+  "entrepreneur_detail.label_title": {
+    "other": "Short name"
+  },
+  "entrepreneur_detail.label_name": {
+    "other": "Official name"
+  },
+  "entrepreneur_detail.label_mb": {
+    "other": "Reg. No."
+  },
+  "entrepreneur_detail.label_pib": {
+    "other": "Tax ID"
+  },
+  "entrepreneur_detail.label_address": {
+    "other": "Address"
+  },
+  "entrepreneur_detail.label_account": {
+    "other": "Bank account"
+  },
+  "entrepreneur_detail.label_taxpayer_code": {
+    "other": "Taxpayer code"
+  },
+  "entrepreneur_detail.label_activity_code": {
+    "other": "Activity code"
+  },
+  "entrepreneur_detail.managed_note": {
+    "other": "Clients, bank accounts, and invoices are managed via the entrepreneur's account."
+  },
+  "entrepreneur_detail.ph_title": {
+    "other": "e.g. Milan Plumber"
+  },
+  "entrepreneur_detail.ph_name": {
+    "other": "e.g. Petar Petrovic PR"
+  },
+  "entrepreneur_detail.ph_mb": {
+    "other": "e.g. 12345678"
+  },
+  "entrepreneur_detail.ph_pib": {
+    "other": "e.g. 1234567890"
+  },
+  "entrepreneur_detail.ph_address": {
+    "other": "e.g. Main St 11, Belgrade"
+  },
+  "entrepreneur_detail.ph_account": {
+    "other": "e.g. 265-1234567890123-56"
+  },
+  "entrepreneur_detail.ph_taxpayer_code": {
+    "other": "e.g. 5060"
+  },
+  "entrepreneur_detail.ph_activity_code": {
+    "other": "e.g. 6201"
+  },
+  "entrepreneur_detail.pausal_label": {
+    "other": "Flat-rate"
+  },
+  "entrepreneur_detail.no_data": {
+    "other": "no data"
+  },
+  "kpo.section_title": {
+    "other": "KPO — Income Book"
+  },
+  "kpo.error_finalized": {
+    "other": "KPO is finalized"
+  },
+  "kpo.error_bad_date": {
+    "other": "Invalid date (expected dd.mm)"
+  },
+  "kpo.download_pdf": {
+    "other": "↓ PDF"
+  },
+  "kpo.download_kpo": {
+    "other": "Download KPO"
+  },
+  "kpo.add_year": {
+    "other": "+ Add Year"
+  },
+  "kpo.add_year_ph": {
+    "other": "Year"
+  },
+  "kpo.add_year_title": {
+    "other": "Enter year and press Open"
+  },
+  "kpo.add_year_submit": {
+    "other": "Open"
+  },
+  "kpo.col_num": {
+    "other": "#"
+  },
+  "kpo.col_date": {
+    "other": "Date"
+  },
+  "kpo.col_invoice": {
+    "other": "Invoice No."
+  },
+  "kpo.col_description": {
+    "other": "Description"
+  },
+  "kpo.col_product": {
+    "other": "Goods sales"
+  },
+  "kpo.col_service": {
+    "other": "Services"
+  },
+  "kpo.col_total": {
+    "other": "Total"
+  },
+  "kpo.advance_tooltip": {
+    "other": "This invoice is not counted in KPO"
+  },
+  "kpo.advance_label": {
+    "other": "A"
+  },
+  "kpo.row_edit": {
+    "other": "Edit"
+  },
+  "kpo.row_delete": {
+    "other": "Delete entry"
+  },
+  "kpo.row_delete_label": {
+    "other": "Delete"
+  },
+  "kpo.row_delete_confirm": {
+    "other": "Delete this entry?"
+  },
+  "kpo.row_save": {
+    "other": "Save"
+  },
+  "kpo.row_cancel": {
+    "other": "Cancel"
+  },
+  "kpo.totals": {
+    "other": "Total:"
+  },
+  "kpo.new_entry_aria": {
+    "other": "New KPO entry"
+  },
+  "kpo.field_date": {
+    "other": "Date"
+  },
+  "kpo.field_invoice": {
+    "other": "Invoice number"
+  },
+  "kpo.field_description": {
+    "other": "Description"
+  },
+  "kpo.field_product": {
+    "other": "Goods revenue"
+  },
+  "kpo.field_service": {
+    "other": "Services revenue"
+  },
+  "kpo.new_entry_submit": {
+    "other": "Add ↵"
+  },
+  "kpo.finalize": {
+    "other": "Finalize"
+  },
+  "kpo.finalize_confirm_q": {
+    "other": "Finalize KPO for"
+  },
+  "kpo.finalize_confirm_year": {
+    "other": "?"
+  },
+  "kpo.finalize_confirm_detail": {
+    "other": "This action locks the book. Further changes require unlocking."
+  },
+  "kpo.finalized_at": {
+    "other": "✓ Finalized"
+  },
+  "kpo.unlock": {
+    "other": "Unlock"
+  },
+  "kpo.order_warning": {
+    "other": "⚠ Entries are out of chronological order — this entry has an older date than the previous one."
+  },
+  "kpo.ph_date": {
+    "other": "dd.mm"
+  },
+  "kpo.ph_invoice": {
+    "other": "e.g. 2026/1"
+  },
+  "kpo.ph_description": {
+    "other": "client / description"
+  },
+  "kpo.date_hint": {
+    "other": "Day 1–31, month 1–12"
+  },
+  "kpo.no_book": {
+    "other": "No income book for this year."
+  },
+  "kpo.invoice_link": {
+    "other": "+ New Invoice"
+  },
+  "slips.section_title": {
+    "other": "Payment Slips"
+  },
+  "slips.add_new": {
+    "other": "+ New Slip"
+  },
+  "slips.tab_current": {
+    "other": "Current"
+  },
+  "slips.tab_previous": {
+    "other": "Previous"
+  },
+  "slips.no_regular": {
+    "other": "No regular slips."
+  },
+  "slips.no_previous": {
+    "other": "No previous slips."
+  },
+  "slips.no_saved": {
+    "other": "No saved slips."
+  },
+  "slips.regular_label": {
+    "other": "Regular"
+  },
+  "slips.advance_label": {
+    "other": "Advance"
+  },
+  "slip_table.col_date": {
+    "other": "Date"
+  },
+  "slip_table.col_purpose": {
+    "other": "Purpose"
+  },
+  "slip_table.col_payee": {
+    "other": "Payee"
+  },
+  "slip_table.col_amount": {
+    "other": "Amount"
+  },
+  "slip_table.delete_tooltip": {
+    "other": "Delete slip"
+  },
+  "slip_table.delete_label": {
+    "other": "Delete"
+  },
+  "slip_table.delete_confirm": {
+    "other": "Delete this slip?"
+  },
+  "entrepreneur_new.title": {
+    "other": "New Entrepreneur"
+  },
+  "entrepreneur_new.error_required_fields": {
+    "other": "Both fields are required."
+  },
+  "entrepreneur_new.error_invalid_pib": {
+    "other": "Tax ID must be exactly 9 digits with a valid check digit."
+  },
+  "entrepreneur_new.error_invalid_mb": {
+    "other": "Registration number must be exactly 8 digits."
+  },
+  "entrepreneur_new.subtitle": {
+    "other": "Enter entrepreneur details manually"
+  },
+  "entrepreneur_new.label_title": {
+    "other": "Short name"
+  },
+  "entrepreneur_new.label_name": {
+    "other": "Name"
+  },
+  "entrepreneur_new.label_mb": {
+    "other": "Reg. No."
+  },
+  "entrepreneur_new.label_pib": {
+    "other": "Tax ID"
+  },
+  "entrepreneur_new.label_address": {
+    "other": "Address"
+  },
+  "entrepreneur_new.label_account": {
+    "other": "Bank account"
+  },
+  "entrepreneur_new.label_taxpayer_code": {
+    "other": "Taxpayer code"
+  },
+  "entrepreneur_new.label_activity_code": {
+    "other": "Activity code"
+  },
+  "entrepreneur_new.save": {
+    "other": "Save"
+  },
+  "entrepreneur_new.cancel": {
+    "other": "Cancel"
+  },
+  "entrepreneur_new.ph_title": {
+    "other": "e.g. Petar Petrovic"
+  },
+  "entrepreneur_new.ph_name": {
+    "other": "e.g. Petar Petrovic PR"
+  },
+  "entrepreneur_new.ph_mb": {
+    "other": "e.g. 12345678"
+  },
+  "entrepreneur_new.ph_pib": {
+    "other": "e.g. 1234567890"
+  },
+  "entrepreneur_new.ph_address": {
+    "other": "e.g. Main St 1, Belgrade"
+  },
+  "entrepreneur_new.ph_account": {
+    "other": "e.g. 123-0000000000000-00"
+  },
+  "entrepreneur_new.ph_taxpayer_code": {
+    "other": "e.g. 5060"
+  },
+  "entrepreneur_new.ph_activity_code": {
+    "other": "e.g. 6201"
+  },
+  "profile.title": {
+    "other": "My Profile"
+  },
+  "profile.error_required_fields": {
+    "other": "Official name and Tax ID are required."
+  },
+  "profile.error_invalid_pib": {
+    "other": "Tax ID must be exactly 9 digits with a valid check digit."
+  },
+  "profile.error_invalid_mb": {
+    "other": "Registration number must be exactly 8 digits."
+  },
+  "profile.section_data": {
+    "other": "Entrepreneur data"
+  },
+  "profile.unpaired_alert": {
+    "other": "Connect your account with an accountant to manage your business data."
+  },
+  "profile.unpaired_invite": {
+    "other": "Invite an accountant"
+  },
+  "profile.edit": {
+    "other": "Edit"
+  },
+  "profile.save": {
+    "other": "Save"
+  },
+  "profile.cancel": {
+    "other": "Cancel"
+  },
+  "profile.label_name": {
+    "other": "Official name"
+  },
+  "profile.label_mb": {
+    "other": "Reg. No."
+  },
+  "profile.label_pib": {
+    "other": "Tax ID"
+  },
+  "profile.label_address": {
+    "other": "Address"
+  },
+  "profile.label_account": {
+    "other": "Bank account"
+  },
+  "profile.label_taxpayer_code": {
+    "other": "Taxpayer code"
+  },
+  "profile.label_activity_code": {
+    "other": "Activity code"
+  },
+  "profile.ph_name": {
+    "other": "e.g. Petar Petrovic PR"
+  },
+  "profile.ph_mb": {
+    "other": "e.g. 12345678"
+  },
+  "profile.ph_pib": {
+    "other": "e.g. 1234567890"
+  },
+  "profile.ph_address": {
+    "other": "e.g. Main St 11, Belgrade"
+  },
+  "profile.ph_account": {
+    "other": "e.g. 265-1234567890123-56"
+  },
+  "profile.ph_taxpayer_code": {
+    "other": "e.g. 5060"
+  },
+  "profile.ph_activity_code": {
+    "other": "e.g. 6201"
+  },
+  "clients.page_title": {
+    "other": "Clients"
+  },
+  "clients.back": {
+    "other": "← Home"
+  },
+  "clients.add_new": {
+    "other": "+ New Client"
+  },
+  "clients.section_title": {
+    "other": "Clients"
+  },
+  "clients.col_name": {
+    "other": "Name"
+  },
+  "clients.col_pib": {
+    "other": "Tax ID"
+  },
+  "clients.col_email": {
+    "other": "Email"
+  },
+  "clients.col_type": {
+    "other": "Type"
+  },
+  "clients.type_foreign": {
+    "other": "Foreign"
+  },
+  "clients.type_local": {
+    "other": "Local"
+  },
+  "clients.edit": {
+    "other": "Edit"
+  },
+  "clients.delete": {
+    "other": "Delete"
+  },
+  "clients.delete_confirm": {
+    "other": "Delete this client?"
+  },
+  "clients.empty": {
+    "other": "No clients yet."
+  },
+  "clients.empty_add": {
+    "other": "Add first client"
+  },
+  "clients.page_info": {
+    "other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"
+  },
+  "clients.prev": {
+    "other": "← Previous"
+  },
+  "clients.next": {
+    "other": "Next →"
+  },
+  "client_form.title_new": {
+    "other": "New Client"
+  },
+  "client_form.error_name_required": {
+    "other": "Client name is required."
+  },
+  "client_form.error_tax_id_required": {
+    "other": "Tax/registration number is required for foreign clients."
+  },
+  "client_form.error_pib_required": {
+    "other": "Tax ID is required for local clients."
+  },
+  "client_form.error_mb_required": {
+    "other": "Registration number is required for local clients."
+  },
+  "client_form.title_edit": {
+    "other": "Edit Client"
+  },
+  "client_form.back": {
+    "other": "← Back"
+  },
+  "client_form.label_name": {
+    "other": "Client name"
+  },
+  "client_form.name_hint": {
+    "other": "Enter name as registered (including LLC or sole trader suffix)."
+  },
+  "client_form.foreign_check": {
+    "other": "Foreign client (outside Serbia)"
+  },
+  "client_form.label_pib": {
+    "other": "Tax ID"
+  },
+  "client_form.pib_hint": {
+    "other": "9 digits"
+  },
+  "client_form.label_mb": {
+    "other": "Registration No."
+  },
+  "client_form.mb_hint": {
+    "other": "8 digits"
+  },
+  "client_form.label_tax_id": {
+    "other": "Tax ID / Reg No."
+  },
+  "client_form.tax_id_hint": {
+    "other": "BIN/IIN (KZ), EIN (US), Company No. (UK), etc."
+  },
+  "client_form.label_email": {
+    "other": "Email"
+  },
+  "client_form.label_address": {
+    "other": "Address"
+  },
+  "client_form.address_hint": {
+    "other": "Include country in the address (e.g. \"Almaty, Kazakhstan\")."
+  },
+  "client_form.submit_new": {
+    "other": "Add Client"
+  },
+  "client_form.submit_edit": {
+    "other": "Save"
+  },
+  "client_form.cancel": {
+    "other": "Cancel"
+  },
+  "bank_accounts.page_title": {
+    "other": "Bank Accounts"
+  },
+  "bank_accounts.back": {
+    "other": "← Home"
+  },
+  "bank_accounts.add_new": {
+    "other": "+ New Account"
+  },
+  "bank_accounts.section_title": {
+    "other": "Bank Accounts"
+  },
+  "bank_accounts.col_bank": {
+    "other": "Bank"
+  },
+  "bank_accounts.col_type": {
+    "other": "Type"
+  },
+  "bank_accounts.col_number": {
+    "other": "Number / IBAN"
+  },
+  "bank_accounts.type_foreign": {
+    "other": "Foreign (FX)"
+  },
+  "bank_accounts.type_local": {
+    "other": "Local (RSD)"
+  },
+  "bank_accounts.edit": {
+    "other": "Edit"
+  },
+  "bank_accounts.delete": {
+    "other": "Delete"
+  },
+  "bank_accounts.delete_confirm": {
+    "other": "Delete this account?"
+  },
+  "bank_accounts.empty": {
+    "other": "No bank accounts yet."
+  },
+  "bank_accounts.empty_add": {
+    "other": "Add account"
+  },
+  "bank_accounts.page_info": {
+    "other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"
+  },
+  "bank_accounts.prev": {
+    "other": "← Previous"
+  },
+  "bank_accounts.next": {
+    "other": "Next →"
+  },
+  "bank_account_form.title_new": {
+    "other": "New Bank Account"
+  },
+  "bank_account_form.title_edit": {
+    "other": "Edit Bank Account"
+  },
+  "bank_account_form.back": {
+    "other": "← Back"
+  },
+  "bank_account_form.label_type": {
+    "other": "Account type"
+  },
+  "bank_account_form.type_local": {
+    "other": "Local (RSD)"
+  },
+  "bank_account_form.type_foreign": {
+    "other": "Foreign (IBAN/SWIFT)"
+  },
+  "bank_account_form.label_bank_name": {
+    "other": "Bank name"
+  },
+  "bank_account_form.label_account_number": {
+    "other": "Account number"
+  },
+  "bank_account_form.ph_account_number": {
+    "other": "265-1234567890-12"
+  },
+  "bank_account_form.label_iban": {
+    "other": "IBAN"
+  },
+  "bank_account_form.label_swift": {
+    "other": "SWIFT / BIC"
+  },
+  "bank_account_form.correspondent_heading": {
+    "other": "Correspondent Banks"
+  },
+  "bank_account_form.correspondent_add": {
+    "other": "+ Add"
+  },
+  "bank_account_form.correspondent_col_bank": {
+    "other": "Bank"
+  },
+  "bank_account_form.correspondent_col_swift": {
+    "other": "SWIFT"
+  },
+  "bank_account_form.correspondent_col_address": {
+    "other": "Address"
+  },
+  "bank_account_form.correspondent_edit": {
+    "other": "Edit"
+  },
+  "bank_account_form.correspondent_delete": {
+    "other": "Delete"
+  },
+  "bank_account_form.correspondent_delete_confirm": {
+    "other": "Delete correspondent bank?"
+  },
+  "bank_account_form.correspondent_empty": {
+    "other": "No correspondent banks."
+  },
+  "bank_account_form.submit_new": {
+    "other": "Add Account"
+  },
+  "bank_account_form.submit_edit": {
+    "other": "Save"
+  },
+  "bank_account_form.cancel": {
+    "other": "Cancel"
+  },
+  "correspondent_form.title_new": {
+    "other": "New Correspondent Bank"
+  },
+  "correspondent_form.title_edit": {
+    "other": "Edit Correspondent Bank"
+  },
+  "correspondent_form.back": {
+    "other": "← Back to account"
+  },
+  "correspondent_form.label_bank_name": {
+    "other": "Bank name"
+  },
+  "correspondent_form.label_swift": {
+    "other": "SWIFT / BIC"
+  },
+  "correspondent_form.label_address": {
+    "other": "Bank address"
+  },
+  "correspondent_form.submit_new": {
+    "other": "Add Bank"
+  },
+  "correspondent_form.submit_edit": {
+    "other": "Save"
+  },
+  "correspondent_form.cancel": {
+    "other": "Cancel"
+  },
+  "invoices.page_title": {
+    "other": "Invoices"
+  },
+  "invoices.back": {
+    "other": "← Home"
+  },
+  "invoices.add_new": {
+    "other": "+ New Invoice"
+  },
+  "invoices.section_title": {
+    "other": "Invoices"
+  },
+  "invoices.col_number": {
+    "other": "Number"
+  },
+  "invoices.col_client": {
+    "other": "Client"
+  },
+  "invoices.col_type": {
+    "other": "Type"
+  },
+  "invoices.col_date": {
+    "other": "Date"
+  },
+  "invoices.col_amount": {
+    "other": "Amount (RSD)"
+  },
+  "invoices.type_advance": {
+    "other": "Advance"
+  },
+  "invoices.type_standard": {
+    "other": "Standard"
+  },
+  "invoices.view": {
+    "other": "View"
+  },
+  "invoices.empty": {
+    "other": "No invoices yet."
+  },
+  "invoices.empty_create": {
+    "other": "Create first invoice"
+  },
+  "invoices.page_info": {
+    "other": "Page {{.Page}} of {{.LastPage}} ({{.Total}} total)"
+  },
+  "invoices.prev": {
+    "other": "← Previous"
+  },
+  "invoices.next": {
+    "other": "Next →"
+  },
+  "invoice_new.title": {
+    "other": "New Invoice"
+  },
+  "invoice_new.back": {
+    "other": "← Back"
+  },
+  "invoice_new.profile_incomplete_warning": {
+    "other": "Profile incomplete."
+  },
+  "invoice_new.profile_incomplete_details": {
+    "other": "The following fields will be blank on the invoice PDF: Tax ID, address, bank account."
+  },
+  "invoice_new.profile_incomplete_action": {
+    "other": "Fill them in Settings"
+  },
+  "invoice_new.profile_incomplete_alt": {
+    "other": "or continue and create the invoice without those fields."
+  },
+  "invoice_new.label_type": {
+    "other": "Invoice type"
+  },
+  "invoice_new.type_standard": {
+    "other": "Invoice"
+  },
+  "invoice_new.type_advance": {
+    "other": "Advance invoice"
+  },
+  "invoice_new.label_language": {
+    "other": "Language"
+  },
+  "invoice_new.lang_sr": {
+    "other": "Serbian"
+  },
+  "invoice_new.lang_en": {
+    "other": "English"
+  },
+  "invoice_new.label_client": {
+    "other": "Client"
+  },
+  "invoice_new.client_search_ph": {
+    "other": "Search client by name..."
+  },
+  "invoice_new.client_add_new": {
+    "other": "+ Add client"
+  },
+  "invoice_new.label_invoice_number": {
+    "other": "Invoice number"
+  },
+  "invoice_new.ph_invoice_number": {
+    "other": "e.g. 1/2026"
+  },
+  "invoice_new.label_issue_date": {
+    "other": "Issue date"
+  },
+  "invoice_new.label_due_date": {
+    "other": "Due date"
+  },
+  "invoice_new.period_toggle": {
+    "other": "Service period (e.g. for continuous services — IT sector)"
+  },
+  "invoice_new.label_period_start": {
+    "other": "Period from"
+  },
+  "invoice_new.label_period_end": {
+    "other": "Period to"
+  },
+  "invoice_new.label_currency": {
+    "other": "Currency"
+  },
+  "invoice_new.label_items": {
+    "other": "Line items"
+  },
+  "invoice_new.item_description": {
+    "other": "Service / goods description"
+  },
+  "invoice_new.item_quantity": {
+    "other": "Qty."
+  },
+  "invoice_new.item_unit_price": {
+    "other": "Unit price"
+  },
+  "invoice_new.item_discount": {
+    "other": "Discount%"
+  },
+  "invoice_new.item_is_product": {
+    "other": "Goods"
+  },
+  "invoice_new.add_item": {
+    "other": "+ Add item"
+  },
+  "invoice_new.grand_total": {
+    "other": "Total due:"
+  },
+  "invoice_new.label_bank_account": {
+    "other": "Bank account (optional)"
+  },
+  "invoice_new.bank_account_empty": {
+    "other": "— no account —"
+  },
+  "invoice_new.label_correspondent": {
+    "other": "Correspondent bank (optional)"
+  },
+  "invoice_new.correspondent_empty": {
+    "other": "— no correspondent bank —"
+  },
+  "invoice_new.label_notes": {
+    "other": "Notes (optional)"
+  },
+  "invoice_new.label_footer_notes": {
+    "other": "Invoice footer notes"
+  },
+  "invoice_new.no_vat_check": {
+    "other": "Not registered for VAT (Article 12 VAT Law)"
+  },
+  "invoice_new.no_sign_check": {
+    "other": "Invoice valid without stamp or signature"
+  },
+  "invoice_new.submit": {
+    "other": "Create invoice and generate PDF"
+  },
+  "invoice_new.cancel": {
+    "other": "Cancel"
+  },
+  "invoice_new.preview_label": {
+    "other": "Preview"
+  },
+  "invoice_new.pausal_alert_prefix": {
+    "other": "With this invoice your total turnover will be"
+  },
+  "invoice_new.pausal_alert_of": {
+    "other": "of"
+  },
+  "invoice_new.pausal_alert_limit": {
+    "other": "flat-rate limit."
+  },
+  "invoice_new.pausal_js_exceeded": {
+    "other": "With this invoice you will reach the flat-rate limit ({pct}% — {total})."
+  },
+  "invoice_new.pausal_js_reach": {
+    "other": "With this invoice you will reach {pct}% of the flat-rate limit ({total})."
+  },
+  "invoice_new.vat_js_exceeded": {
+    "other": "With this invoice you will reach the VAT registration threshold ({pct}% — {total})."
+  },
+  "invoice_new.vat_js_reach": {
+    "other": "With this invoice you will reach {pct}% of the VAT registration threshold ({total})."
+  },
+  "invoice_detail.back": {
+    "other": "← Back"
+  },
+  "invoice_detail.title_standard": {
+    "other": "Invoice"
+  },
+  "invoice_detail.title_advance": {
+    "other": "Advance Invoice"
+  },
+  "invoice_detail.download": {
+    "other": "↓ Download PDF"
+  },
+  "invoice_detail.issuer": {
+    "other": "Issuer"
+  },
+  "invoice_detail.client": {
+    "other": "Client"
+  },
+  "invoice_detail.issue_date": {
+    "other": "Issue date:"
+  },
+  "invoice_detail.due_date": {
+    "other": "Due date:"
+  },
+  "invoice_detail.period": {
+    "other": "Service period:"
+  },
+  "invoice_detail.currency": {
+    "other": "Currency:"
+  },
+  "invoice_detail.amount_rsd": {
+    "other": "Amount in RSD:"
+  },
+  "invoice_detail.col_description": {
+    "other": "Description"
+  },
+  "invoice_detail.col_qty": {
+    "other": "Qty."
+  },
+  "invoice_detail.col_unit_price": {
+    "other": "Unit price"
+  },
+  "invoice_detail.col_discount": {
+    "other": "Discount"
+  },
+  "invoice_detail.col_amount": {
+    "other": "Amount"
+  },
+  "invoice_detail.product_label": {
+    "other": "(goods)"
+  },
+  "invoice_detail.total_label": {
+    "other": "Total due:"
+  },
+  "invoice_detail.payment_account": {
+    "other": "Payment account"
+  },
+  "invoice_detail.notes_label": {
+    "other": "Notes:"
+  },
+  "invoice_detail.corr_bank": {
+    "other": "Corr. bank:"
+  },
+  "kpo_merge.title": {
+    "other": "Download KPO"
+  },
+  "kpo_merge.back": {
+    "other": "← Back to entrepreneur"
+  },
+  "kpo_merge.no_ebook": {
+    "other": "This entrepreneur has no linked account or no KPO for this year."
+  },
+  "kpo_merge.already_merged": {
+    "other": "✓ KPO has already been marked as downloaded."
+  },
+  "kpo_merge.entrepreneur_kpo_title": {
+    "other": "Entrepreneur's KPO (source)"
+  },
+  "kpo_merge.mark_downloaded": {
+    "other": "Mark as downloaded"
+  },
+  "kpo_merge.col_num": {
+    "other": "#"
+  },
+  "kpo_merge.col_date": {
+    "other": "Date"
+  },
+  "kpo_merge.col_invoice": {
+    "other": "Invoice No."
+  },
+  "kpo_merge.col_description": {
+    "other": "Description"
+  },
+  "kpo_merge.col_product": {
+    "other": "Goods"
+  },
+  "kpo_merge.col_service": {
+    "other": "Services"
+  },
+  "kpo_merge.col_total": {
+    "other": "Total"
+  },
+  "kpo_merge.copy": {
+    "other": "Copy →"
+  },
+  "kpo_merge.no_entries_ent": {
+    "other": "Entrepreneur has no KPO entries for this year."
+  },
+  "kpo_merge.accountant_kpo_title": {
+    "other": "Your KPO (destination)"
+  },
+  "kpo_merge.accountant_finalized": {
+    "other": "✓ Finalized"
+  },
+  "kpo_merge.open_accountant_kpo": {
+    "other": "Open KPO →"
+  },
+  "kpo_merge.no_entries_acc": {
+    "other": "Your KPO for this year is empty."
+  },
+  "slip.title": {
+    "other": "Payment Slip"
+  },
+  "slip.error_required_fields": {
+    "other": "Please fill in all required fields."
+  },
+  "slip.back": {
+    "other": "← Back to entrepreneur"
+  },
+  "slip.saved": {
+    "other": "Slip saved."
+  },
+  "slip.saved_downloading": {
+    "other": "Slip saved. Download starting..."
+  },
+  "slip.label_payer": {
+    "other": "Payer / Uplatilac"
+  },
+  "slip.label_purpose": {
+    "other": "Payment purpose / Svrha uplate"
+  },
+  "slip.label_payee": {
+    "other": "Payee / Primalac"
+  },
+  "slip.label_payment_code": {
+    "other": "Payment code"
+  },
+  "slip.label_currency": {
+    "other": "Currency"
+  },
+  "slip.label_amount": {
+    "other": "Amount / Iznos"
+  },
+  "slip.label_account": {
+    "other": "Payee account / Racun primaoca"
+  },
+  "slip.label_reference": {
+    "other": "Reference / Poziv na broj"
+  },
+  "slip.label_year": {
+    "other": "Year"
+  },
+  "slip.year_tooltip": {
+    "other": "Tax year this slip applies to — from the Tax Authority decision."
+  },
+  "slip.label_advance": {
+    "other": "Advance"
+  },
+  "slip.advance_tooltip": {
+    "other": "Check if this is an advance payment for the next year."
+  },
+  "slip.delete": {
+    "other": "Delete"
+  },
+  "slip.save": {
+    "other": "Save"
+  },
+  "slip.download": {
+    "other": "Download PDF"
+  },
+  "slip.delete_confirm": {
+    "other": "Delete this slip?"
+  },
+  "slip.history_title": {
+    "other": "Change history"
+  },
+  "slip_history.field_amount": {
+    "other": "Amount"
+  },
+  "slip_history.field_currency": {
+    "other": "Currency"
+  },
+  "slip_history.field_purpose": {
+    "other": "Purpose"
+  },
+  "slip_history.field_payee": {
+    "other": "Payee"
+  },
+  "slip_history.field_payeeAccount": {
+    "other": "Payee account"
+  },
+  "slip_history.field_reference": {
+    "other": "Reference"
+  },
+  "slip_history.field_payer": {
+    "other": "Payer"
+  },
+  "slip_history.field_paymentCode": {
+    "other": "Payment code"
+  },
+  "slip_history.field_year": {
+    "other": "Year"
+  },
+  "slip_history.field_advance": {
+    "other": "Advance"
+  },
+  "slip_history.event_created": {
+    "other": "Slip created"
+  },
+  "slip_history.event_imported": {
+    "other": "Slip imported"
+  },
+  "slip_history.event_updated": {
+    "other": "Slip updated"
+  },
+  "slip_history.event_deleted": {
+    "other": "Slip deleted"
+  },
+  "slip_history.actor_accountant": {
+    "other": "Accountant"
+  },
+  "slip_history.actor_entrepreneur": {
+    "other": "Entrepreneur"
+  },
+  "slip_new.title": {
+    "other": "New Payment Slip"
+  },
+  "slip_new.label_payer": {
+    "other": "Payer / Uplatilac"
+  },
+  "slip_new.label_purpose": {
+    "other": "Purpose / Svrha uplate"
+  },
+  "slip_new.label_payee": {
+    "other": "Payee / Primalac"
+  },
+  "slip_new.label_payment_code": {
+    "other": "Payment code"
+  },
+  "slip_new.label_currency": {
+    "other": "Currency"
+  },
+  "slip_new.label_amount": {
+    "other": "Amount / Iznos"
+  },
+  "slip_new.label_account": {
+    "other": "Payee account / Racun primaoca"
+  },
+  "slip_new.label_reference": {
+    "other": "Reference / Poziv na broj"
+  },
+  "slip_new.label_year": {
+    "other": "Year"
+  },
+  "slip_new.year_tooltip": {
+    "other": "Tax year this slip applies to — from the Tax Authority decision."
+  },
+  "slip_new.label_advance": {
+    "other": "Advance"
+  },
+  "slip_new.advance_tooltip": {
+    "other": "Check if this is an advance payment for the next year."
+  },
+  "slip_new.cancel": {
+    "other": "Cancel"
+  },
+  "slip_new.submit": {
+    "other": "Save slip"
+  },
+  "results.title": {
+    "other": "Import Results"
+  },
+  "results.subtitle": {
+    "other": "Uploaded PDF files have been processed and saved"
+  },
+  "results.back": {
+    "other": "← Entrepreneur list"
+  },
+  "results.no_results": {
+    "other": "No entrepreneurs or slips found in the uploaded files."
+  },
+  "results.badge_new": {
+    "other": "New entrepreneur"
+  },
+  "results.badge_existing": {
+    "other": "Existing entrepreneur"
+  },
+  "results.col_purpose": {
+    "other": "Purpose"
+  },
+  "results.col_payee": {
+    "other": "Payee"
+  },
+  "results.col_amount": {
+    "other": "Amount"
+  },
+  "results.col_status": {
+    "other": "Status"
+  },
+  "results.status_created": {
+    "other": "New"
+  },
+  "results.status_updated": {
+    "other": "Updated"
+  },
+  "results.status_unchanged": {
+    "other": "Unchanged"
+  },
+  "results.details_link": {
+    "other": "Details"
+  },
+  "results.no_slips": {
+    "other": "No slips found in this file."
+  },
+  "error.home": {
+    "other": "Go to home page"
+  },
+  "error.not_found_title": {
+    "other": "Page not found"
+  },
+  "error.not_found_message": {
+    "other": "The requested page does not exist."
+  },
+  "error.forbidden_title": {
+    "other": "Access denied"
+  },
+  "error.forbidden_message": {
+    "other": "You do not have permission to access this page."
+  },
+  "error.server_error": {
+    "other": "Server error"
+  },
+  "error.bad_request": {
+    "other": "Bad request"
+  },
+  "error.pdf_generation_failed": {
+    "other": "PDF generation failed"
+  },
+  "results.pib_label": {
+    "other": "Tax ID:"
+  },
+  "placeholder.under_construction": {
+    "other": "This page is under construction."
+  },
+  "pausal_alert.critical_title": {
+    "other": "CRITICAL!"
+  },
+  "pausal_alert.critical_message": {
+    "other": "Flat-rate income limit reached"
+  },
+  "pausal_alert.critical_contact_acc": {
+    "other": "Notify the client immediately."
+  },
+  "pausal_alert.critical_contact_self": {
+    "other": "Consult your accountant immediately."
+  },
+  "pausal_alert.high_message": {
+    "other": "You have reached {{.Percent}}% of the flat-rate limit"
+  },
+  "pausal_alert.high_recommendation": {
+    "other": "We recommend consulting your accountant."
+  },
+  "pausal_alert.alert_title": {
+    "other": "WARNING!"
+  },
+  "pausal_alert.alert_contact_acc": {
+    "other": "Notify the client immediately."
+  },
+  "pausal_alert.alert_contact_self": {
+    "other": "Consult your accountant immediately."
+  },
+  "pausal_alert.minor_message": {
+    "other": "You have reached {{.Percent}}% of the flat-rate limit"
+  },
+  "pausal_alert.info_link": {
+    "other": "What does this mean?"
+  },
+  "vat_alert.critical_title": {
+    "other": "CRITICAL!"
+  },
+  "vat_alert.critical_message": {
+    "other": "VAT registration threshold reached"
+  },
+  "vat_alert.rolling_period": {
+    "other": "in the last 12 months"
+  },
+  "vat_alert.critical_contact_acc": {
+    "other": "Notify the client immediately."
+  },
+  "vat_alert.critical_contact_self": {
+    "other": "Consult your accountant immediately."
+  },
+  "vat_alert.alert_title": {
+    "other": "WARNING!"
+  },
+  "vat_alert.high_message": {
+    "other": "You have reached {{.Percent}}% of the VAT threshold"
+  },
+  "vat_alert.high_recommendation": {
+    "other": "We recommend consulting your accountant."
+  },
+  "vat_alert.minor_message": {
+    "other": "You have reached {{.Percent}}% of the VAT threshold"
+  },
+  "vat_alert.info_link": {
+    "other": "What does this mean?"
+  },
+  "pausal_limit_info.title": {
+    "other": "Flat-rate Income Limit"
+  },
+  "pausal_limit_info.subtitle": {
+    "other": "What the flat-rate limit means and what happens if you exceed it"
+  },
+  "pausal_limit_info.limit_q": {
+    "other": "What is the limit?"
+  },
+  "pausal_limit_info.limit_intro": {
+    "other": "Flat-rate entrepreneurs are exempt from full business bookkeeping, but only up to a certain annual income:"
+  },
+  "pausal_limit_info.until_2026": {
+    "other": "Until 2026 (inclusive): RSD 6,000,000"
+  },
+  "pausal_limit_info.from_2027": {
+    "other": "From 2027: RSD 8,000,000"
+  },
+  "pausal_limit_info.limit_note": {
+    "other": "The limit is based on turnover — total income from goods and service sales in the calendar year."
+  },
+  "pausal_limit_info.consequences_q": {
+    "other": "What happens if you exceed the limit?"
+  },
+  "pausal_limit_info.consequences_intro": {
+    "other": "If your annual turnover exceeds the prescribed amount, you lose the right to flat-rate taxation and switch to actual income taxation. In practice this means:"
+  },
+  "pausal_limit_info.con_bookkeeping": {
+    "other": "Mandatory business records (KEP, business account, invoices)"
+  },
+  "pausal_limit_info.con_tax_payments": {
+    "other": "Quarterly advance tax payments based on actual income"
+  },
+  "pausal_limit_info.con_tax_return": {
+    "other": "Filing an annual tax return with final settlement"
+  },
+  "pausal_limit_info.con_burden": {
+    "other": "Significantly higher administrative burden and accounting costs"
+  },
+  "pausal_limit_info.consequences_note": {
+    "other": "Switching from flat-rate to actual income taxation can be financially unfavorable — especially if you haven't planned expenses in advance."
+  },
+  "pausal_limit_info.planning_q": {
+    "other": "What can you do?"
+  },
+  "pausal_limit_info.planning_intro": {
+    "other": "There are various legal options for expense planning before reaching the limit — equipment purchases, investments, prepaid services, and more."
+  },
+  "pausal_limit_info.planning_rec": {
+    "other": "Consult a qualified accountant early — they will recommend a solution tailored to your specific situation."
+  },
+  "vat_limit_info.title": {
+    "other": "VAT Registration Threshold"
+  },
+  "vat_limit_info.subtitle": {
+    "other": "What the VAT threshold means and what happens if you exceed it"
+  },
+  "vat_limit_info.limit_q": {
+    "other": "What is the threshold?"
+  },
+  "vat_limit_info.limit_intro": {
+    "other": "An entrepreneur must register for VAT if their total turnover in the last 12 months has exceeded:"
+  },
+  "vat_limit_info.current_limit": {
+    "other": "Current: RSD 8,000,000"
+  },
+  "vat_limit_info.limit_note": {
+    "other": "Unlike the flat-rate limit (calendar year), the VAT threshold is calculated on a rolling window — turnover in the last 365 days."
+  },
+  "vat_limit_info.consequences_q": {
+    "other": "What happens if you exceed the threshold?"
+  },
+  "vat_limit_info.consequences_intro": {
+    "other": "If your turnover in the last 12 months exceeds RSD 8,000,000, you must file a VAT registration request. In practice this means:"
+  },
+  "vat_limit_info.con_calculation": {
+    "other": "Mandatory VAT calculation on every invoice you issue"
+  },
+  "vat_limit_info.con_filing": {
+    "other": "Filing monthly or quarterly VAT returns"
+  },
+  "vat_limit_info.con_credit": {
+    "other": "Right to deduct input tax (VAT on purchases)"
+  },
+  "vat_limit_info.con_burden": {
+    "other": "Significantly higher administrative burden and accounting costs"
+  },
+  "vat_limit_info.con_pricing": {
+    "other": "VAT registration changes how you do business — prices charged to clients must include VAT, or your margin shrinks."
+  },
+  "vat_limit_info.planning_q": {
+    "other": "What can you do?"
+  },
+  "vat_limit_info.planning_intro": {
+    "other": "There are various legal options for expense planning before reaching the threshold."
+  },
+  "vat_limit_info.planning_rec": {
+    "other": "Consult a qualified accountant early — they will recommend a solution tailored to your specific situation."
+  },
+  "invite_token.title": {
+    "other": "Invitation created"
+  },
+  "invite_token.desc": {
+    "other": "Send the following link to the person you want to connect. The link is valid for 7 days."
+  },
+  "invite_token.back_entrepreneur": {
+    "other": "← Back to entrepreneur"
+  },
+  "invite_token.back_home": {
+    "other": "← Home"
+  },
+  "invite_accept.title": {
+    "other": "Invitation"
+  },
+  "invite_accept.expired": {
+    "other": "The invitation has expired or has already been used."
+  },
+  "invite_accept.already_paired": {
+    "other": "You are already connected to an accountant."
+  },
+  "invite_accept.error_pairing": {
+    "other": "Pairing error"
+  },
+  "invite_accept.error_create_entrepreneur": {
+    "other": "Error creating entrepreneur"
+  },
+  "invite_accept.default_entrepreneur_name": {
+    "other": "Entrepreneur"
+  },
+  "invite_accept.entrepreneur_field": {
+    "other": "Entrepreneur (optional)"
+  },
+  "invite_accept.entrepreneur_ph": {
+    "other": "UUID of existing entrepreneur or leave blank"
+  },
+  "invite_accept.submit": {
+    "other": "Accept invitation"
+  },
+  "entrepreneur_register.title": {
+    "other": "Entrepreneur Registration"
+  },
+  "entrepreneur_register.label_email": {
+    "other": "Email"
+  },
+  "entrepreneur_register.label_password": {
+    "other": "Password"
+  },
+  "entrepreneur_register.label_confirm": {
+    "other": "Confirm password"
+  },
+  "entrepreneur_register.submit": {
+    "other": "Register"
+  },
+  "entrepreneur_register.has_account": {
+    "other": "Already have an account?"
+  },
+  "entrepreneur_register.login_link": {
+    "other": "Sign in"
+  },
+  "entrepreneur_register.error_required": {
+    "other": "Email and password are required."
+  },
+  "entrepreneur_register.error_password_mismatch": {
+    "other": "Passwords do not match."
+  },
+  "entrepreneur_register.error_email_taken": {
+    "other": "That email is already in use."
+  },
+  "invite_entrepreneur.title": {
+    "other": "Invite Entrepreneur"
+  },
+  "invite_entrepreneur.desc": {
+    "other": "Send the following link to the entrepreneur."
+  },
+  "invite_entrepreneur.generate": {
+    "other": "Generate invitation"
+  },
+  "invite_entrepreneur.back": {
+    "other": "← Back to entrepreneur"
+  },
+  "invite_accountant.title": {
+    "other": "Invite Accountant"
+  },
+  "invite_accountant.desc": {
+    "other": "Click the button below to generate an invitation. Share the resulting link with your accountant."
+  },
+  "invite_accountant.generate": {
+    "other": "Generate invitation"
+  },
+  "entrepreneur_dashboard.title": {
+    "other": "Dashboard"
+  },
+  "batch.title": {
+    "other": "File Processing"
+  },
+  "batch.processing": {
+    "other": "Files are being processed, page will refresh automatically…"
+  },
+  "batch.done": {
+    "other": "Processing complete"
+  },
+  "batch.files_pending": {
+    "other": "Files in queue:"
+  },
+  "batch.navigate_away": {
+    "other": "You can close this page or navigate away — processing will finish in the background."
+  },
+  "batch.col_file": {
+    "other": "File"
+  },
+  "results.col_entrepreneur": {
+    "other": "Entrepreneur"
+  },
+  "sidebar.slips": {
+    "other": "Slips"
+  },
+  "e_slips.title": {
+    "other": "My Payment Slips"
+  },
+  "e_slips.upload_pdf": {
+    "other": "Import PDF"
+  },
+  "e_slips.new_slip": {
+    "other": "New Slip"
+  },
+  "e_slips.empty": {
+    "other": "No slips yet. Add the first one."
+  },
+  "e_slips.merged_badge": {
+    "other": "Merged"
+  },
+  "e_slips.advance_header": {
+    "other": "Advance"
+  },
+  "e_slip.back": {
+    "other": "← Back to slips"
+  },
+  "e_slip_upload.title": {
+    "other": "Import Slips from PDF"
+  },
+  "e_slip_upload.pib_missing": {
+    "other": "Your PIB (tax ID) is not set. Contact your accountant or enter it in your "
+  },
+  "e_slip_upload.go_to_profile": {
+    "other": "profile"
+  },
+  "e_slip_upload.description": {
+    "other": "Choose a PDF file containing slips to import."
+  },
+  "e_slip_upload.file_label": {
+    "other": "PDF file"
+  },
+  "e_slip_upload.submit": {
+    "other": "Import"
+  },
+  "e_slip_upload.success": {
+    "other": "Slips imported successfully. "
+  },
+  "e_slip_upload.view_slips": {
+    "other": "View slips"
+  },
+  "e_slip_upload.results_header": {
+    "other": "Import results"
+  },
+  "e_slip_upload.col_status": {
+    "other": "Status"
+  },
+  "slip_merge.title": {
+    "other": "Slip Merge"
+  },
+  "slip_merge.heading": {
+    "other": "Merge slips for"
+  },
+  "slip_merge.back": {
+    "other": "Back to entrepreneur"
+  },
+  "slip_merge.conflicts_note": {
+    "other": "Conflicts were found. Choose which version to keep for each conflict."
+  },
+  "slip_merge.no_conflicts": {
+    "other": "No conflicts — merge can proceed automatically."
+  },
+  "slip_merge.accountant_version": {
+    "other": "Accountant's version"
+  },
+  "slip_merge.entrepreneur_version": {
+    "other": "Entrepreneur's version"
+  },
+  "slip_merge.keep_this": {
+    "other": "Keep this version"
+  },
+  "slip_merge.advance_label": {
+    "other": "advance"
+  },
+  "slip_merge.auto_merge_header": {
+    "other": "Auto-merge (no conflicts)"
+  },
+  "slip_merge.finalize": {
+    "other": "Finalize merge"
+  },
+  "slip_history.merged": {
+    "other": "Merged into accountant's account"
+  },
+  "entrepreneur_detail.unpair_btn": {
+    "other": "Unlink entrepreneur account"
+  },
+  "entrepreneur_detail.unpair_confirm": {
+    "other": "This will copy all KPO records and payment slips to the entrepreneur's own account and remove the link. Continue?"
+  },
+  "entrepreneur_detail.merged_success": {
+    "other": "Payment slips have been merged successfully."
+  },
+  "entrepreneur_detail.unpaired_success": {
+    "other": "Entrepreneur account has been unlinked. All records have been copied."
+  },
+  "profile.unpair_btn": {
+    "other": "Disconnect accountant"
+  },
+  "profile.unpair_confirm": {
+    "other": "This will copy all KPO records and payment slips from your accountant's records to your own account and remove the link. Continue?"
+  },
+  "profile.unpaired_success": {
+    "other": "Your accountant account has been disconnected. All records have been copied."
+  },
+  "notice.unpaired_by_accountant": {
+    "other": "Your accountant has disconnected your account. All KPO records and payment slips have been copied to your account."
+  },
+  "notice.unpaired_by_entrepreneur": {
+    "other": "The entrepreneur has disconnected their account."
+  }
 }

@@ -368,7 +368,7 @@ func (h *Handler) handleInvoicePDF(w http.ResponseWriter, r *http.Request) {
 	pdfBytes, err := invoice.GeneratePDF(inv, items, issuer, clientInfo, bankAccInfo)
 	if err != nil {
 		log.Printf("invoice pdf generation error: %v", err)
-		http.Error(w, "PDF generation failed", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.pdf_generation_failed"), http.StatusInternalServerError)
 		return
 	}
 

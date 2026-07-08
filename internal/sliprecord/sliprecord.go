@@ -25,20 +25,22 @@ const (
 )
 
 // SlipRecord is a persisted record of a generated payment slip.
+// Exactly one of ManagedEntrepreneurID / EntrepreneurUserID is non-zero (XOR ownership).
 type SlipRecord struct {
-	ID             uuid.UUID
-	EntrepreneurID uuid.UUID
-	PaymentCode    string
-	Amount         string
-	Currency       string
-	Purpose        string
-	PayeeAccount   string
-	Reference      string
-	Payee          string
-	Payer          string
-	Year           int
-	Advance        bool
-	GeneratedAt    time.Time
+	ID                    uuid.UUID
+	ManagedEntrepreneurID uuid.UUID  // set for accountant-owned slips
+	EntrepreneurUserID    *uuid.UUID // set for standalone entrepreneur-owned slips
+	PaymentCode           string
+	Amount                string
+	Currency              string
+	Purpose               string
+	PayeeAccount          string
+	Reference             string
+	Payee                 string
+	Payer                 string
+	Year                  int
+	Advance               bool
+	GeneratedAt           time.Time
 }
 
 // Repo handles persistence of slip records.
@@ -51,42 +53,122 @@ func NewRepo(db *sql.DB) *Repo {
 	return &Repo{db: db}
 }
 
-const selectCols = `id, entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance, generated_at`
+const selectCols = `id, managed_entrepreneur_id, entrepreneur_user_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance, generated_at`
 
 func scanSlip(row interface {
 	Scan(...any) error
 }, s *SlipRecord) error {
-	return row.Scan(
-		&s.ID, &s.EntrepreneurID, &s.PaymentCode, &s.Amount, &s.Currency,
+	var managedEntrepreneurID sql.NullString
+	var entrepreneurUserID sql.NullString
+	err := row.Scan(
+		&s.ID, &managedEntrepreneurID, &entrepreneurUserID, &s.PaymentCode, &s.Amount, &s.Currency,
 		&s.Purpose, &s.PayeeAccount, &s.Reference, &s.Payee, &s.Payer,
 		&s.Year, &s.Advance, &s.GeneratedAt,
 	)
+	if err != nil {
+		return err
+	}
+	if managedEntrepreneurID.Valid {
+		s.ManagedEntrepreneurID, _ = uuid.Parse(managedEntrepreneurID.String)
+	}
+	if entrepreneurUserID.Valid {
+		id, _ := uuid.Parse(entrepreneurUserID.String)
+		s.EntrepreneurUserID = &id
+	}
+	return nil
 }
 
 // Save inserts a new SlipRecord. The ID and GeneratedAt fields are set by the database.
+// Exactly one of s.ManagedEntrepreneurID / s.EntrepreneurUserID must be set.
 func (r *Repo) Save(ctx context.Context, s SlipRecord) (SlipRecord, error) {
-	err := scanSlip(r.db.QueryRowContext(ctx,
-		`INSERT INTO slip_records
-		 (entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		 RETURNING `+selectCols,
-		s.EntrepreneurID, s.PaymentCode, s.Amount, s.Currency, s.Purpose,
-		s.PayeeAccount, s.Reference, s.Payee, s.Payer, s.Year, s.Advance,
-	), &s)
-	if err != nil {
+	var row *sql.Row
+	if s.EntrepreneurUserID != nil {
+		row = r.db.QueryRowContext(ctx,
+			`INSERT INTO slip_records
+			 (entrepreneur_user_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			 RETURNING `+selectCols,
+			*s.EntrepreneurUserID, s.PaymentCode, s.Amount, s.Currency, s.Purpose,
+			s.PayeeAccount, s.Reference, s.Payee, s.Payer, s.Year, s.Advance,
+		)
+	} else {
+		row = r.db.QueryRowContext(ctx,
+			`INSERT INTO slip_records
+			 (managed_entrepreneur_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			 RETURNING `+selectCols,
+			s.ManagedEntrepreneurID, s.PaymentCode, s.Amount, s.Currency, s.Purpose,
+			s.PayeeAccount, s.Reference, s.Payee, s.Payer, s.Year, s.Advance,
+		)
+	}
+	if err := scanSlip(row, &s); err != nil {
 		return SlipRecord{}, err
 	}
 	return s, nil
 }
 
-// ListByEntrepreneur returns all slip records for the given entrepreneur, newest first.
-func (r *Repo) ListByEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID) ([]SlipRecord, error) {
+// ListByManagedEntrepreneur returns all slip records for a managed entrepreneur, newest first.
+func (r *Repo) ListByManagedEntrepreneur(ctx context.Context, managedEntrepreneurID uuid.UUID) ([]SlipRecord, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT `+selectCols+`
 		 FROM slip_records
-		 WHERE entrepreneur_id = $1
+		 WHERE managed_entrepreneur_id = $1
 		 ORDER BY generated_at DESC`,
-		entrepreneurID,
+		managedEntrepreneurID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []SlipRecord
+	for rows.Next() {
+		var s SlipRecord
+		if err := scanSlip(rows, &s); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+// ListByEntrepreneurUser returns all slip records owned directly by an entrepreneur user, newest first.
+func (r *Repo) ListByEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID) ([]SlipRecord, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT `+selectCols+`
+		 FROM slip_records
+		 WHERE entrepreneur_user_id = $1
+		 ORDER BY generated_at DESC`,
+		entrepreneurUserID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []SlipRecord
+	for rows.Next() {
+		var s SlipRecord
+		if err := scanSlip(rows, &s); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+// ListAccessibleByEntrepreneurUser returns all slips the entrepreneur user can see:
+// slips owned directly plus slips owned by their paired managed entrepreneur (post-merge).
+func (r *Repo) ListAccessibleByEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID) ([]SlipRecord, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT `+selectCols+`
+		 FROM slip_records
+		 WHERE entrepreneur_user_id = $1
+		    OR managed_entrepreneur_id IN (
+		        SELECT id FROM managed_entrepreneurs WHERE entrepreneur_user_id = $1
+		    )
+		 ORDER BY generated_at DESC`,
+		entrepreneurUserID,
 	)
 	if err != nil {
 		return nil, err
@@ -126,21 +208,31 @@ func (r *Repo) Update(ctx context.Context, s SlipRecord) error {
 	return nil
 }
 
-// FindOrUpdateByPurpose looks up a slip by (entrepreneur_id, purpose, advance).
+// FindOrUpdateByPurpose looks up a slip by (owner, purpose, year, advance).
+// Year is part of the key because the same purpose text can repeat across tax years.
 // If found and unchanged it returns UpsertUnchanged; if fields differ it updates and returns UpsertUpdated.
 // If not found it inserts and returns UpsertCreated.
-// The advance field is part of the key because the same purpose text can appear on both a main slip
-// and an advance slip from different tax-year resolutions.
 // Returns (old, result, status, err); old is zero for UpsertCreated, equals result for UpsertUnchanged.
 func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (old SlipRecord, result SlipRecord, status UpsertStatus, err error) {
 	var existing SlipRecord
-	scanErr := scanSlip(r.db.QueryRowContext(ctx,
-		`SELECT `+selectCols+`
-		 FROM slip_records
-		 WHERE entrepreneur_id = $1 AND purpose = $2 AND advance = $3
-		 LIMIT 1`,
-		s.EntrepreneurID, s.Purpose, s.Advance,
-	), &existing)
+	var scanErr error
+	if s.EntrepreneurUserID != nil {
+		scanErr = scanSlip(r.db.QueryRowContext(ctx,
+			`SELECT `+selectCols+`
+			 FROM slip_records
+			 WHERE entrepreneur_user_id = $1 AND purpose = $2 AND year = $3 AND advance = $4
+			 LIMIT 1`,
+			*s.EntrepreneurUserID, s.Purpose, s.Year, s.Advance,
+		), &existing)
+	} else {
+		scanErr = scanSlip(r.db.QueryRowContext(ctx,
+			`SELECT `+selectCols+`
+			 FROM slip_records
+			 WHERE managed_entrepreneur_id = $1 AND purpose = $2 AND year = $3 AND advance = $4
+			 LIMIT 1`,
+			s.ManagedEntrepreneurID, s.Purpose, s.Year, s.Advance,
+		), &existing)
+	}
 	if errors.Is(scanErr, sql.ErrNoRows) {
 		saved, saveErr := r.Save(ctx, s)
 		return SlipRecord{}, saved, UpsertCreated, saveErr
@@ -166,6 +258,32 @@ func (r *Repo) FindOrUpdateByPurpose(ctx context.Context, s SlipRecord) (old Sli
 		return SlipRecord{}, SlipRecord{}, 0, updateErr
 	}
 	return existing, s, UpsertUpdated, nil
+}
+
+// CopyToEntrepreneurUser bulk-copies all accountant-owned slips for managedEntrepreneurID
+// to new rows owned by entrepreneurUserID. Used during unpair.
+func (r *Repo) CopyToEntrepreneurUser(ctx context.Context, managedEntrepreneurID, entrepreneurUserID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO slip_records
+		 (entrepreneur_user_id, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance)
+		 SELECT $2, payment_code, amount, currency, purpose, payee_account, reference, payee, payer, year, advance
+		 FROM slip_records WHERE managed_entrepreneur_id = $1
+		 ON CONFLICT (entrepreneur_user_id, purpose, year, advance) WHERE entrepreneur_user_id IS NOT NULL DO NOTHING`,
+		managedEntrepreneurID, entrepreneurUserID,
+	)
+	return err
+}
+
+// MoveToManagedEntrepreneur reassigns a slip from entrepreneur_user_id to managed_entrepreneur_id.
+// Used during merge when the entrepreneur's slip is brought into the accountant's set.
+func (r *Repo) MoveToManagedEntrepreneur(ctx context.Context, slipID, managedEntrepreneurID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE slip_records
+		 SET managed_entrepreneur_id = $1, entrepreneur_user_id = NULL
+		 WHERE id = $2`,
+		managedEntrepreneurID, slipID,
+	)
+	return err
 }
 
 // Snapshot returns all editable fields of a SlipRecord as a flat map (for history logging).

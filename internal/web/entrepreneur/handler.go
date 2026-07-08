@@ -5,19 +5,25 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/accountant"
 	"buh/internal/auth"
 	"buh/internal/bankaccount"
 	"buh/internal/client"
 	entcore "buh/internal/entrepreneur"
 	"buh/internal/entrepreneuruser"
+	"buh/internal/importer"
 	"buh/internal/invitation"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
+	"buh/internal/sliphistory"
+	"buh/internal/slipmerge"
+	"buh/internal/sliprecord"
 	"buh/internal/web/shared"
 )
 
 type Handler struct {
 	sessions          *auth.SessionManager
+	accountants       *accountant.Repo
 	entrepreneurs     *entcore.Repo
 	kpoBooks          *kpo.Repo
 	clients           *client.Repo
@@ -25,11 +31,16 @@ type Handler struct {
 	bankAccounts      *bankaccount.Repo
 	entrepreneurUsers *entrepreneuruser.Repo
 	invitations       *invitation.Repo
+	slips             *sliprecord.Repo
+	slipHistory       *sliphistory.Repo
+	slipMerges        *slipmerge.Repo
+	importer          *importer.Importer
 	tmpl              shared.Templates
 }
 
 func NewHandler(
 	sessions *auth.SessionManager,
+	accountants *accountant.Repo,
 	entrepreneurs *entcore.Repo,
 	kpoBooks *kpo.Repo,
 	clients *client.Repo,
@@ -37,10 +48,15 @@ func NewHandler(
 	bankAccounts *bankaccount.Repo,
 	entrepreneurUsers *entrepreneuruser.Repo,
 	invitations *invitation.Repo,
+	slips *sliprecord.Repo,
+	slipHistory *sliphistory.Repo,
+	slipMerges *slipmerge.Repo,
+	imp *importer.Importer,
 	tmpl shared.Templates,
 ) *Handler {
 	return &Handler{
 		sessions:          sessions,
+		accountants:       accountants,
 		entrepreneurs:     entrepreneurs,
 		kpoBooks:          kpoBooks,
 		clients:           clients,
@@ -48,6 +64,10 @@ func NewHandler(
 		bankAccounts:      bankAccounts,
 		entrepreneurUsers: entrepreneurUsers,
 		invitations:       invitations,
+		slips:             slips,
+		slipHistory:       slipHistory,
+		slipMerges:        slipMerges,
+		importer:          imp,
 		tmpl:              tmpl,
 	}
 }
@@ -102,7 +122,41 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /kpo/{year}/entries/{entryID}/delete", h.handleKPODeleteEntry)
 	mux.HandleFunc("POST /kpo/{year}/finalize", h.handleKPOFinalize)
 	mux.HandleFunc("POST /kpo/{year}/unfinalize", h.handleKPOUnfinalize)
+	mux.HandleFunc("GET /slips", h.handleSlipList)
+	mux.HandleFunc("GET /slips/new", h.handleESlipNewForm)
+	mux.HandleFunc("POST /slips/new", h.handleESlipNewSubmit)
+	mux.HandleFunc("GET /slips/upload", h.handleESlipUploadForm)
+	mux.HandleFunc("POST /slips/upload", h.handleESlipUploadSubmit)
+	mux.HandleFunc("GET /slips/{id}", h.handleESlip)
+	mux.HandleFunc("POST /slips/{id}/save", h.handleESlipSave)
+	mux.HandleFunc("POST /slips/{id}/download", h.handleESlipDownload)
+	mux.HandleFunc("POST /slips/{id}/delete", h.handleESlipDelete)
+	mux.HandleFunc("GET /slips/{id}/pdf", h.handleESlipPDF)
 	mux.HandleFunc("GET /profile", h.handleProfileForm)
 	mux.HandleFunc("POST /profile", h.handleProfileUpdate)
-	return mux
+	mux.HandleFunc("POST /unpair", h.handleUnpair)
+	mux.HandleFunc("POST /notices/dismiss", h.handleDismissNotice)
+	return h.noticeMiddleware(mux)
+}
+
+func (h *Handler) noticeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if userID, ok := h.entrepreneurUserFromSession(r); ok {
+			if notice, err := h.entrepreneurUsers.GetPendingNotice(r.Context(), userID); err == nil && notice != "" {
+				r = r.WithContext(shared.WithNotice(r.Context(), notice))
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *Handler) handleDismissNotice(w http.ResponseWriter, r *http.Request) {
+	if userID, ok := h.entrepreneurUserFromSession(r); ok {
+		_ = h.entrepreneurUsers.ClearPendingNotice(r.Context(), userID)
+	}
+	ref := r.Header.Get("Referer")
+	if ref == "" {
+		ref = "/e/"
+	}
+	http.Redirect(w, r, ref, http.StatusFound)
 }

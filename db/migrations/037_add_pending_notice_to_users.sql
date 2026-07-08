@@ -1,0 +1,2 @@
+ALTER TABLE accountants ADD COLUMN IF NOT EXISTS pending_notice TEXT NOT NULL DEFAULT '';
+ALTER TABLE entrepreneur_users ADD COLUMN IF NOT EXISTS pending_notice TEXT NOT NULL DEFAULT '';

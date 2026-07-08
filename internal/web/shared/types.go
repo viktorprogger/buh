@@ -13,6 +13,7 @@ import (
 // or an advance invoice (shown muted, not counted in totals).
 type KPORow struct {
 	IsAdvanceInvoice bool
+	WarnOutOfOrder   bool // true on the first entry whose date precedes the preceding entry's date (ordinal order)
 	Date             time.Time
 	InvoiceNum       string
 	// Regular KPO entry fields:
@@ -26,6 +27,25 @@ type KPORow struct {
 	InvoiceID  uuid.UUID
 	ClientName string
 	TotalRSD   float64
+}
+
+// MarkFirstOutOfOrder sets WarnOutOfOrder=true on the first non-advance entry
+// whose date is strictly before the preceding non-advance entry's date.
+// Must be called before any re-sorting, while rows are still in ordinal order.
+func MarkFirstOutOfOrder(rows []KPORow) {
+	var prevDate time.Time
+	var hasPrev bool
+	for i := range rows {
+		if rows[i].IsAdvanceInvoice {
+			continue
+		}
+		if hasPrev && rows[i].Date.Before(prevDate) {
+			rows[i].WarnOutOfOrder = true
+			return
+		}
+		prevDate = rows[i].Date
+		hasPrev = true
+	}
 }
 
 type SlipYearGroup struct {

@@ -16,6 +16,7 @@ const (
 	EventImported Event = "imported"
 	EventUpdated  Event = "updated"
 	EventDeleted  Event = "deleted"
+	EventMerged   Event = "merged"
 )
 
 // Record is one entry in the slip audit log.

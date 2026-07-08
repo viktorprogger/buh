@@ -1,12 +1,14 @@
 package entrepreneur
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 
 	"buh/internal/i18n"
+	"buh/internal/validate"
 	"buh/internal/web/shared"
 )
 
@@ -18,8 +20,9 @@ func (h *Handler) handleProfileForm(w http.ResponseWriter, r *http.Request) {
 	}
 	managed, _ := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
 	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurProfile, map[string]any{
-		"Paired":  managed.ID != uuid.Nil,
-		"Managed": managed,
+		"Paired":          managed.ID != uuid.Nil,
+		"Managed":         managed,
+		"UnpairedSuccess": r.URL.Query().Get("unpaired") == "1",
 	})
 }
 
@@ -39,10 +42,22 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	pib := strings.TrimSpace(r.FormValue("pib"))
 
-	if name == "" || pib == "" {
+	mb := strings.TrimSpace(r.FormValue("mb"))
+
+	l := i18n.FromContext(r.Context())
+	var errMsg string
+	switch {
+	case name == "" || pib == "":
+		errMsg = l.T("profile.error_required_fields")
+	case !validate.PIB(pib):
+		errMsg = l.T("profile.error_invalid_pib")
+	case mb != "" && !validate.MB(mb):
+		errMsg = l.T("profile.error_invalid_mb")
+	}
+	if errMsg != "" {
 		managed.Name = name
 		managed.PIB = pib
-		managed.MB = strings.TrimSpace(r.FormValue("mb"))
+		managed.MB = mb
 		managed.Address = strings.TrimSpace(r.FormValue("address"))
 		managed.BankAccount = strings.TrimSpace(r.FormValue("bank_account"))
 		managed.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
@@ -51,14 +66,14 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 			"Paired":   true,
 			"Managed":  managed,
 			"EditMode": true,
-			"Error":    i18n.FromContext(r.Context()).T("profile.error_required_fields"),
+			"Error":    errMsg,
 		})
 		return
 	}
 
 	managed.Name = name
 	managed.PIB = pib
-	managed.MB = strings.TrimSpace(r.FormValue("mb"))
+	managed.MB = mb
 	managed.Address = strings.TrimSpace(r.FormValue("address"))
 	managed.BankAccount = strings.TrimSpace(r.FormValue("bank_account"))
 	managed.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
@@ -69,4 +84,43 @@ func (h *Handler) handleProfileUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/e/profile", http.StatusFound)
+}
+
+func (h *Handler) handleUnpair(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.entrepreneurUserFromSession(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	e, err := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
+	if err != nil {
+		h.renderError(w, r, http.StatusNotFound)
+		return
+	}
+
+	if err := h.slips.CopyToEntrepreneurUser(r.Context(), e.ID, userID); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.kpoBooks.CopyToEntrepreneurUser(r.Context(), e.ID, userID); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+
+	if h.slipMerges != nil {
+		if err := h.slipMerges.DeleteForPairing(r.Context(), e.ID); err != nil {
+			log.Printf("unpair: delete slip merges for %s: %v", e.ID, err)
+		}
+	}
+
+	if err := h.entrepreneurs.Unpair(r.Context(), e.ID); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+
+	// Notify the accountant.
+	_ = h.accountants.SetPendingNotice(r.Context(), e.AccountantID.String(), "notice.unpaired_by_entrepreneur")
+
+	http.Redirect(w, r, "/e/profile?unpaired=1", http.StatusFound)
 }

@@ -1,12 +1,26 @@
 package shared
 
 import (
+	"context"
 	"html/template"
 	"log"
 	"net/http"
 
 	"buh/internal/i18n"
 )
+
+type ctxNoticeKey struct{}
+
+// WithNotice injects a pending notice i18n key into the context.
+func WithNotice(ctx context.Context, key string) context.Context {
+	return context.WithValue(ctx, ctxNoticeKey{}, key)
+}
+
+// NoticeFromContext returns the pending notice key stored in the context, or "".
+func NoticeFromContext(ctx context.Context) string {
+	v, _ := ctx.Value(ctxNoticeKey{}).(string)
+	return v
+}
 
 // cloneWithT returns a clone of tmpl with the real T/TWith functions injected
 // from the request's localizer. Cloning is needed because FuncMap entries are
@@ -29,6 +43,12 @@ func cloneWithT(tmpl *template.Template, r *http.Request) *template.Template {
 func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl *template.Template, data any) {
 	t := cloneWithT(tmpl, r)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if notice := NoticeFromContext(r.Context()); notice != "" {
+		l := i18n.FromContext(r.Context())
+		if m, ok := data.(map[string]any); ok {
+			m["Notice"] = l.T(notice)
+		}
+	}
 	if err := t.Execute(w, data); err != nil {
 		log.Printf("template error: %v", err)
 	}

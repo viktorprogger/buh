@@ -220,7 +220,7 @@
 
         <!-- Footer actions -->
         <div class="flex gap-3 pt-2 border-t border-gray-200">
-          <button type="submit"
+          <button id="btn-create-invoice" type="submit"
                   class="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover">
             {{T "invoice_new.submit"}}
           </button>
@@ -299,6 +299,28 @@ var PAUSAL_YEAR_PCT = {{.PausalYearPct}};
 // VAT limit alerting data
 var VAT_LIMIT = {{.VATLimit}};
 var VAT_DAILY = {{.VATDailyRevenue}};
+// i18n strings for dynamic alert messages
+var PAUSAL_I18N = {
+  criticalTitle:   '{{T "pausal_alert.critical_title"}}',
+  criticalContact: '{{T "pausal_alert.critical_contact_self"}}',
+  alertTitle:      '{{T "pausal_alert.alert_title"}}',
+  alertContact:    '{{T "pausal_alert.alert_contact_self"}}',
+  highRec:         '{{T "pausal_alert.high_recommendation"}}',
+  infoLinkText:    '{{T "pausal_alert.info_link"}}',
+  exceeded:        '{{T "invoice_new.pausal_js_exceeded"}}',
+  reach:           '{{T "invoice_new.pausal_js_reach"}}',
+};
+var VAT_I18N = {
+  criticalTitle:   '{{T "vat_alert.critical_title"}}',
+  criticalContact: '{{T "vat_alert.critical_contact_self"}}',
+  alertTitle:      '{{T "vat_alert.alert_title"}}',
+  alertContact:    '{{T "pausal_alert.alert_contact_self"}}',
+  highRec:         '{{T "vat_alert.high_recommendation"}}',
+  infoLinkText:    '{{T "vat_alert.info_link"}}',
+  rollingPeriod:   '{{T "vat_alert.rolling_period"}}',
+  exceeded:        '{{T "invoice_new.vat_js_exceeded"}}',
+  reach:           '{{T "invoice_new.vat_js_reach"}}',
+};
 
 // ── Line items ────────────────────────────────────────────────────────────────
 var itemCount = 0;
@@ -415,20 +437,24 @@ function updatePausalAlert() {
 
   var pctStr = hit.percent.toFixed(1);
   var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(PAUSAL_LIMIT) + ' RSD';
-  var infoLink = ' <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
+  var infoLink = ' <a href="/info/pausal-limit" target="_blank" class="underline hover:opacity-80 ml-1">' + PAUSAL_I18N.infoLinkText + '</a>';
   var msg = '';
   if (hit.severity === 'exceeded') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-gray-900 border-gray-800 text-white';
-    msg = '<strong>КРИТИЧНО!</strong> Са овом фактуром достићи ћете паушални праг (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+    var body = PAUSAL_I18N.exceeded.replace('{pct}', pctStr).replace('{total}', totalStr);
+    msg = '<strong>' + PAUSAL_I18N.criticalTitle + '</strong> ' + body + ' <strong>' + PAUSAL_I18N.criticalContact + '</strong>' + infoLink;
   } else if (hit.severity === 'alert') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
-    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+    var body = PAUSAL_I18N.reach.replace('{pct}', '<strong>' + pctStr + '</strong>').replace('{total}', totalStr);
+    msg = '<strong>' + PAUSAL_I18N.alertTitle + '</strong> ' + body + ' <strong>' + PAUSAL_I18N.alertContact + '</strong>' + infoLink;
   } else if (hit.severity === 'high') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
-    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+    var body = PAUSAL_I18N.reach.replace('{pct}', '<strong>' + pctStr + '</strong>').replace('{total}', totalStr);
+    msg = body + ' ' + PAUSAL_I18N.highRec + infoLink;
   } else {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
-    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> паушалног прага (' + totalStr + ').' + infoLink;
+    var body = PAUSAL_I18N.reach.replace('{pct}', '<strong>' + pctStr + '</strong>').replace('{total}', totalStr);
+    msg = body + infoLink;
   }
   alertEl.innerHTML = msg;
 }
@@ -486,21 +512,25 @@ function updateVATAlert() {
   }
 
   var pctStr = hit.percent.toFixed(1);
-  var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(VAT_LIMIT) + ' RSD у последњих 12 месеци';
-  var infoLink = ' <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">Шта то значи?</a>';
+  var totalStr = fmtPausalRSD(projected) + ' / ' + fmtPausalRSD(VAT_LIMIT) + ' RSD ' + VAT_I18N.rollingPeriod;
+  var infoLink = ' <a href="/info/vat-limit" target="_blank" class="underline hover:opacity-80 ml-1">' + VAT_I18N.infoLinkText + '</a>';
   var msg = '';
   if (hit.severity === 'exceeded') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-gray-900 border-gray-800 text-white';
-    msg = '<strong>КРИТИЧНО!</strong> Са овом фактуром достићи ћете праг за ПДВ регистрацију (' + pctStr + '% — ' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+    var body = VAT_I18N.exceeded.replace('{pct}', pctStr).replace('{total}', totalStr);
+    msg = '<strong>' + VAT_I18N.criticalTitle + '</strong> ' + body + ' <strong>' + VAT_I18N.criticalContact + '</strong>' + infoLink;
   } else if (hit.severity === 'alert') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-red-50 border-red-300 text-red-900';
-    msg = '<strong>УПОЗОРЕЊЕ!</strong> Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + '). <strong>Хитно се консултујте са вашим књиговођом.</strong>' + infoLink;
+    var body = VAT_I18N.reach.replace('{pct}', '<strong>' + pctStr + '</strong>').replace('{total}', totalStr);
+    msg = '<strong>' + VAT_I18N.alertTitle + '</strong> ' + body + ' <strong>' + VAT_I18N.alertContact + '</strong>' + infoLink;
   } else if (hit.severity === 'high') {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-orange-50 border-orange-300 text-orange-900';
-    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + '). Препоручујемо консултацију са вашим књиговођом.' + infoLink;
+    var body = VAT_I18N.reach.replace('{pct}', '<strong>' + pctStr + '</strong>').replace('{total}', totalStr);
+    msg = body + ' ' + VAT_I18N.highRec + infoLink;
   } else {
     alertEl.className = 'mb-4 rounded border px-4 py-3 text-sm leading-snug bg-amber-50 border-amber-200 text-amber-800';
-    msg = 'Са овом фактуром достићи ћете <strong>' + pctStr + '%</strong> прага за ПДВ регистрацију (' + totalStr + ').' + infoLink;
+    var body = VAT_I18N.reach.replace('{pct}', '<strong>' + pctStr + '</strong>').replace('{total}', totalStr);
+    msg = body + infoLink;
   }
   alertEl.innerHTML = msg;
 }
@@ -514,14 +544,14 @@ function onBankAccountChange() {
   var corrSel = document.getElementById('f-corr-bank');
   if (!aid || !BANK_ACCOUNTS[aid] || BANK_ACCOUNTS[aid].type !== 'foreign') {
     if (corrSection) corrSection.classList.add('hidden');
-    if (corrSel) { corrSel.innerHTML = '<option value="">— без кор. банке —</option>'; corrSel.value = ''; }
+    if (corrSel) { corrSel.innerHTML = '<option value="">{{T "invoice_new.correspondent_empty"}}</option>'; corrSel.value = ''; }
     updatePreview();
     return;
   }
   // Foreign account: populate correspondent banks
   var corrs = BANK_ACCOUNTS[aid].correspondents || [];
   if (corrSel) {
-    corrSel.innerHTML = '<option value="">— без кор. банке —</option>';
+    corrSel.innerHTML = '<option value="">{{T "invoice_new.correspondent_empty"}}</option>';
     corrs.forEach(function(cb) {
       var opt = document.createElement('option');
       opt.value = cb.id;
@@ -533,7 +563,7 @@ function onBankAccountChange() {
   updatePreview();
 }
 
-function getBankAccountPreviewLines() {
+function getBankAccountPreviewLines(lbl) {
   var sel = document.getElementById('f-bank-account');
   if (!sel || !sel.value) return '';
   var opt = sel.options[sel.selectedIndex];
@@ -545,7 +575,7 @@ function getBankAccountPreviewLines() {
   if (corrSel && corrSel.value && acc.correspondents) {
     var cb = acc.correspondents.find(function(c) { return c.id === corrSel.value; });
     if (cb) {
-      lines += '<div style="color:#6b7280;margin-top:2px">Кор. банка: ' + escHtml(cb.name) + ' (' + escHtml(cb.swift) + ')</div>';
+      lines += '<div style="color:#6b7280;margin-top:2px">' + (lbl ? lbl.corrBank : '') + ' ' + escHtml(cb.name) + ' (' + escHtml(cb.swift) + ')</div>';
       if (cb.addr) lines += '<div style="color:#6b7280">' + escHtml(cb.addr) + '</div>';
     }
   }
@@ -595,7 +625,7 @@ document.getElementById('client-search').addEventListener('input', function() {
           ul.appendChild(li);
         });
         var addLi = document.createElement('li');
-        addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">+ Додај клијента</a>';
+        addLi.innerHTML = '<a href="' + CLIENT_NEW_URL + '" class="block w-full text-primary font-medium hover:bg-gray-50">{{T "invoice_new.client_add_new"}}</a>';
         addLi.className = 'px-3 py-2 border-t border-gray-100';
         ul.appendChild(addLi);
         ul.classList.remove('hidden');
@@ -695,7 +725,7 @@ function updatePreview() {
     clientHtml += '<div style="font-weight:600">' + escHtml(clientName) + '</div>';
   }
 
-  var bankLines = getBankAccountPreviewLines();
+  var bankLines = getBankAccountPreviewLines(lbl);
 
   // Footer lines
   var footerParts = [];

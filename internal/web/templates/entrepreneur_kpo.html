@@ -77,6 +77,13 @@
       <tbody id="kpo-tbody" class="divide-y divide-gray-100">
 
         {{range .KPORows}}
+        {{if .WarnOutOfOrder}}
+        <tr>
+          <td colspan="8" class="px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400">
+            {{T "kpo.order_warning"}}
+          </td>
+        </tr>
+        {{end}}
         {{if .IsAdvanceInvoice}}
         <tr class="opacity-50 hover:opacity-70"
             title="{{T "kpo.advance_tooltip"}}">

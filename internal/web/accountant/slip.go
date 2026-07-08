@@ -40,6 +40,7 @@ var eventKeys = map[sliphistory.Event]string{
 	sliphistory.EventImported: "slip_history.event_imported",
 	sliphistory.EventUpdated:  "slip_history.event_updated",
 	sliphistory.EventDeleted:  "slip_history.event_deleted",
+	sliphistory.EventMerged:   "slip_history.merged",
 }
 
 var actorKeys = map[string]string{
@@ -128,7 +129,12 @@ func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return sliprecord.SlipRecord{}, false
 	}
-	e, err := h.entrepreneurs.FindByID(r.Context(), s.EntrepreneurID)
+	if s.ManagedEntrepreneurID == uuid.Nil {
+		// Slip is owned by an entrepreneur user, not a managed entrepreneur — accountant has no access.
+		h.renderError(w, r, http.StatusForbidden)
+		return sliprecord.SlipRecord{}, false
+	}
+	e, err := h.entrepreneurs.FindByID(r.Context(), s.ManagedEntrepreneurID)
 	if errors.Is(err, entrepreneur.ErrNotFound) {
 		h.renderError(w, r, http.StatusNotFound)
 		return sliprecord.SlipRecord{}, false
@@ -245,7 +251,7 @@ func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	entrepreneurID := s.EntrepreneurID
+	entrepreneurID := s.ManagedEntrepreneurID
 	if actorID, ok := h.accountantFromSession(r); ok {
 		h.logSlipHistory(r.Context(), id, sliphistory.EventDeleted, actorID, sliprecord.Snapshot(s))
 	}
@@ -391,7 +397,7 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rec := sliprecord.SlipRecord{
-		EntrepreneurID: id,
+		ManagedEntrepreneurID: id,
 		PaymentCode:    pay.SF,
 		Amount:         shared.FormatAmount(form.Amount),
 		Currency:       form.Currency,

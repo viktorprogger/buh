@@ -537,6 +537,30 @@ func (r *Repo) RollingSumBulk(ctx context.Context, ids []uuid.UUID, from, to tim
 	return result, rows.Err()
 }
 
+// CopyToEntrepreneurUser copies all KPO books and entries from a managed entrepreneur to an
+// entrepreneur user. Books for years that already exist on the entrepreneur side are skipped.
+func (r *Repo) CopyToEntrepreneurUser(ctx context.Context, managedEntrepreneurID, entrepreneurUserID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `
+		WITH new_books AS (
+			INSERT INTO kpo_books (entrepreneur_user_id, year, finalized_at)
+			SELECT $2, year, finalized_at
+			FROM kpo_books
+			WHERE managed_entrepreneur_id = $1
+			ON CONFLICT (entrepreneur_user_id, year) WHERE entrepreneur_user_id IS NOT NULL
+			DO NOTHING
+			RETURNING id, year
+		)
+		INSERT INTO kpo_entries (kpo_book_id, position, collection_date, invoice_number, description, product_revenue, service_revenue)
+		SELECT nb.id, ke.position, ke.collection_date, ke.invoice_number, ke.description, ke.product_revenue, ke.service_revenue
+		FROM kpo_books sb
+		JOIN kpo_entries ke ON ke.kpo_book_id = sb.id
+		JOIN new_books nb ON nb.year = sb.year
+		WHERE sb.managed_entrepreneur_id = $1`,
+		managedEntrepreneurID, entrepreneurUserID,
+	)
+	return err
+}
+
 func (r *Repo) SumForYear(ctx context.Context, managedEntrepreneurID uuid.UUID, year int) (total float64, hasEntries bool, err error) {
 	var count int
 	err = r.db.QueryRowContext(ctx, `

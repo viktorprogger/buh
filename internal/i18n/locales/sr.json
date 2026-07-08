@@ -1,577 +1,1775 @@
 {
-  "app.title": {"other": "Паушалне уплатнице"},
-  "nav.entrepreneurs": {"other": "Предузетници"},
-  "nav.logout": {"other": "Одјава"},
-  "nav.profile": {"other": "Профил"},
-  "footer.privacy": {"other": "Политика приватности"},
-  "footer.terms": {"other": "Услови коришћења"},
-
-  "sidebar.dashboard": {"other": "Контролна табла"},
-  "sidebar.clients": {"other": "Клијенти"},
-  "sidebar.bank_accounts": {"other": "Банковни рачуни"},
-  "sidebar.invoices": {"other": "Фактуре"},
-  "sidebar.kpo": {"other": "КПО књига"},
-  "sidebar.invite_accountant": {"other": "Позови рачуновођу"},
-  "sidebar.profile": {"other": "Профил"},
-  "sidebar.logout": {"other": "Одјава"},
-  "sidebar.close_menu": {"other": "Затвори мени"},
-  "sidebar.open_menu": {"other": "Мени"},
-
-  "lang.switch_label": {"other": "Језик"},
-  "lang.sr": {"other": "Српски"},
-  "lang.en": {"other": "English"},
-  "lang.ru": {"other": "Русский"},
-
-  "login.title": {"other": "Паушалне уплатнице"},
-  "login.subtitle": {"other": "Пријавите се да бисте наставили"},
-  "login.tab_accountant": {"other": "Рачуновођа"},
-  "login.tab_entrepreneur": {"other": "Предузетник"},
-  "login.email": {"other": "Е-пошта"},
-  "login.password": {"other": "Лозинка"},
-  "login.submit": {"other": "Пријави се"},
-  "login.error_invalid_credentials": {"other": "Погрешна е-пошта или лозинка."},
-  "login.error_server": {"other": "Грешка при пријави"},
-  "login.error_session": {"other": "Грешка при постављању сесије"},
-
-  "entrepreneur_list.title": {"other": "Предузетници"},
-  "entrepreneur_list.subtitle": {"other": "Листа предузетника за ваш налог"},
-  "entrepreneur_list.add_new": {"other": "+ Нови предузетник"},
-  "entrepreneur_list.upload_title": {"other": "Учитај PDF решење"},
-  "entrepreneur_list.upload_desc": {"other": "Изаберите до 4 PDF фајла из е-Пореза. Предузетник ће бити аутоматски препознат."},
-  "entrepreneur_list.upload_submit": {"other": "Обради"},
-  "entrepreneur_list.col_name": {"other": "Назив / Предузетник"},
-  "entrepreneur_list.col_pib": {"other": "ПИБ"},
-  "entrepreneur_list.col_pausal": {"other": "Паушал (год.)"},
-  "entrepreneur_list.col_vat": {"other": "ПДВ (12 мес.)"},
-  "entrepreneur_list.empty": {"other": "Нема предузетника. Учитајте PDF решење из е-Пореза да бисте аутоматски додали предузетника."},
-  "entrepreneur_list.page_info": {"other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"},
-  "entrepreneur_list.prev": {"other": "← Претходна"},
-  "entrepreneur_list.next": {"other": "Следећа →"},
-  "entrepreneur_list.pausal_dot_exceeded": {"other": "Прекорачен паушални лимит"},
-  "entrepreneur_list.pausal_dot_alert": {"other": "Критично: паушал"},
-  "entrepreneur_list.pausal_dot_high": {"other": "Упозорење: паушал"},
-  "entrepreneur_list.pausal_dot_minor": {"other": "Пажња: паушал"},
-  "entrepreneur_list.vat_dot_exceeded": {"other": "Прекорачен ПДВ лимит"},
-  "entrepreneur_list.vat_dot_alert": {"other": "Критично: ПДВ праг"},
-  "entrepreneur_list.vat_dot_high": {"other": "Упозорење: ПДВ праг"},
-  "entrepreneur_list.vat_dot_minor": {"other": "Пажња: ПДВ праг"},
-
-  "entrepreneur_detail.back": {"other": "← Предузетници"},
-  "entrepreneur_detail.section_data": {"other": "Подаци предузетника"},
-  "entrepreneur_detail.edit": {"other": "Измени"},
-  "entrepreneur_detail.save": {"other": "Сачувај"},
-  "entrepreneur_detail.cancel": {"other": "Откажи"},
-  "entrepreneur_detail.label_title": {"other": "Назив (кратко)"},
-  "entrepreneur_detail.label_name": {"other": "Службени назив"},
-  "entrepreneur_detail.label_mb": {"other": "МБ"},
-  "entrepreneur_detail.label_pib": {"other": "ПИБ"},
-  "entrepreneur_detail.label_address": {"other": "Адреса"},
-  "entrepreneur_detail.label_account": {"other": "Жиро рачун"},
-  "entrepreneur_detail.label_taxpayer_code": {"other": "Шифра пореског обвезника"},
-  "entrepreneur_detail.label_activity_code": {"other": "Шифра делатности"},
-  "entrepreneur_detail.managed_note": {"other": "Клијенти, банковни рачуни и фактуре се управљају преко налога предузетника."},
-  "entrepreneur_detail.ph_title": {"other": "нпр. Милан водоинсталатер"},
-  "entrepreneur_detail.ph_name": {"other": "нпр. Петар Петровић ПР"},
-  "entrepreneur_detail.ph_mb": {"other": "нпр. 12345678"},
-  "entrepreneur_detail.ph_pib": {"other": "нпр. 1234567890"},
-  "entrepreneur_detail.ph_address": {"other": "нпр. Нушићева 11, Београд"},
-  "entrepreneur_detail.ph_account": {"other": "нпр. 265-1234567890123-56"},
-  "entrepreneur_detail.ph_taxpayer_code": {"other": "нпр. 5060"},
-  "entrepreneur_detail.ph_activity_code": {"other": "нпр. 6201"},
-  "entrepreneur_detail.pausal_label": {"other": "Паушалац"},
-  "entrepreneur_detail.no_data": {"other": "нема података"},
-
-  "kpo.section_title": {"other": "КПО — Књига прихода"},
-  "kpo.error_finalized": {"other": "КПО је финализована"},
-  "kpo.error_bad_date": {"other": "Неисправан датум (очекује се дд.мм)"},
-  "kpo.download_pdf": {"other": "↓ PDF"},
-  "kpo.download_kpo": {"other": "Преузми КПО"},
-  "kpo.add_year": {"other": "+ Додај годину"},
-  "kpo.add_year_ph": {"other": "Год."},
-  "kpo.add_year_title": {"other": "Унесите годину и притисните Отвори"},
-  "kpo.add_year_submit": {"other": "Отвори"},
-  "kpo.col_num": {"other": "#"},
-  "kpo.col_date": {"other": "Датум"},
-  "kpo.col_invoice": {"other": "Бр. рачуна"},
-  "kpo.col_description": {"other": "Опис"},
-  "kpo.col_product": {"other": "Продаја роба"},
-  "kpo.col_service": {"other": "Услуге"},
-  "kpo.col_total": {"other": "Укупно"},
-  "kpo.advance_tooltip": {"other": "Ова фактура се не узима у обзир у КПО"},
-  "kpo.advance_label": {"other": "А"},
-  "kpo.row_edit": {"other": "Измени"},
-  "kpo.row_delete": {"other": "Обриши ставку"},
-  "kpo.row_delete_label": {"other": "Обриши"},
-  "kpo.row_delete_confirm": {"other": "Обрисати ставку?"},
-  "kpo.row_save": {"other": "Сачувај"},
-  "kpo.row_cancel": {"other": "Откажи"},
-  "kpo.totals": {"other": "Укупно:"},
-  "kpo.new_entry_aria": {"other": "Нова ставка КПО"},
-  "kpo.field_date": {"other": "Датум"},
-  "kpo.field_invoice": {"other": "Број рачуна"},
-  "kpo.field_description": {"other": "Опис"},
-  "kpo.field_product": {"other": "Приход од продаје роба"},
-  "kpo.field_service": {"other": "Приход од услуга"},
-  "kpo.new_entry_submit": {"other": "Унеси ↵"},
-  "kpo.finalize": {"other": "Укњижи"},
-  "kpo.finalize_confirm_q": {"other": "Финализовати КПО за"},
-  "kpo.finalize_confirm_year": {"other": "годину?"},
-  "kpo.finalize_confirm_detail": {"other": "Ова акција закључава књигу. Накнадне измене захтевају откључавање."},
-  "kpo.finalized_at": {"other": "✓ Укњижено"},
-  "kpo.unlock": {"other": "Откључај"},
-  "kpo.ph_date": {"other": "дд.мм"},
-  "kpo.ph_invoice": {"other": "нпр. 2026/1"},
-  "kpo.ph_description": {"other": "клијент / опис"},
-  "kpo.date_hint": {"other": "Дан 1–31, месец 1–12"},
-  "kpo.no_book": {"other": "Нема КПО за ову годину."},
-  "kpo.invoice_link": {"other": "+ Нова фактура"},
-
-  "slips.section_title": {"other": "Уплатнице"},
-  "slips.add_new": {"other": "+ Нова уплатница"},
-  "slips.tab_current": {"other": "Текуће"},
-  "slips.tab_previous": {"other": "Претходне"},
-  "slips.no_regular": {"other": "Нема редовних уплатница."},
-  "slips.no_previous": {"other": "Нема претходних уплатница."},
-  "slips.no_saved": {"other": "Нема сачуваних уплатница."},
-  "slips.regular_label": {"other": "Редовне"},
-  "slips.advance_label": {"other": "Аванс"},
-
-  "slip_table.col_date": {"other": "Датум"},
-  "slip_table.col_purpose": {"other": "Сврха"},
-  "slip_table.col_payee": {"other": "Прималац"},
-  "slip_table.col_amount": {"other": "Износ"},
-  "slip_table.delete_tooltip": {"other": "Обриши уплатницу"},
-  "slip_table.delete_label": {"other": "Обриши"},
-  "slip_table.delete_confirm": {"other": "Обрисати уплатницу?"},
-
-  "entrepreneur_new.title": {"other": "Нови предузетник"},
-  "entrepreneur_new.error_required_fields": {"other": "Оба поља су обавезна."},
-  "entrepreneur_new.subtitle": {"other": "Ручно унесите предузетника"},
-  "entrepreneur_new.label_title": {"other": "Назив (кратко)"},
-  "entrepreneur_new.label_name": {"other": "Назив"},
-  "entrepreneur_new.label_mb": {"other": "МБ"},
-  "entrepreneur_new.label_pib": {"other": "ПИБ"},
-  "entrepreneur_new.label_address": {"other": "Адреса"},
-  "entrepreneur_new.label_account": {"other": "Жиро рачун"},
-  "entrepreneur_new.label_taxpayer_code": {"other": "Шифра пореског обвезника"},
-  "entrepreneur_new.label_activity_code": {"other": "Шифра делатности"},
-  "entrepreneur_new.save": {"other": "Сачувај"},
-  "entrepreneur_new.cancel": {"other": "Откажи"},
-  "entrepreneur_new.ph_title": {"other": "нпр. Петар Петровић"},
-  "entrepreneur_new.ph_name": {"other": "нпр. Петар Петровић ПР"},
-  "entrepreneur_new.ph_mb": {"other": "нпр. 12345678"},
-  "entrepreneur_new.ph_pib": {"other": "нпр. 1234567890"},
-  "entrepreneur_new.ph_address": {"other": "нпр. Улица бр. 1, Београд"},
-  "entrepreneur_new.ph_account": {"other": "нпр. 123-0000000000000-00"},
-  "entrepreneur_new.ph_taxpayer_code": {"other": "нпр. 5060"},
-  "entrepreneur_new.ph_activity_code": {"other": "нпр. 6201"},
-
-  "profile.title": {"other": "Мој профил"},
-  "profile.error_required_fields": {"other": "Службени назив и ПИБ су обавезни."},
-  "profile.section_data": {"other": "Подаци предузетника"},
-  "profile.unpaired_alert": {"other": "Повежите налог са рачуновођом да бисте управљали подацима о предузећу."},
-  "profile.unpaired_invite": {"other": "Позовите рачуновођу"},
-  "profile.edit": {"other": "Измени"},
-  "profile.save": {"other": "Сачувај"},
-  "profile.cancel": {"other": "Откажи"},
-  "profile.label_name": {"other": "Службени назив"},
-  "profile.label_mb": {"other": "МБ"},
-  "profile.label_pib": {"other": "ПИБ"},
-  "profile.label_address": {"other": "Адреса"},
-  "profile.label_account": {"other": "Жиро рачун"},
-  "profile.label_taxpayer_code": {"other": "Шифра пореског обвезника"},
-  "profile.label_activity_code": {"other": "Шифра делатности"},
-  "profile.ph_name": {"other": "нпр. Петар Петровић ПР"},
-  "profile.ph_mb": {"other": "нпр. 12345678"},
-  "profile.ph_pib": {"other": "нпр. 1234567890"},
-  "profile.ph_address": {"other": "нпр. Нушићева 11, Београд"},
-  "profile.ph_account": {"other": "нпр. 265-1234567890123-56"},
-  "profile.ph_taxpayer_code": {"other": "нпр. 5060"},
-  "profile.ph_activity_code": {"other": "нпр. 6201"},
-
-  "clients.page_title": {"other": "Клијенти"},
-  "clients.back": {"other": "← Почетна"},
-  "clients.add_new": {"other": "+ Нови клијент"},
-  "clients.section_title": {"other": "Клијенти"},
-  "clients.col_name": {"other": "Назив"},
-  "clients.col_pib": {"other": "ПИБ"},
-  "clients.col_email": {"other": "Е-пошта"},
-  "clients.col_type": {"other": "Тип"},
-  "clients.type_foreign": {"other": "Иностранство"},
-  "clients.type_local": {"other": "Домаћи"},
-  "clients.edit": {"other": "Измени"},
-  "clients.delete": {"other": "Обриши"},
-  "clients.delete_confirm": {"other": "Обрисати клијента?"},
-  "clients.empty": {"other": "Нема клијената."},
-  "clients.empty_add": {"other": "Додај првог клијента"},
-  "clients.page_info": {"other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"},
-  "clients.prev": {"other": "← Претходна"},
-  "clients.next": {"other": "Следећа →"},
-
-  "client_form.title_new": {"other": "Нови клијент"},
-  "client_form.error_name_required": {"other": "Назив клијента је обавезан."},
-  "client_form.error_tax_id_required": {"other": "Порески / регистрациони број је обавезан за стране клијенте."},
-  "client_form.error_pib_required": {"other": "ПИБ је обавезан за домаће клијенте."},
-  "client_form.error_mb_required": {"other": "Матични број је обавезан за домаће клијенте."},
-  "client_form.title_edit": {"other": "Измена клијента"},
-  "client_form.back": {"other": "← Назад"},
-  "client_form.label_name": {"other": "Назив клијента"},
-  "client_form.name_hint": {"other": "Унесите назив према АПР регистрацији (укључујући ДОО или ПР)."},
-  "client_form.foreign_check": {"other": "Страни клијент (ван Србије)"},
-  "client_form.label_pib": {"other": "ПИБ"},
-  "client_form.pib_hint": {"other": "9 цифара"},
-  "client_form.label_mb": {"other": "Матични број"},
-  "client_form.mb_hint": {"other": "8 цифара"},
-  "client_form.label_tax_id": {"other": "Tax ID / Reg No."},
-  "client_form.tax_id_hint": {"other": "BIN/IIN (KZ), EIN (US), Company No. (UK) и сл."},
-  "client_form.label_email": {"other": "Е-пошта"},
-  "client_form.label_address": {"other": "Адреса"},
-  "client_form.address_hint": {"other": "Обавезно укључите земљу у адресу (нпр. „Алматы, Казахстан“)."},
-  "client_form.submit_new": {"other": "Додај клијента"},
-  "client_form.submit_edit": {"other": "Сачувај"},
-  "client_form.cancel": {"other": "Одустани"},
-
-  "bank_accounts.page_title": {"other": "Банковни рачуни"},
-  "bank_accounts.back": {"other": "← Почетна"},
-  "bank_accounts.add_new": {"other": "+ Нови рачун"},
-  "bank_accounts.section_title": {"other": "Банковни рачуни"},
-  "bank_accounts.col_bank": {"other": "Банка"},
-  "bank_accounts.col_type": {"other": "Тип"},
-  "bank_accounts.col_number": {"other": "Број / IBAN"},
-  "bank_accounts.type_foreign": {"other": "Девизни"},
-  "bank_accounts.type_local": {"other": "Динарски"},
-  "bank_accounts.edit": {"other": "Измени"},
-  "bank_accounts.delete": {"other": "Обриши"},
-  "bank_accounts.delete_confirm": {"other": "Обрисати рачун?"},
-  "bank_accounts.empty": {"other": "Нема банковних рачуна."},
-  "bank_accounts.empty_add": {"other": "Додај рачун"},
-  "bank_accounts.page_info": {"other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"},
-  "bank_accounts.prev": {"other": "← Претходна"},
-  "bank_accounts.next": {"other": "Следећа →"},
-
-  "bank_account_form.title_new": {"other": "Нови банковни рачун"},
-  "bank_account_form.title_edit": {"other": "Измена банковног рачуна"},
-  "bank_account_form.back": {"other": "← Назад"},
-  "bank_account_form.label_type": {"other": "Тип рачуна"},
-  "bank_account_form.type_local": {"other": "Домаћи (динарски)"},
-  "bank_account_form.type_foreign": {"other": "Девизни (IBAN/SWIFT)"},
-  "bank_account_form.label_bank_name": {"other": "Назив банке"},
-  "bank_account_form.label_account_number": {"other": "Број рачуна"},
-  "bank_account_form.ph_account_number": {"other": "265-1234567890-12"},
-  "bank_account_form.label_iban": {"other": "IBAN"},
-  "bank_account_form.label_swift": {"other": "SWIFT / BIC"},
-  "bank_account_form.correspondent_heading": {"other": "Коресподентне банке"},
-  "bank_account_form.correspondent_add": {"other": "+ Додај"},
-  "bank_account_form.correspondent_col_bank": {"other": "Банка"},
-  "bank_account_form.correspondent_col_swift": {"other": "SWIFT"},
-  "bank_account_form.correspondent_col_address": {"other": "Адреса"},
-  "bank_account_form.correspondent_edit": {"other": "Измени"},
-  "bank_account_form.correspondent_delete": {"other": "Обриши"},
-  "bank_account_form.correspondent_delete_confirm": {"other": "Обрисати кор. банку?"},
-  "bank_account_form.correspondent_empty": {"other": "Нема коресподентних банака."},
-  "bank_account_form.submit_new": {"other": "Додај рачун"},
-  "bank_account_form.submit_edit": {"other": "Сачувај"},
-  "bank_account_form.cancel": {"other": "Одустани"},
-
-  "correspondent_form.title_new": {"other": "Нова коресподентна банка"},
-  "correspondent_form.title_edit": {"other": "Измена коресподентне банке"},
-  "correspondent_form.back": {"other": "← Назад на рачун"},
-  "correspondent_form.label_bank_name": {"other": "Назив банке"},
-  "correspondent_form.label_swift": {"other": "SWIFT / BIC"},
-  "correspondent_form.label_address": {"other": "Адреса банке"},
-  "correspondent_form.submit_new": {"other": "Додај банку"},
-  "correspondent_form.submit_edit": {"other": "Сачувај"},
-  "correspondent_form.cancel": {"other": "Одустани"},
-
-  "invoices.page_title": {"other": "Фактуре"},
-  "invoices.back": {"other": "← Почетна"},
-  "invoices.add_new": {"other": "+ Нова фактура"},
-  "invoices.section_title": {"other": "Фактуре"},
-  "invoices.col_number": {"other": "Број"},
-  "invoices.col_client": {"other": "Клијент"},
-  "invoices.col_type": {"other": "Тип"},
-  "invoices.col_date": {"other": "Датум"},
-  "invoices.col_amount": {"other": "Износ (RSD)"},
-  "invoices.type_advance": {"other": "Аванс"},
-  "invoices.type_standard": {"other": "Стандард"},
-  "invoices.view": {"other": "Прегледај"},
-  "invoices.empty": {"other": "Нема фактура."},
-  "invoices.empty_create": {"other": "Креирај прву фактуру"},
-  "invoices.page_info": {"other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"},
-  "invoices.prev": {"other": "← Претходна"},
-  "invoices.next": {"other": "Следећа →"},
-
-  "invoice_new.title": {"other": "Нова фактура"},
-  "invoice_new.back": {"other": "← Назад"},
-  "invoice_new.profile_incomplete_warning": {"other": "Профил није завршен."},
-  "invoice_new.profile_incomplete_details": {"other": "Следећа поља ће бити празна на фактури (PDF): ПИБ, адреса, жиро рачун."},
-  "invoice_new.profile_incomplete_action": {"other": "Попуните их у Подешавањима"},
-  "invoice_new.profile_incomplete_alt": {"other": "или наставите и креирајте фактуру без тих поља."},
-  "invoice_new.label_type": {"other": "Тип фактуре"},
-  "invoice_new.type_standard": {"other": "Фактура"},
-  "invoice_new.type_advance": {"other": "Авансна фактура"},
-  "invoice_new.label_language": {"other": "Језик / Language"},
-  "invoice_new.lang_sr": {"other": "Српски"},
-  "invoice_new.lang_en": {"other": "English"},
-  "invoice_new.label_client": {"other": "Клијент"},
-  "invoice_new.client_search_ph": {"other": "Претражи клијента по имену..."},
-  "invoice_new.client_add_new": {"other": "+ Додај клијента"},
-  "invoice_new.label_invoice_number": {"other": "Број фактуре"},
-  "invoice_new.ph_invoice_number": {"other": "нпр. 1/2026"},
-  "invoice_new.label_issue_date": {"other": "Датум издавања"},
-  "invoice_new.label_due_date": {"other": "Датум валуте (рок)"},
-  "invoice_new.period_toggle": {"other": "Период промета (нпр. за континуиране услуге — IT сектор)"},
-  "invoice_new.label_period_start": {"other": "Промет од"},
-  "invoice_new.label_period_end": {"other": "Промет до"},
-  "invoice_new.label_currency": {"other": "Валута"},
-  "invoice_new.label_items": {"other": "Ставке фактуре"},
-  "invoice_new.item_description": {"other": "Опис услуге / робе"},
-  "invoice_new.item_quantity": {"other": "Кол."},
-  "invoice_new.item_unit_price": {"other": "Јед. цена"},
-  "invoice_new.item_discount": {"other": "Попуст%"},
-  "invoice_new.item_is_product": {"other": "Роба"},
-  "invoice_new.add_item": {"other": "+ Додај ставку"},
-  "invoice_new.grand_total": {"other": "За уплату:"},
-  "invoice_new.label_bank_account": {"other": "Банковни рачун (опционо)"},
-  "invoice_new.bank_account_empty": {"other": "— без рачуна —"},
-  "invoice_new.label_correspondent": {"other": "Коресподентна банка (опционо)"},
-  "invoice_new.correspondent_empty": {"other": "— без кор. банке —"},
-  "invoice_new.label_notes": {"other": "Напомена (опционо)"},
-  "invoice_new.label_footer_notes": {"other": "Напомене на фактури"},
-  "invoice_new.no_vat_check": {"other": "Нисам у систему ПДВ-а (члан 12 ЗПДВ)"},
-  "invoice_new.no_sign_check": {"other": "Фактура је валидна без печата и потписа"},
-  "invoice_new.submit": {"other": "Креирај фактуру и генериши PDF"},
-  "invoice_new.cancel": {"other": "Одустани"},
-  "invoice_new.preview_label": {"other": "Преглед"},
-  "invoice_new.pausal_alert_prefix": {"other": "Са овом фактуром ваш укупан промет ће бити"},
-  "invoice_new.pausal_alert_of": {"other": "од"},
-  "invoice_new.pausal_alert_limit": {"other": "паушалног лимита."},
-
-  "invoice_detail.back": {"other": "← Назад"},
-  "invoice_detail.title_standard": {"other": "Фактура"},
-  "invoice_detail.title_advance": {"other": "Авансна фактура"},
-  "invoice_detail.download": {"other": "↓ Преузми PDF"},
-  "invoice_detail.issuer": {"other": "Издавалац"},
-  "invoice_detail.client": {"other": "Клијент"},
-  "invoice_detail.issue_date": {"other": "Датум издавања:"},
-  "invoice_detail.due_date": {"other": "Рок плаћања:"},
-  "invoice_detail.period": {"other": "Период промета:"},
-  "invoice_detail.currency": {"other": "Валута:"},
-  "invoice_detail.amount_rsd": {"other": "Износ у RSD:"},
-  "invoice_detail.col_description": {"other": "Опис"},
-  "invoice_detail.col_qty": {"other": "Кол."},
-  "invoice_detail.col_unit_price": {"other": "Јед. цена"},
-  "invoice_detail.col_discount": {"other": "Попуст"},
-  "invoice_detail.col_amount": {"other": "Износ"},
-  "invoice_detail.product_label": {"other": "(роба)"},
-  "invoice_detail.total_label": {"other": "За уплату:"},
-  "invoice_detail.payment_account": {"other": "Рачун за уплату"},
-  "invoice_detail.notes_label": {"other": "Напомена:"},
-  "invoice_detail.corr_bank": {"other": "Кор. банка:"},
-
-  "kpo_merge.title": {"other": "Преузимање КПО"},
-  "kpo_merge.back": {"other": "← Назад на предузетника"},
-  "kpo_merge.no_ebook": {"other": "Овај предузетник нема повезан налог или нема КПО за ову годину."},
-  "kpo_merge.already_merged": {"other": "✓ КПО предузетника је већ означена као преузета."},
-  "kpo_merge.entrepreneur_kpo_title": {"other": "КПО предузетника (извор)"},
-  "kpo_merge.mark_downloaded": {"other": "Означи као преузето"},
-  "kpo_merge.col_num": {"other": "#"},
-  "kpo_merge.col_date": {"other": "Датум"},
-  "kpo_merge.col_invoice": {"other": "Бр. рачуна"},
-  "kpo_merge.col_description": {"other": "Опис"},
-  "kpo_merge.col_product": {"other": "Роба"},
-  "kpo_merge.col_service": {"other": "Услуге"},
-  "kpo_merge.col_total": {"other": "Укупно"},
-  "kpo_merge.copy": {"other": "Копирај →"},
-  "kpo_merge.no_entries_ent": {"other": "Предузетник нема ставки у КПО за ову годину."},
-  "kpo_merge.accountant_kpo_title": {"other": "Ваша КПО (одредиште)"},
-  "kpo_merge.accountant_finalized": {"other": "✓ Укњижено"},
-  "kpo_merge.open_accountant_kpo": {"other": "Отвори КПО →"},
-  "kpo_merge.no_entries_acc": {"other": "Ваша КПО за ову годину је празна."},
-
-  "slip.title": {"other": "Уплатница"},
-  "slip.error_required_fields": {"other": "Молимо попуните сва обавезна поља."},
-  "slip.back": {"other": "← Назад на предузетника"},
-  "slip.saved": {"other": "Уплатница је сачувана."},
-  "slip.saved_downloading": {"other": "Уплатница је сачувана. Преузимање почиње..."},
-  "slip.label_payer": {"other": "Уплатилац / Uplatilac"},
-  "slip.label_purpose": {"other": "Сврха уплате / Svrha uplate"},
-  "slip.label_payee": {"other": "Прималац / Primalac"},
-  "slip.label_payment_code": {"other": "Шифра плаћања"},
-  "slip.label_currency": {"other": "Валута"},
-  "slip.label_amount": {"other": "Износ / Iznos"},
-  "slip.label_account": {"other": "Рачун примаоца / Racun primaoca"},
-  "slip.label_reference": {"other": "Позив на број / Poziv na broj"},
-  "slip.label_year": {"other": "Година"},
-  "slip.year_tooltip": {"other": "Пореска година на коју се ова уплатница односи — година из решења Пореске управе."},
-  "slip.label_advance": {"other": "Аванс"},
-  "slip.advance_tooltip": {"other": "Означите ако је ово авансна уплата за наредну годину."},
-  "slip.delete": {"other": "Обриши"},
-  "slip.save": {"other": "Сачувај"},
-  "slip.download": {"other": "Преузми PDF"},
-  "slip.delete_confirm": {"other": "Обрисати уплатницу?"},
-  "slip.history_title": {"other": "Историја промена"},
-
-  "slip_history.field_amount": {"other": "Износ"},
-  "slip_history.field_currency": {"other": "Валута"},
-  "slip_history.field_purpose": {"other": "Сврха"},
-  "slip_history.field_payee": {"other": "Прималац"},
-  "slip_history.field_payeeAccount": {"other": "Рачун примаоца"},
-  "slip_history.field_reference": {"other": "Позив на број"},
-  "slip_history.field_payer": {"other": "Уплатилац"},
-  "slip_history.field_paymentCode": {"other": "Шифра плаћања"},
-  "slip_history.field_year": {"other": "Година"},
-  "slip_history.field_advance": {"other": "Аванс"},
-  "slip_history.event_created": {"other": "Уплатница је креирана"},
-  "slip_history.event_imported": {"other": "Уплатница је увезена"},
-  "slip_history.event_updated": {"other": "Уплатница је ажурирана"},
-  "slip_history.event_deleted": {"other": "Уплатница је обрисана"},
-  "slip_history.actor_accountant": {"other": "Рачуновођа"},
-  "slip_history.actor_entrepreneur": {"other": "Предузетник"},
-
-  "slip_new.title": {"other": "Нова уплатница"},
-  "slip_new.label_payer": {"other": "Уплатилац / Uplatilac"},
-  "slip_new.label_purpose": {"other": "Сврха уплате / Svrha uplate"},
-  "slip_new.label_payee": {"other": "Прималац / Primalac"},
-  "slip_new.label_payment_code": {"other": "Шифра плаћања"},
-  "slip_new.label_currency": {"other": "Валута"},
-  "slip_new.label_amount": {"other": "Износ / Iznos"},
-  "slip_new.label_account": {"other": "Рачун примаоца / Racun primaoca"},
-  "slip_new.label_reference": {"other": "Позив на број / Poziv na broj"},
-  "slip_new.label_year": {"other": "Година"},
-  "slip_new.year_tooltip": {"other": "Пореска година на коју се ова уплатница односи — година из решења Пореске управе."},
-  "slip_new.label_advance": {"other": "Аванс"},
-  "slip_new.advance_tooltip": {"other": "Означите ако је ово авансна уплата за наредну годину."},
-  "slip_new.cancel": {"other": "Одустани"},
-  "slip_new.submit": {"other": "Сачувај и преузми PDF"},
-
-  "results.title": {"other": "Резултати увоза"},
-  "results.subtitle": {"other": "Учитани PDF фајлови су обрађени и сачувани"},
-  "results.back": {"other": "← Списак предузетника"},
-  "results.no_results": {"other": "Нису пронађени предузетници ни уплатнице у учитаним фајловима."},
-  "results.badge_new": {"other": "Нови предузетник"},
-  "results.badge_existing": {"other": "Постојећи предузетник"},
-  "results.col_purpose": {"other": "Сврха"},
-  "results.col_payee": {"other": "Прималац"},
-  "results.col_amount": {"other": "Износ"},
-  "results.col_status": {"other": "Статус"},
-  "results.status_created": {"other": "Нова"},
-  "results.status_updated": {"other": "Ажурирана"},
-  "results.status_unchanged": {"other": "Непромењена"},
-  "results.details_link": {"other": "Детаљи"},
-  "results.no_slips": {"other": "Нису пронађене уплатнице у овом фајлу."},
-
-  "error.home": {"other": "На почетну страницу"},
-  "error.not_found_title": {"other": "Страница није пронађена"},
-  "error.not_found_message": {"other": "Тражена страница не постоји."},
-  "error.forbidden_title": {"other": "Забрањен приступ"},
-  "error.forbidden_message": {"other": "Немате право приступа овој страни."},
-  "error.server_error": {"other": "Грешка на серверу"},
-  "error.bad_request": {"other": "Неисправан захтев"},
-  "results.pib_label": {"other": "ПИБ:"},
-
-  "placeholder.under_construction": {"other": "Ова страница је у изради."},
-
-  "pausal_alert.critical_title": {"other": "КРИТИЧНО!"},
-  "pausal_alert.critical_message": {"other": "Достигли сте паушални праг"},
-  "pausal_alert.critical_contact_acc": {"other": "Хитно обавестите клијента."},
-  "pausal_alert.critical_contact_self": {"other": "Хитно се консултујте са вашим књиговођом."},
-  "pausal_alert.high_message": {"other": "Достигли сте {{.Percent}}% паушалног прага"},
-  "pausal_alert.high_recommendation": {"other": "Препоручујемо консултацију са вашим књиговођом."},
-  "pausal_alert.alert_title": {"other": "УПОЗОРЕЊЕ!"},
-  "pausal_alert.alert_contact_acc": {"other": "Хитно обавестите клијента."},
-  "pausal_alert.alert_contact_self": {"other": "Хитно се консултујте са вашим књиговођом."},
-  "pausal_alert.minor_message": {"other": "Достигли сте {{.Percent}}% паушалног прага"},
-  "pausal_alert.info_link": {"other": "Шта то значи?"},
-
-  "vat_alert.critical_title": {"other": "КРИТИЧНО!"},
-  "vat_alert.critical_message": {"other": "Достигли сте праг за ПДВ регистрацију"},
-  "vat_alert.rolling_period": {"other": "у последњих 12 месеци"},
-  "vat_alert.critical_contact_acc": {"other": "Хитно обавестите клијента."},
-  "vat_alert.critical_contact_self": {"other": "Хитно се консултујте са вашим књиговођом."},
-  "vat_alert.alert_title": {"other": "УПОЗОРЕЊЕ!"},
-  "vat_alert.high_message": {"other": "Достигли сте {{.Percent}}% прага за ПДВ регистрацију"},
-  "vat_alert.high_recommendation": {"other": "Препоручујемо консултацију са вашим књиговођом."},
-  "vat_alert.minor_message": {"other": "Достигли сте {{.Percent}}% прага за ПДВ регистрацију"},
-  "vat_alert.info_link": {"other": "Шта то значи?"},
-
-  "pausal_limit_info.title": {"other": "Паушални праг прихода"},
-  "pausal_limit_info.subtitle": {"other": "Шта значи паушални праг и шта се дешава ако га прекорачите"},
-  "pausal_limit_info.limit_q": {"other": "Колики је праг?"},
-  "pausal_limit_info.limit_intro": {"other": "Паушалне предузетнике порески закон ослобађа вођења пуног пословног књиговодства, али само до одређеног годишњег прихода:"},
-  "pausal_limit_info.until_2026": {"other": "До 2026. године (укључујући): 6.000.000 РСД"},
-  "pausal_limit_info.from_2027": {"other": "Од 2027. године: 8.000.000 РСД"},
-  "pausal_limit_info.limit_note": {"other": "Праг се рачуна по промету — укупном приходу од продаје робе и услуга у календарској години."},
-  "pausal_limit_info.consequences_q": {"other": "Шта се дешава ако прекорачите праг?"},
-  "pausal_limit_info.consequences_intro": {"other": "Ако ваш годишњи промет пређе прописани износ, губите право на паушално опорезивање и прелазите на опорезивање по стварном приходу. То у пракси значи:"},
-  "pausal_limit_info.con_bookkeeping": {"other": "Обавезно вођење пословних књига (КЕП, пословни рачун, фактуре)"},
-  "pausal_limit_info.con_tax_payments": {"other": "Тромесечне авансне уплате пореза на основу стварног прихода"},
-  "pausal_limit_info.con_tax_return": {"other": "Подношење пореске пријаве на крају године са коначним обрачуном"},
-  "pausal_limit_info.con_burden": {"other": "Значајно већи административни терет и трошкови вођења рачуноводства"},
-  "pausal_limit_info.consequences_note": {"other": "Прелаз са паушала на стварни приход може бити финансијски неповољан — поготово ако нисте правовремено планирали расходе."},
-  "pausal_limit_info.planning_q": {"other": "Шта можете да урадите?"},
-  "pausal_limit_info.planning_intro": {"other": "Постоје различити легалне могућности за планирање расхода пре него што достигнете праг — набавка опреме, инвестиције, унапред плаћене услуге и слично."},
-  "pausal_limit_info.planning_rec": {"other": "Зато је кључно да се на време посаветујете са стручним рачуновођом — он ће вам препоручити решење прилагођено вашем конкретном случају."},
-
-  "vat_limit_info.title": {"other": "Праг за ПДВ регистрацију"},
-  "vat_limit_info.subtitle": {"other": "Шта значи ПДВ праг и шта се дешава ако га прекорачите"},
-  "vat_limit_info.limit_q": {"other": "Колики је праг?"},
-  "vat_limit_info.limit_intro": {"other": "Предузетник је обавезан да се региструје за ПДВ ако је укупан промет у последњих 12 месеци прешао:"},
-  "vat_limit_info.current_limit": {"other": "Тренутно: 8.000.000 РСД"},
-  "vat_limit_info.limit_note": {"other": "За разлику од паушалног прага (календарска година), ПДВ праг се рачуна по клизном прозору — гледа се промет у последњих 365 дана."},
-  "vat_limit_info.consequences_q": {"other": "Шта се дешава ако прекорачите праг?"},
-  "vat_limit_info.consequences_intro": {"other": "Ако ваш промет у последњих 12 месеци пређе 8.000.000 РСД, дужни сте да поднесете захтев за ПДВ регистрацију. То у пракси значи:"},
-  "vat_limit_info.con_calculation": {"other": "Обавезно обрачунавање ПДВ на сваку фактуру коју издате"},
-  "vat_limit_info.con_filing": {"other": "Подношење месечне или тромесечне ПДВ пријаве"},
-  "vat_limit_info.con_credit": {"other": "Право на одбитак претходног пореза (ПДВ на набавке)"},
-  "vat_limit_info.con_burden": {"other": "Значајно већи административни терет и трошкови вођења рачуноводства"},
-  "vat_limit_info.con_pricing": {"other": "ПДВ регистрација мења начин пословања — цене које наплаћујете клијентима морају да укључе ПДВ."},
-  "vat_limit_info.planning_q": {"other": "Шта можете да урадите?"},
-  "vat_limit_info.planning_intro": {"other": "Постоје различите легалне могућности за планирање расхода пре него што достигнете праг."},
-  "vat_limit_info.planning_rec": {"other": "Зато је кључно да се на време посаветујете са стручним рачуновођом — он ће вам препоручити решење прилагођено вашем конкретном случају."},
-
-  "invite_token.title": {"other": "Позивница креирана"},
-  "invite_token.desc": {"other": "Пошаљите следећи линк особи коју желите да повежете. Линк важи 7 дана."},
-  "invite_token.back_entrepreneur": {"other": "← Назад на предузетника"},
-  "invite_token.back_home": {"other": "← На почетну"},
-
-  "invite_accept.title": {"other": "Позивница"},
-  "invite_accept.expired": {"other": "Позивница је истекла или је већ искоришћена."},
-  "invite_accept.already_paired": {"other": "Већ сте повезани са рачуновођом."},
-  "invite_accept.error_pairing": {"other": "Грешка при повезивању"},
-  "invite_accept.error_create_entrepreneur": {"other": "Грешка при креирању предузетника"},
-  "invite_accept.default_entrepreneur_name": {"other": "Предузетник"},
-  "invite_accept.entrepreneur_field": {"other": "Предузетник (опционо)"},
-  "invite_accept.entrepreneur_ph": {"other": "UUID постојећег предузетника или оставите празно"},
-  "invite_accept.submit": {"other": "Прихвати позивницу"},
-
-  "entrepreneur_register.title": {"other": "Регистрација предузетника"},
-  "entrepreneur_register.label_email": {"other": "Е-пошта"},
-  "entrepreneur_register.label_password": {"other": "Лозинка"},
-  "entrepreneur_register.label_confirm": {"other": "Потврди лозинку"},
-  "entrepreneur_register.submit": {"other": "Региструј се"},
-  "entrepreneur_register.has_account": {"other": "Већ имате налог?"},
-  "entrepreneur_register.login_link": {"other": "Пријавите се"},
-  "entrepreneur_register.error_required": {"other": "Е-пошта и лозинка су обавезни."},
-  "entrepreneur_register.error_password_mismatch": {"other": "Лозинке се не подударају."},
-  "entrepreneur_register.error_email_taken": {"other": "Та е-пошта је већ у употреби."},
-
-  "invite_entrepreneur.title": {"other": "Позови предузетника"},
-  "invite_entrepreneur.desc": {"other": "Пошаљите следећи линк предузетнику."},
-  "invite_entrepreneur.generate": {"other": "Генериши позивницу"},
-  "invite_entrepreneur.back": {"other": "← Назад на предузетника"},
-
-  "invite_accountant.title": {"other": "Позови рачуновођу"},
-  "invite_accountant.desc": {"other": "Кликните на дугме испод да генеришете позивницу. Добијени линк поделите са вашим рачуновођом."},
-  "invite_accountant.generate": {"other": "Генериши позивницу"},
-
-  "entrepreneur_dashboard.title": {"other": "Контролна табла"},
-
-  "batch.title": {"other": "Обрада фајлова"},
-  "batch.processing": {"other": "Фајлови се обрађују, страница ће се освежити аутоматски…"},
-  "batch.done": {"other": "Обрада завршена"},
-  "batch.files_pending": {"other": "Фајлова у реду:"},
-  "batch.navigate_away": {"other": "Можете затворити ову страницу или прећи на другу — обрада ће се завршити у позадини."},
-  "batch.col_file": {"other": "Фајл"},
-  "results.col_entrepreneur": {"other": "Предузетник"}
+  "app.title": {
+    "other": "Паушалне уплатнице"
+  },
+  "nav.entrepreneurs": {
+    "other": "Предузетници"
+  },
+  "nav.logout": {
+    "other": "Одјава"
+  },
+  "nav.profile": {
+    "other": "Профил"
+  },
+  "footer.privacy": {
+    "other": "Политика приватности"
+  },
+  "footer.terms": {
+    "other": "Услови коришћења"
+  },
+  "sidebar.dashboard": {
+    "other": "Контролна табла"
+  },
+  "sidebar.clients": {
+    "other": "Клијенти"
+  },
+  "sidebar.bank_accounts": {
+    "other": "Банковни рачуни"
+  },
+  "sidebar.invoices": {
+    "other": "Фактуре"
+  },
+  "sidebar.kpo": {
+    "other": "КПО књига"
+  },
+  "sidebar.invite_accountant": {
+    "other": "Позови рачуновођу"
+  },
+  "sidebar.profile": {
+    "other": "Профил"
+  },
+  "sidebar.logout": {
+    "other": "Одјава"
+  },
+  "sidebar.close_menu": {
+    "other": "Затвори мени"
+  },
+  "sidebar.open_menu": {
+    "other": "Мени"
+  },
+  "lang.switch_label": {
+    "other": "Језик"
+  },
+  "lang.sr": {
+    "other": "Српски"
+  },
+  "lang.en": {
+    "other": "English"
+  },
+  "lang.ru": {
+    "other": "Русский"
+  },
+  "login.title": {
+    "other": "Паушалне уплатнице"
+  },
+  "login.subtitle": {
+    "other": "Пријавите се да бисте наставили"
+  },
+  "login.tab_accountant": {
+    "other": "Рачуновођа"
+  },
+  "login.tab_entrepreneur": {
+    "other": "Предузетник"
+  },
+  "login.email": {
+    "other": "Е-пошта"
+  },
+  "login.password": {
+    "other": "Лозинка"
+  },
+  "login.submit": {
+    "other": "Пријави се"
+  },
+  "login.error_invalid_credentials": {
+    "other": "Погрешна е-пошта или лозинка."
+  },
+  "login.error_server": {
+    "other": "Грешка при пријави"
+  },
+  "login.error_session": {
+    "other": "Грешка при постављању сесије"
+  },
+  "entrepreneur_list.title": {
+    "other": "Предузетници"
+  },
+  "entrepreneur_list.subtitle": {
+    "other": "Листа предузетника за ваш налог"
+  },
+  "entrepreneur_list.add_new": {
+    "other": "+ Нови предузетник"
+  },
+  "entrepreneur_list.upload_title": {
+    "other": "Учитај PDF решење"
+  },
+  "entrepreneur_list.upload_desc": {
+    "other": "Изаберите до 4 PDF фајла из е-Пореза. Предузетник ће бити аутоматски препознат."
+  },
+  "entrepreneur_list.upload_submit": {
+    "other": "Обради"
+  },
+  "entrepreneur_list.col_name": {
+    "other": "Назив / Предузетник"
+  },
+  "entrepreneur_list.col_pib": {
+    "other": "ПИБ"
+  },
+  "entrepreneur_list.col_pausal": {
+    "other": "Паушал (год.)"
+  },
+  "entrepreneur_list.col_vat": {
+    "other": "ПДВ (12 мес.)"
+  },
+  "entrepreneur_list.empty": {
+    "other": "Нема предузетника. Учитајте PDF решење из е-Пореза да бисте аутоматски додали предузетника."
+  },
+  "entrepreneur_list.page_info": {
+    "other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"
+  },
+  "entrepreneur_list.prev": {
+    "other": "← Претходна"
+  },
+  "entrepreneur_list.next": {
+    "other": "Следећа →"
+  },
+  "entrepreneur_list.pausal_dot_exceeded": {
+    "other": "Прекорачен паушални лимит"
+  },
+  "entrepreneur_list.pausal_dot_alert": {
+    "other": "Критично: паушал"
+  },
+  "entrepreneur_list.pausal_dot_high": {
+    "other": "Упозорење: паушал"
+  },
+  "entrepreneur_list.pausal_dot_minor": {
+    "other": "Пажња: паушал"
+  },
+  "entrepreneur_list.vat_dot_exceeded": {
+    "other": "Прекорачен ПДВ лимит"
+  },
+  "entrepreneur_list.vat_dot_alert": {
+    "other": "Критично: ПДВ праг"
+  },
+  "entrepreneur_list.vat_dot_high": {
+    "other": "Упозорење: ПДВ праг"
+  },
+  "entrepreneur_list.vat_dot_minor": {
+    "other": "Пажња: ПДВ праг"
+  },
+  "entrepreneur_detail.back": {
+    "other": "← Предузетници"
+  },
+  "entrepreneur_detail.section_data": {
+    "other": "Подаци предузетника"
+  },
+  "entrepreneur_detail.error_required_fields": {
+    "other": "Службени назив и ПИБ су обавезни."
+  },
+  "entrepreneur_detail.error_invalid_pib": {
+    "other": "ПИБ мора имати тачно 9 цифара са исправном контролном цифром."
+  },
+  "entrepreneur_detail.error_invalid_mb": {
+    "other": "Матични број мора имати тачно 8 цифара."
+  },
+  "entrepreneur_detail.edit": {
+    "other": "Измени"
+  },
+  "entrepreneur_detail.save": {
+    "other": "Сачувај"
+  },
+  "entrepreneur_detail.cancel": {
+    "other": "Откажи"
+  },
+  "entrepreneur_detail.label_title": {
+    "other": "Назив (кратко)"
+  },
+  "entrepreneur_detail.label_name": {
+    "other": "Службени назив"
+  },
+  "entrepreneur_detail.label_mb": {
+    "other": "МБ"
+  },
+  "entrepreneur_detail.label_pib": {
+    "other": "ПИБ"
+  },
+  "entrepreneur_detail.label_address": {
+    "other": "Адреса"
+  },
+  "entrepreneur_detail.label_account": {
+    "other": "Жиро рачун"
+  },
+  "entrepreneur_detail.label_taxpayer_code": {
+    "other": "Шифра пореског обвезника"
+  },
+  "entrepreneur_detail.label_activity_code": {
+    "other": "Шифра делатности"
+  },
+  "entrepreneur_detail.managed_note": {
+    "other": "Клијенти, банковни рачуни и фактуре се управљају преко налога предузетника."
+  },
+  "entrepreneur_detail.ph_title": {
+    "other": "нпр. Милан водоинсталатер"
+  },
+  "entrepreneur_detail.ph_name": {
+    "other": "нпр. Петар Петровић ПР"
+  },
+  "entrepreneur_detail.ph_mb": {
+    "other": "нпр. 12345678"
+  },
+  "entrepreneur_detail.ph_pib": {
+    "other": "нпр. 1234567890"
+  },
+  "entrepreneur_detail.ph_address": {
+    "other": "нпр. Нушићева 11, Београд"
+  },
+  "entrepreneur_detail.ph_account": {
+    "other": "нпр. 265-1234567890123-56"
+  },
+  "entrepreneur_detail.ph_taxpayer_code": {
+    "other": "нпр. 5060"
+  },
+  "entrepreneur_detail.ph_activity_code": {
+    "other": "нпр. 6201"
+  },
+  "entrepreneur_detail.pausal_label": {
+    "other": "Паушалац"
+  },
+  "entrepreneur_detail.no_data": {
+    "other": "нема података"
+  },
+  "kpo.section_title": {
+    "other": "КПО — Књига прихода"
+  },
+  "kpo.error_finalized": {
+    "other": "КПО је финализована"
+  },
+  "kpo.error_bad_date": {
+    "other": "Неисправан датум (очекује се дд.мм)"
+  },
+  "kpo.download_pdf": {
+    "other": "↓ PDF"
+  },
+  "kpo.download_kpo": {
+    "other": "Преузми КПО"
+  },
+  "kpo.add_year": {
+    "other": "+ Додај годину"
+  },
+  "kpo.add_year_ph": {
+    "other": "Год."
+  },
+  "kpo.add_year_title": {
+    "other": "Унесите годину и притисните Отвори"
+  },
+  "kpo.add_year_submit": {
+    "other": "Отвори"
+  },
+  "kpo.col_num": {
+    "other": "#"
+  },
+  "kpo.col_date": {
+    "other": "Датум"
+  },
+  "kpo.col_invoice": {
+    "other": "Бр. рачуна"
+  },
+  "kpo.col_description": {
+    "other": "Опис"
+  },
+  "kpo.col_product": {
+    "other": "Продаја роба"
+  },
+  "kpo.col_service": {
+    "other": "Услуге"
+  },
+  "kpo.col_total": {
+    "other": "Укупно"
+  },
+  "kpo.advance_tooltip": {
+    "other": "Ова фактура се не узима у обзир у КПО"
+  },
+  "kpo.advance_label": {
+    "other": "А"
+  },
+  "kpo.row_edit": {
+    "other": "Измени"
+  },
+  "kpo.row_delete": {
+    "other": "Обриши ставку"
+  },
+  "kpo.row_delete_label": {
+    "other": "Обриши"
+  },
+  "kpo.row_delete_confirm": {
+    "other": "Обрисати ставку?"
+  },
+  "kpo.row_save": {
+    "other": "Сачувај"
+  },
+  "kpo.row_cancel": {
+    "other": "Откажи"
+  },
+  "kpo.totals": {
+    "other": "Укупно:"
+  },
+  "kpo.new_entry_aria": {
+    "other": "Нова ставка КПО"
+  },
+  "kpo.field_date": {
+    "other": "Датум"
+  },
+  "kpo.field_invoice": {
+    "other": "Број рачуна"
+  },
+  "kpo.field_description": {
+    "other": "Опис"
+  },
+  "kpo.field_product": {
+    "other": "Приход од продаје роба"
+  },
+  "kpo.field_service": {
+    "other": "Приход од услуга"
+  },
+  "kpo.new_entry_submit": {
+    "other": "Унеси ↵"
+  },
+  "kpo.finalize": {
+    "other": "Укњижи"
+  },
+  "kpo.finalize_confirm_q": {
+    "other": "Финализовати КПО за"
+  },
+  "kpo.finalize_confirm_year": {
+    "other": "годину?"
+  },
+  "kpo.finalize_confirm_detail": {
+    "other": "Ова акција закључава књигу. Накнадне измене захтевају откључавање."
+  },
+  "kpo.finalized_at": {
+    "other": "✓ Укњижено"
+  },
+  "kpo.unlock": {
+    "other": "Откључај"
+  },
+  "kpo.order_warning": {
+    "other": "⚠ Ставке нису у хронолошком редоследу — ова ставка има старији датум од претходне."
+  },
+  "kpo.ph_date": {
+    "other": "дд.мм"
+  },
+  "kpo.ph_invoice": {
+    "other": "нпр. 2026/1"
+  },
+  "kpo.ph_description": {
+    "other": "клијент / опис"
+  },
+  "kpo.date_hint": {
+    "other": "Дан 1–31, месец 1–12"
+  },
+  "kpo.no_book": {
+    "other": "Нема КПО за ову годину."
+  },
+  "kpo.invoice_link": {
+    "other": "+ Нова фактура"
+  },
+  "slips.section_title": {
+    "other": "Уплатнице"
+  },
+  "slips.add_new": {
+    "other": "+ Нова уплатница"
+  },
+  "slips.tab_current": {
+    "other": "Текуће"
+  },
+  "slips.tab_previous": {
+    "other": "Претходне"
+  },
+  "slips.no_regular": {
+    "other": "Нема редовних уплатница."
+  },
+  "slips.no_previous": {
+    "other": "Нема претходних уплатница."
+  },
+  "slips.no_saved": {
+    "other": "Нема сачуваних уплатница."
+  },
+  "slips.regular_label": {
+    "other": "Редовне"
+  },
+  "slips.advance_label": {
+    "other": "Аванс"
+  },
+  "slip_table.col_date": {
+    "other": "Датум"
+  },
+  "slip_table.col_purpose": {
+    "other": "Сврха"
+  },
+  "slip_table.col_payee": {
+    "other": "Прималац"
+  },
+  "slip_table.col_amount": {
+    "other": "Износ"
+  },
+  "slip_table.delete_tooltip": {
+    "other": "Обриши уплатницу"
+  },
+  "slip_table.delete_label": {
+    "other": "Обриши"
+  },
+  "slip_table.delete_confirm": {
+    "other": "Обрисати уплатницу?"
+  },
+  "entrepreneur_new.title": {
+    "other": "Нови предузетник"
+  },
+  "entrepreneur_new.error_required_fields": {
+    "other": "Оба поља су обавезна."
+  },
+  "entrepreneur_new.error_invalid_pib": {
+    "other": "ПИБ мора имати тачно 9 цифара са исправном контролном цифром."
+  },
+  "entrepreneur_new.error_invalid_mb": {
+    "other": "Матични број мора имати тачно 8 цифара."
+  },
+  "entrepreneur_new.subtitle": {
+    "other": "Ручно унесите предузетника"
+  },
+  "entrepreneur_new.label_title": {
+    "other": "Назив (кратко)"
+  },
+  "entrepreneur_new.label_name": {
+    "other": "Назив"
+  },
+  "entrepreneur_new.label_mb": {
+    "other": "МБ"
+  },
+  "entrepreneur_new.label_pib": {
+    "other": "ПИБ"
+  },
+  "entrepreneur_new.label_address": {
+    "other": "Адреса"
+  },
+  "entrepreneur_new.label_account": {
+    "other": "Жиро рачун"
+  },
+  "entrepreneur_new.label_taxpayer_code": {
+    "other": "Шифра пореског обвезника"
+  },
+  "entrepreneur_new.label_activity_code": {
+    "other": "Шифра делатности"
+  },
+  "entrepreneur_new.save": {
+    "other": "Сачувај"
+  },
+  "entrepreneur_new.cancel": {
+    "other": "Откажи"
+  },
+  "entrepreneur_new.ph_title": {
+    "other": "нпр. Петар Петровић"
+  },
+  "entrepreneur_new.ph_name": {
+    "other": "нпр. Петар Петровић ПР"
+  },
+  "entrepreneur_new.ph_mb": {
+    "other": "нпр. 12345678"
+  },
+  "entrepreneur_new.ph_pib": {
+    "other": "нпр. 1234567890"
+  },
+  "entrepreneur_new.ph_address": {
+    "other": "нпр. Улица бр. 1, Београд"
+  },
+  "entrepreneur_new.ph_account": {
+    "other": "нпр. 123-0000000000000-00"
+  },
+  "entrepreneur_new.ph_taxpayer_code": {
+    "other": "нпр. 5060"
+  },
+  "entrepreneur_new.ph_activity_code": {
+    "other": "нпр. 6201"
+  },
+  "profile.title": {
+    "other": "Мој профил"
+  },
+  "profile.error_required_fields": {
+    "other": "Службени назив и ПИБ су обавезни."
+  },
+  "profile.error_invalid_pib": {
+    "other": "ПИБ мора имати тачно 9 цифара са исправном контролном цифром."
+  },
+  "profile.error_invalid_mb": {
+    "other": "Матични број мора имати тачно 8 цифара."
+  },
+  "profile.section_data": {
+    "other": "Подаци предузетника"
+  },
+  "profile.unpaired_alert": {
+    "other": "Повежите налог са рачуновођом да бисте управљали подацима о предузећу."
+  },
+  "profile.unpaired_invite": {
+    "other": "Позовите рачуновођу"
+  },
+  "profile.edit": {
+    "other": "Измени"
+  },
+  "profile.save": {
+    "other": "Сачувај"
+  },
+  "profile.cancel": {
+    "other": "Откажи"
+  },
+  "profile.label_name": {
+    "other": "Службени назив"
+  },
+  "profile.label_mb": {
+    "other": "МБ"
+  },
+  "profile.label_pib": {
+    "other": "ПИБ"
+  },
+  "profile.label_address": {
+    "other": "Адреса"
+  },
+  "profile.label_account": {
+    "other": "Жиро рачун"
+  },
+  "profile.label_taxpayer_code": {
+    "other": "Шифра пореског обвезника"
+  },
+  "profile.label_activity_code": {
+    "other": "Шифра делатности"
+  },
+  "profile.ph_name": {
+    "other": "нпр. Петар Петровић ПР"
+  },
+  "profile.ph_mb": {
+    "other": "нпр. 12345678"
+  },
+  "profile.ph_pib": {
+    "other": "нпр. 1234567890"
+  },
+  "profile.ph_address": {
+    "other": "нпр. Нушићева 11, Београд"
+  },
+  "profile.ph_account": {
+    "other": "нпр. 265-1234567890123-56"
+  },
+  "profile.ph_taxpayer_code": {
+    "other": "нпр. 5060"
+  },
+  "profile.ph_activity_code": {
+    "other": "нпр. 6201"
+  },
+  "clients.page_title": {
+    "other": "Клијенти"
+  },
+  "clients.back": {
+    "other": "← Почетна"
+  },
+  "clients.add_new": {
+    "other": "+ Нови клијент"
+  },
+  "clients.section_title": {
+    "other": "Клијенти"
+  },
+  "clients.col_name": {
+    "other": "Назив"
+  },
+  "clients.col_pib": {
+    "other": "ПИБ"
+  },
+  "clients.col_email": {
+    "other": "Е-пошта"
+  },
+  "clients.col_type": {
+    "other": "Тип"
+  },
+  "clients.type_foreign": {
+    "other": "Иностранство"
+  },
+  "clients.type_local": {
+    "other": "Домаћи"
+  },
+  "clients.edit": {
+    "other": "Измени"
+  },
+  "clients.delete": {
+    "other": "Обриши"
+  },
+  "clients.delete_confirm": {
+    "other": "Обрисати клијента?"
+  },
+  "clients.empty": {
+    "other": "Нема клијената."
+  },
+  "clients.empty_add": {
+    "other": "Додај првог клијента"
+  },
+  "clients.page_info": {
+    "other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"
+  },
+  "clients.prev": {
+    "other": "← Претходна"
+  },
+  "clients.next": {
+    "other": "Следећа →"
+  },
+  "client_form.title_new": {
+    "other": "Нови клијент"
+  },
+  "client_form.error_name_required": {
+    "other": "Назив клијента је обавезан."
+  },
+  "client_form.error_tax_id_required": {
+    "other": "Порески / регистрациони број је обавезан за стране клијенте."
+  },
+  "client_form.error_pib_required": {
+    "other": "ПИБ је обавезан за домаће клијенте."
+  },
+  "client_form.error_mb_required": {
+    "other": "Матични број је обавезан за домаће клијенте."
+  },
+  "client_form.title_edit": {
+    "other": "Измена клијента"
+  },
+  "client_form.back": {
+    "other": "← Назад"
+  },
+  "client_form.label_name": {
+    "other": "Назив клијента"
+  },
+  "client_form.name_hint": {
+    "other": "Унесите назив према АПР регистрацији (укључујући ДОО или ПР)."
+  },
+  "client_form.foreign_check": {
+    "other": "Страни клијент (ван Србије)"
+  },
+  "client_form.label_pib": {
+    "other": "ПИБ"
+  },
+  "client_form.pib_hint": {
+    "other": "9 цифара"
+  },
+  "client_form.label_mb": {
+    "other": "Матични број"
+  },
+  "client_form.mb_hint": {
+    "other": "8 цифара"
+  },
+  "client_form.label_tax_id": {
+    "other": "Tax ID / Reg No."
+  },
+  "client_form.tax_id_hint": {
+    "other": "BIN/IIN (KZ), EIN (US), Company No. (UK) и сл."
+  },
+  "client_form.label_email": {
+    "other": "Е-пошта"
+  },
+  "client_form.label_address": {
+    "other": "Адреса"
+  },
+  "client_form.address_hint": {
+    "other": "Обавезно укључите земљу у адресу (нпр. „Алматы, Казахстан“)."
+  },
+  "client_form.submit_new": {
+    "other": "Додај клијента"
+  },
+  "client_form.submit_edit": {
+    "other": "Сачувај"
+  },
+  "client_form.cancel": {
+    "other": "Одустани"
+  },
+  "bank_accounts.page_title": {
+    "other": "Банковни рачуни"
+  },
+  "bank_accounts.back": {
+    "other": "← Почетна"
+  },
+  "bank_accounts.add_new": {
+    "other": "+ Нови рачун"
+  },
+  "bank_accounts.section_title": {
+    "other": "Банковни рачуни"
+  },
+  "bank_accounts.col_bank": {
+    "other": "Банка"
+  },
+  "bank_accounts.col_type": {
+    "other": "Тип"
+  },
+  "bank_accounts.col_number": {
+    "other": "Број / IBAN"
+  },
+  "bank_accounts.type_foreign": {
+    "other": "Девизни"
+  },
+  "bank_accounts.type_local": {
+    "other": "Динарски"
+  },
+  "bank_accounts.edit": {
+    "other": "Измени"
+  },
+  "bank_accounts.delete": {
+    "other": "Обриши"
+  },
+  "bank_accounts.delete_confirm": {
+    "other": "Обрисати рачун?"
+  },
+  "bank_accounts.empty": {
+    "other": "Нема банковних рачуна."
+  },
+  "bank_accounts.empty_add": {
+    "other": "Додај рачун"
+  },
+  "bank_accounts.page_info": {
+    "other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"
+  },
+  "bank_accounts.prev": {
+    "other": "← Претходна"
+  },
+  "bank_accounts.next": {
+    "other": "Следећа →"
+  },
+  "bank_account_form.title_new": {
+    "other": "Нови банковни рачун"
+  },
+  "bank_account_form.title_edit": {
+    "other": "Измена банковног рачуна"
+  },
+  "bank_account_form.back": {
+    "other": "← Назад"
+  },
+  "bank_account_form.label_type": {
+    "other": "Тип рачуна"
+  },
+  "bank_account_form.type_local": {
+    "other": "Домаћи (динарски)"
+  },
+  "bank_account_form.type_foreign": {
+    "other": "Девизни (IBAN/SWIFT)"
+  },
+  "bank_account_form.label_bank_name": {
+    "other": "Назив банке"
+  },
+  "bank_account_form.label_account_number": {
+    "other": "Број рачуна"
+  },
+  "bank_account_form.ph_account_number": {
+    "other": "265-1234567890-12"
+  },
+  "bank_account_form.label_iban": {
+    "other": "IBAN"
+  },
+  "bank_account_form.label_swift": {
+    "other": "SWIFT / BIC"
+  },
+  "bank_account_form.correspondent_heading": {
+    "other": "Коресподентне банке"
+  },
+  "bank_account_form.correspondent_add": {
+    "other": "+ Додај"
+  },
+  "bank_account_form.correspondent_col_bank": {
+    "other": "Банка"
+  },
+  "bank_account_form.correspondent_col_swift": {
+    "other": "SWIFT"
+  },
+  "bank_account_form.correspondent_col_address": {
+    "other": "Адреса"
+  },
+  "bank_account_form.correspondent_edit": {
+    "other": "Измени"
+  },
+  "bank_account_form.correspondent_delete": {
+    "other": "Обриши"
+  },
+  "bank_account_form.correspondent_delete_confirm": {
+    "other": "Обрисати кор. банку?"
+  },
+  "bank_account_form.correspondent_empty": {
+    "other": "Нема коресподентних банака."
+  },
+  "bank_account_form.submit_new": {
+    "other": "Додај рачун"
+  },
+  "bank_account_form.submit_edit": {
+    "other": "Сачувај"
+  },
+  "bank_account_form.cancel": {
+    "other": "Одустани"
+  },
+  "correspondent_form.title_new": {
+    "other": "Нова коресподентна банка"
+  },
+  "correspondent_form.title_edit": {
+    "other": "Измена коресподентне банке"
+  },
+  "correspondent_form.back": {
+    "other": "← Назад на рачун"
+  },
+  "correspondent_form.label_bank_name": {
+    "other": "Назив банке"
+  },
+  "correspondent_form.label_swift": {
+    "other": "SWIFT / BIC"
+  },
+  "correspondent_form.label_address": {
+    "other": "Адреса банке"
+  },
+  "correspondent_form.submit_new": {
+    "other": "Додај банку"
+  },
+  "correspondent_form.submit_edit": {
+    "other": "Сачувај"
+  },
+  "correspondent_form.cancel": {
+    "other": "Одустани"
+  },
+  "invoices.page_title": {
+    "other": "Фактуре"
+  },
+  "invoices.back": {
+    "other": "← Почетна"
+  },
+  "invoices.add_new": {
+    "other": "+ Нова фактура"
+  },
+  "invoices.section_title": {
+    "other": "Фактуре"
+  },
+  "invoices.col_number": {
+    "other": "Број"
+  },
+  "invoices.col_client": {
+    "other": "Клијент"
+  },
+  "invoices.col_type": {
+    "other": "Тип"
+  },
+  "invoices.col_date": {
+    "other": "Датум"
+  },
+  "invoices.col_amount": {
+    "other": "Износ (RSD)"
+  },
+  "invoices.type_advance": {
+    "other": "Аванс"
+  },
+  "invoices.type_standard": {
+    "other": "Стандард"
+  },
+  "invoices.view": {
+    "other": "Прегледај"
+  },
+  "invoices.empty": {
+    "other": "Нема фактура."
+  },
+  "invoices.empty_create": {
+    "other": "Креирај прву фактуру"
+  },
+  "invoices.page_info": {
+    "other": "Страна {{.Page}} од {{.LastPage}} (укупно {{.Total}})"
+  },
+  "invoices.prev": {
+    "other": "← Претходна"
+  },
+  "invoices.next": {
+    "other": "Следећа →"
+  },
+  "invoice_new.title": {
+    "other": "Нова фактура"
+  },
+  "invoice_new.back": {
+    "other": "← Назад"
+  },
+  "invoice_new.profile_incomplete_warning": {
+    "other": "Профил није завршен."
+  },
+  "invoice_new.profile_incomplete_details": {
+    "other": "Следећа поља ће бити празна на фактури (PDF): ПИБ, адреса, жиро рачун."
+  },
+  "invoice_new.profile_incomplete_action": {
+    "other": "Попуните их у Подешавањима"
+  },
+  "invoice_new.profile_incomplete_alt": {
+    "other": "или наставите и креирајте фактуру без тих поља."
+  },
+  "invoice_new.label_type": {
+    "other": "Тип фактуре"
+  },
+  "invoice_new.type_standard": {
+    "other": "Фактура"
+  },
+  "invoice_new.type_advance": {
+    "other": "Авансна фактура"
+  },
+  "invoice_new.label_language": {
+    "other": "Језик / Language"
+  },
+  "invoice_new.lang_sr": {
+    "other": "Српски"
+  },
+  "invoice_new.lang_en": {
+    "other": "English"
+  },
+  "invoice_new.label_client": {
+    "other": "Клијент"
+  },
+  "invoice_new.client_search_ph": {
+    "other": "Претражи клијента по имену..."
+  },
+  "invoice_new.client_add_new": {
+    "other": "+ Додај клијента"
+  },
+  "invoice_new.label_invoice_number": {
+    "other": "Број фактуре"
+  },
+  "invoice_new.ph_invoice_number": {
+    "other": "нпр. 1/2026"
+  },
+  "invoice_new.label_issue_date": {
+    "other": "Датум издавања"
+  },
+  "invoice_new.label_due_date": {
+    "other": "Датум валуте (рок)"
+  },
+  "invoice_new.period_toggle": {
+    "other": "Период промета (нпр. за континуиране услуге — IT сектор)"
+  },
+  "invoice_new.label_period_start": {
+    "other": "Промет од"
+  },
+  "invoice_new.label_period_end": {
+    "other": "Промет до"
+  },
+  "invoice_new.label_currency": {
+    "other": "Валута"
+  },
+  "invoice_new.label_items": {
+    "other": "Ставке фактуре"
+  },
+  "invoice_new.item_description": {
+    "other": "Опис услуге / робе"
+  },
+  "invoice_new.item_quantity": {
+    "other": "Кол."
+  },
+  "invoice_new.item_unit_price": {
+    "other": "Јед. цена"
+  },
+  "invoice_new.item_discount": {
+    "other": "Попуст%"
+  },
+  "invoice_new.item_is_product": {
+    "other": "Роба"
+  },
+  "invoice_new.add_item": {
+    "other": "+ Додај ставку"
+  },
+  "invoice_new.grand_total": {
+    "other": "За уплату:"
+  },
+  "invoice_new.label_bank_account": {
+    "other": "Банковни рачун (опционо)"
+  },
+  "invoice_new.bank_account_empty": {
+    "other": "— без рачуна —"
+  },
+  "invoice_new.label_correspondent": {
+    "other": "Коресподентна банка (опционо)"
+  },
+  "invoice_new.correspondent_empty": {
+    "other": "— без кор. банке —"
+  },
+  "invoice_new.label_notes": {
+    "other": "Напомена (опционо)"
+  },
+  "invoice_new.label_footer_notes": {
+    "other": "Напомене на фактури"
+  },
+  "invoice_new.no_vat_check": {
+    "other": "Нисам у систему ПДВ-а (члан 12 ЗПДВ)"
+  },
+  "invoice_new.no_sign_check": {
+    "other": "Фактура је валидна без печата и потписа"
+  },
+  "invoice_new.submit": {
+    "other": "Креирај фактуру и генериши PDF"
+  },
+  "invoice_new.cancel": {
+    "other": "Одустани"
+  },
+  "invoice_new.preview_label": {
+    "other": "Преглед"
+  },
+  "invoice_new.pausal_alert_prefix": {
+    "other": "Са овом фактуром ваш укупан промет ће бити"
+  },
+  "invoice_new.pausal_alert_of": {
+    "other": "од"
+  },
+  "invoice_new.pausal_alert_limit": {
+    "other": "паушалног лимита."
+  },
+  "invoice_new.pausal_js_exceeded": {
+    "other": "Са овом фактуром достићи ћете паушални праг ({pct}% — {total})."
+  },
+  "invoice_new.pausal_js_reach": {
+    "other": "Са овом фактуром достићи ћете {pct}% паушалног прага ({total})."
+  },
+  "invoice_new.vat_js_exceeded": {
+    "other": "Са овом фактуром достићи ћете праг за ПДВ регистрацију ({pct}% — {total})."
+  },
+  "invoice_new.vat_js_reach": {
+    "other": "Са овом фактуром достићи ћете {pct}% прага за ПДВ регистрацију ({total})."
+  },
+  "invoice_detail.back": {
+    "other": "← Назад"
+  },
+  "invoice_detail.title_standard": {
+    "other": "Фактура"
+  },
+  "invoice_detail.title_advance": {
+    "other": "Авансна фактура"
+  },
+  "invoice_detail.download": {
+    "other": "↓ Преузми PDF"
+  },
+  "invoice_detail.issuer": {
+    "other": "Издавалац"
+  },
+  "invoice_detail.client": {
+    "other": "Клијент"
+  },
+  "invoice_detail.issue_date": {
+    "other": "Датум издавања:"
+  },
+  "invoice_detail.due_date": {
+    "other": "Рок плаћања:"
+  },
+  "invoice_detail.period": {
+    "other": "Период промета:"
+  },
+  "invoice_detail.currency": {
+    "other": "Валута:"
+  },
+  "invoice_detail.amount_rsd": {
+    "other": "Износ у RSD:"
+  },
+  "invoice_detail.col_description": {
+    "other": "Опис"
+  },
+  "invoice_detail.col_qty": {
+    "other": "Кол."
+  },
+  "invoice_detail.col_unit_price": {
+    "other": "Јед. цена"
+  },
+  "invoice_detail.col_discount": {
+    "other": "Попуст"
+  },
+  "invoice_detail.col_amount": {
+    "other": "Износ"
+  },
+  "invoice_detail.product_label": {
+    "other": "(роба)"
+  },
+  "invoice_detail.total_label": {
+    "other": "За уплату:"
+  },
+  "invoice_detail.payment_account": {
+    "other": "Рачун за уплату"
+  },
+  "invoice_detail.notes_label": {
+    "other": "Напомена:"
+  },
+  "invoice_detail.corr_bank": {
+    "other": "Кор. банка:"
+  },
+  "kpo_merge.title": {
+    "other": "Преузимање КПО"
+  },
+  "kpo_merge.back": {
+    "other": "← Назад на предузетника"
+  },
+  "kpo_merge.no_ebook": {
+    "other": "Овај предузетник нема повезан налог или нема КПО за ову годину."
+  },
+  "kpo_merge.already_merged": {
+    "other": "✓ КПО предузетника је већ означена као преузета."
+  },
+  "kpo_merge.entrepreneur_kpo_title": {
+    "other": "КПО предузетника (извор)"
+  },
+  "kpo_merge.mark_downloaded": {
+    "other": "Означи као преузето"
+  },
+  "kpo_merge.col_num": {
+    "other": "#"
+  },
+  "kpo_merge.col_date": {
+    "other": "Датум"
+  },
+  "kpo_merge.col_invoice": {
+    "other": "Бр. рачуна"
+  },
+  "kpo_merge.col_description": {
+    "other": "Опис"
+  },
+  "kpo_merge.col_product": {
+    "other": "Роба"
+  },
+  "kpo_merge.col_service": {
+    "other": "Услуге"
+  },
+  "kpo_merge.col_total": {
+    "other": "Укупно"
+  },
+  "kpo_merge.copy": {
+    "other": "Копирај →"
+  },
+  "kpo_merge.no_entries_ent": {
+    "other": "Предузетник нема ставки у КПО за ову годину."
+  },
+  "kpo_merge.accountant_kpo_title": {
+    "other": "Ваша КПО (одредиште)"
+  },
+  "kpo_merge.accountant_finalized": {
+    "other": "✓ Укњижено"
+  },
+  "kpo_merge.open_accountant_kpo": {
+    "other": "Отвори КПО →"
+  },
+  "kpo_merge.no_entries_acc": {
+    "other": "Ваша КПО за ову годину је празна."
+  },
+  "slip.title": {
+    "other": "Уплатница"
+  },
+  "slip.error_required_fields": {
+    "other": "Молимо попуните сва обавезна поља."
+  },
+  "slip.back": {
+    "other": "← Назад на предузетника"
+  },
+  "slip.saved": {
+    "other": "Уплатница је сачувана."
+  },
+  "slip.saved_downloading": {
+    "other": "Уплатница је сачувана. Преузимање почиње..."
+  },
+  "slip.label_payer": {
+    "other": "Уплатилац / Uplatilac"
+  },
+  "slip.label_purpose": {
+    "other": "Сврха уплате / Svrha uplate"
+  },
+  "slip.label_payee": {
+    "other": "Прималац / Primalac"
+  },
+  "slip.label_payment_code": {
+    "other": "Шифра плаћања"
+  },
+  "slip.label_currency": {
+    "other": "Валута"
+  },
+  "slip.label_amount": {
+    "other": "Износ / Iznos"
+  },
+  "slip.label_account": {
+    "other": "Рачун примаоца / Racun primaoca"
+  },
+  "slip.label_reference": {
+    "other": "Позив на број / Poziv na broj"
+  },
+  "slip.label_year": {
+    "other": "Година"
+  },
+  "slip.year_tooltip": {
+    "other": "Пореска година на коју се ова уплатница односи — година из решења Пореске управе."
+  },
+  "slip.label_advance": {
+    "other": "Аванс"
+  },
+  "slip.advance_tooltip": {
+    "other": "Означите ако је ово авансна уплата за наредну годину."
+  },
+  "slip.delete": {
+    "other": "Обриши"
+  },
+  "slip.save": {
+    "other": "Сачувај"
+  },
+  "slip.download": {
+    "other": "Преузми PDF"
+  },
+  "slip.delete_confirm": {
+    "other": "Обрисати уплатницу?"
+  },
+  "slip.history_title": {
+    "other": "Историја промена"
+  },
+  "slip_history.field_amount": {
+    "other": "Износ"
+  },
+  "slip_history.field_currency": {
+    "other": "Валута"
+  },
+  "slip_history.field_purpose": {
+    "other": "Сврха"
+  },
+  "slip_history.field_payee": {
+    "other": "Прималац"
+  },
+  "slip_history.field_payeeAccount": {
+    "other": "Рачун примаоца"
+  },
+  "slip_history.field_reference": {
+    "other": "Позив на број"
+  },
+  "slip_history.field_payer": {
+    "other": "Уплатилац"
+  },
+  "slip_history.field_paymentCode": {
+    "other": "Шифра плаћања"
+  },
+  "slip_history.field_year": {
+    "other": "Година"
+  },
+  "slip_history.field_advance": {
+    "other": "Аванс"
+  },
+  "slip_history.event_created": {
+    "other": "Уплатница је креирана"
+  },
+  "slip_history.event_imported": {
+    "other": "Уплатница је увезена"
+  },
+  "slip_history.event_updated": {
+    "other": "Уплатница је ажурирана"
+  },
+  "slip_history.event_deleted": {
+    "other": "Уплатница је обрисана"
+  },
+  "slip_history.actor_accountant": {
+    "other": "Рачуновођа"
+  },
+  "slip_history.actor_entrepreneur": {
+    "other": "Предузетник"
+  },
+  "slip_new.title": {
+    "other": "Нова уплатница"
+  },
+  "slip_new.label_payer": {
+    "other": "Уплатилац / Uplatilac"
+  },
+  "slip_new.label_purpose": {
+    "other": "Сврха уплате / Svrha uplate"
+  },
+  "slip_new.label_payee": {
+    "other": "Прималац / Primalac"
+  },
+  "slip_new.label_payment_code": {
+    "other": "Шифра плаћања"
+  },
+  "slip_new.label_currency": {
+    "other": "Валута"
+  },
+  "slip_new.label_amount": {
+    "other": "Износ / Iznos"
+  },
+  "slip_new.label_account": {
+    "other": "Рачун примаоца / Racun primaoca"
+  },
+  "slip_new.label_reference": {
+    "other": "Позив на број / Poziv na broj"
+  },
+  "slip_new.label_year": {
+    "other": "Година"
+  },
+  "slip_new.year_tooltip": {
+    "other": "Пореска година на коју се ова уплатница односи — година из решења Пореске управе."
+  },
+  "slip_new.label_advance": {
+    "other": "Аванс"
+  },
+  "slip_new.advance_tooltip": {
+    "other": "Означите ако је ово авансна уплата за наредну годину."
+  },
+  "slip_new.cancel": {
+    "other": "Откажи"
+  },
+  "slip_new.submit": {
+    "other": "Сачувај уплатницу"
+  },
+  "results.title": {
+    "other": "Резултати увоза"
+  },
+  "results.subtitle": {
+    "other": "Учитани PDF фајлови су обрађени и сачувани"
+  },
+  "results.back": {
+    "other": "← Списак предузетника"
+  },
+  "results.no_results": {
+    "other": "Нису пронађени предузетници ни уплатнице у учитаним фајловима."
+  },
+  "results.badge_new": {
+    "other": "Нови предузетник"
+  },
+  "results.badge_existing": {
+    "other": "Постојећи предузетник"
+  },
+  "results.col_purpose": {
+    "other": "Сврха"
+  },
+  "results.col_payee": {
+    "other": "Прималац"
+  },
+  "results.col_amount": {
+    "other": "Износ"
+  },
+  "results.col_status": {
+    "other": "Статус"
+  },
+  "results.status_created": {
+    "other": "Нова"
+  },
+  "results.status_updated": {
+    "other": "Ажурирана"
+  },
+  "results.status_unchanged": {
+    "other": "Непромењена"
+  },
+  "results.details_link": {
+    "other": "Детаљи"
+  },
+  "results.no_slips": {
+    "other": "Нису пронађене уплатнице у овом фајлу."
+  },
+  "error.home": {
+    "other": "На почетну страницу"
+  },
+  "error.not_found_title": {
+    "other": "Страница није пронађена"
+  },
+  "error.not_found_message": {
+    "other": "Тражена страница не постоји."
+  },
+  "error.forbidden_title": {
+    "other": "Забрањен приступ"
+  },
+  "error.forbidden_message": {
+    "other": "Немате право приступа овој страни."
+  },
+  "error.server_error": {
+    "other": "Грешка на серверу"
+  },
+  "error.bad_request": {
+    "other": "Неисправан захтев"
+  },
+  "error.pdf_generation_failed": {
+    "other": "Грешка при генерисању PDF-а"
+  },
+  "results.pib_label": {
+    "other": "ПИБ:"
+  },
+  "placeholder.under_construction": {
+    "other": "Ова страница је у изради."
+  },
+  "pausal_alert.critical_title": {
+    "other": "КРИТИЧНО!"
+  },
+  "pausal_alert.critical_message": {
+    "other": "Достигли сте паушални праг"
+  },
+  "pausal_alert.critical_contact_acc": {
+    "other": "Хитно обавестите клијента."
+  },
+  "pausal_alert.critical_contact_self": {
+    "other": "Хитно се консултујте са вашим књиговођом."
+  },
+  "pausal_alert.high_message": {
+    "other": "Достигли сте {{.Percent}}% паушалног прага"
+  },
+  "pausal_alert.high_recommendation": {
+    "other": "Препоручујемо консултацију са вашим књиговођом."
+  },
+  "pausal_alert.alert_title": {
+    "other": "УПОЗОРЕЊЕ!"
+  },
+  "pausal_alert.alert_contact_acc": {
+    "other": "Хитно обавестите клијента."
+  },
+  "pausal_alert.alert_contact_self": {
+    "other": "Хитно се консултујте са вашим књиговођом."
+  },
+  "pausal_alert.minor_message": {
+    "other": "Достигли сте {{.Percent}}% паушалног прага"
+  },
+  "pausal_alert.info_link": {
+    "other": "Шта то значи?"
+  },
+  "vat_alert.critical_title": {
+    "other": "КРИТИЧНО!"
+  },
+  "vat_alert.critical_message": {
+    "other": "Достигли сте праг за ПДВ регистрацију"
+  },
+  "vat_alert.rolling_period": {
+    "other": "у последњих 12 месеци"
+  },
+  "vat_alert.critical_contact_acc": {
+    "other": "Хитно обавестите клијента."
+  },
+  "vat_alert.critical_contact_self": {
+    "other": "Хитно се консултујте са вашим књиговођом."
+  },
+  "vat_alert.alert_title": {
+    "other": "УПОЗОРЕЊЕ!"
+  },
+  "vat_alert.high_message": {
+    "other": "Достигли сте {{.Percent}}% прага за ПДВ регистрацију"
+  },
+  "vat_alert.high_recommendation": {
+    "other": "Препоручујемо консултацију са вашим књиговођом."
+  },
+  "vat_alert.minor_message": {
+    "other": "Достигли сте {{.Percent}}% прага за ПДВ регистрацију"
+  },
+  "vat_alert.info_link": {
+    "other": "Шта то значи?"
+  },
+  "pausal_limit_info.title": {
+    "other": "Паушални праг прихода"
+  },
+  "pausal_limit_info.subtitle": {
+    "other": "Шта значи паушални праг и шта се дешава ако га прекорачите"
+  },
+  "pausal_limit_info.limit_q": {
+    "other": "Колики је праг?"
+  },
+  "pausal_limit_info.limit_intro": {
+    "other": "Паушалне предузетнике порески закон ослобађа вођења пуног пословног књиговодства, али само до одређеног годишњег прихода:"
+  },
+  "pausal_limit_info.until_2026": {
+    "other": "До 2026. године (укључујући): 6.000.000 РСД"
+  },
+  "pausal_limit_info.from_2027": {
+    "other": "Од 2027. године: 8.000.000 РСД"
+  },
+  "pausal_limit_info.limit_note": {
+    "other": "Праг се рачуна по промету — укупном приходу од продаје робе и услуга у календарској години."
+  },
+  "pausal_limit_info.consequences_q": {
+    "other": "Шта се дешава ако прекорачите праг?"
+  },
+  "pausal_limit_info.consequences_intro": {
+    "other": "Ако ваш годишњи промет пређе прописани износ, губите право на паушално опорезивање и прелазите на опорезивање по стварном приходу. То у пракси значи:"
+  },
+  "pausal_limit_info.con_bookkeeping": {
+    "other": "Обавезно вођење пословних књига (КЕП, пословни рачун, фактуре)"
+  },
+  "pausal_limit_info.con_tax_payments": {
+    "other": "Тромесечне авансне уплате пореза на основу стварног прихода"
+  },
+  "pausal_limit_info.con_tax_return": {
+    "other": "Подношење пореске пријаве на крају године са коначним обрачуном"
+  },
+  "pausal_limit_info.con_burden": {
+    "other": "Значајно већи административни терет и трошкови вођења рачуноводства"
+  },
+  "pausal_limit_info.consequences_note": {
+    "other": "Прелаз са паушала на стварни приход може бити финансијски неповољан — поготово ако нисте правовремено планирали расходе."
+  },
+  "pausal_limit_info.planning_q": {
+    "other": "Шта можете да урадите?"
+  },
+  "pausal_limit_info.planning_intro": {
+    "other": "Постоје различити легалне могућности за планирање расхода пре него што достигнете праг — набавка опреме, инвестиције, унапред плаћене услуге и слично."
+  },
+  "pausal_limit_info.planning_rec": {
+    "other": "Зато је кључно да се на време посаветујете са стручним рачуновођом — он ће вам препоручити решење прилагођено вашем конкретном случају."
+  },
+  "vat_limit_info.title": {
+    "other": "Праг за ПДВ регистрацију"
+  },
+  "vat_limit_info.subtitle": {
+    "other": "Шта значи ПДВ праг и шта се дешава ако га прекорачите"
+  },
+  "vat_limit_info.limit_q": {
+    "other": "Колики је праг?"
+  },
+  "vat_limit_info.limit_intro": {
+    "other": "Предузетник је обавезан да се региструје за ПДВ ако је укупан промет у последњих 12 месеци прешао:"
+  },
+  "vat_limit_info.current_limit": {
+    "other": "Тренутно: 8.000.000 РСД"
+  },
+  "vat_limit_info.limit_note": {
+    "other": "За разлику од паушалног прага (календарска година), ПДВ праг се рачуна по клизном прозору — гледа се промет у последњих 365 дана."
+  },
+  "vat_limit_info.consequences_q": {
+    "other": "Шта се дешава ако прекорачите праг?"
+  },
+  "vat_limit_info.consequences_intro": {
+    "other": "Ако ваш промет у последњих 12 месеци пређе 8.000.000 РСД, дужни сте да поднесете захтев за ПДВ регистрацију. То у пракси значи:"
+  },
+  "vat_limit_info.con_calculation": {
+    "other": "Обавезно обрачунавање ПДВ на сваку фактуру коју издате"
+  },
+  "vat_limit_info.con_filing": {
+    "other": "Подношење месечне или тромесечне ПДВ пријаве"
+  },
+  "vat_limit_info.con_credit": {
+    "other": "Право на одбитак претходног пореза (ПДВ на набавке)"
+  },
+  "vat_limit_info.con_burden": {
+    "other": "Значајно већи административни терет и трошкови вођења рачуноводства"
+  },
+  "vat_limit_info.con_pricing": {
+    "other": "ПДВ регистрација мења начин пословања — цене које наплаћујете клијентима морају да укључе ПДВ."
+  },
+  "vat_limit_info.planning_q": {
+    "other": "Шта можете да урадите?"
+  },
+  "vat_limit_info.planning_intro": {
+    "other": "Постоје различите легалне могућности за планирање расхода пре него што достигнете праг."
+  },
+  "vat_limit_info.planning_rec": {
+    "other": "Зато је кључно да се на време посаветујете са стручним рачуновођом — он ће вам препоручити решење прилагођено вашем конкретном случају."
+  },
+  "invite_token.title": {
+    "other": "Позивница креирана"
+  },
+  "invite_token.desc": {
+    "other": "Пошаљите следећи линк особи коју желите да повежете. Линк важи 7 дана."
+  },
+  "invite_token.back_entrepreneur": {
+    "other": "← Назад на предузетника"
+  },
+  "invite_token.back_home": {
+    "other": "← На почетну"
+  },
+  "invite_accept.title": {
+    "other": "Позивница"
+  },
+  "invite_accept.expired": {
+    "other": "Позивница је истекла или је већ искоришћена."
+  },
+  "invite_accept.already_paired": {
+    "other": "Већ сте повезани са рачуновођом."
+  },
+  "invite_accept.error_pairing": {
+    "other": "Грешка при повезивању"
+  },
+  "invite_accept.error_create_entrepreneur": {
+    "other": "Грешка при креирању предузетника"
+  },
+  "invite_accept.default_entrepreneur_name": {
+    "other": "Предузетник"
+  },
+  "invite_accept.entrepreneur_field": {
+    "other": "Предузетник (опционо)"
+  },
+  "invite_accept.entrepreneur_ph": {
+    "other": "UUID постојећег предузетника или оставите празно"
+  },
+  "invite_accept.submit": {
+    "other": "Прихвати позивницу"
+  },
+  "entrepreneur_register.title": {
+    "other": "Регистрација предузетника"
+  },
+  "entrepreneur_register.label_email": {
+    "other": "Е-пошта"
+  },
+  "entrepreneur_register.label_password": {
+    "other": "Лозинка"
+  },
+  "entrepreneur_register.label_confirm": {
+    "other": "Потврди лозинку"
+  },
+  "entrepreneur_register.submit": {
+    "other": "Региструј се"
+  },
+  "entrepreneur_register.has_account": {
+    "other": "Већ имате налог?"
+  },
+  "entrepreneur_register.login_link": {
+    "other": "Пријавите се"
+  },
+  "entrepreneur_register.error_required": {
+    "other": "Е-пошта и лозинка су обавезни."
+  },
+  "entrepreneur_register.error_password_mismatch": {
+    "other": "Лозинке се не подударају."
+  },
+  "entrepreneur_register.error_email_taken": {
+    "other": "Та е-пошта је већ у употреби."
+  },
+  "invite_entrepreneur.title": {
+    "other": "Позови предузетника"
+  },
+  "invite_entrepreneur.desc": {
+    "other": "Пошаљите следећи линк предузетнику."
+  },
+  "invite_entrepreneur.generate": {
+    "other": "Генериши позивницу"
+  },
+  "invite_entrepreneur.back": {
+    "other": "← Назад на предузетника"
+  },
+  "invite_accountant.title": {
+    "other": "Позови рачуновођу"
+  },
+  "invite_accountant.desc": {
+    "other": "Кликните на дугме испод да генеришете позивницу. Добијени линк поделите са вашим рачуновођом."
+  },
+  "invite_accountant.generate": {
+    "other": "Генериши позивницу"
+  },
+  "entrepreneur_dashboard.title": {
+    "other": "Контролна табла"
+  },
+  "batch.title": {
+    "other": "Обрада фајлова"
+  },
+  "batch.processing": {
+    "other": "Фајлови се обрађују, страница ће се освежити аутоматски…"
+  },
+  "batch.done": {
+    "other": "Обрада завршена"
+  },
+  "batch.files_pending": {
+    "other": "Фајлова у реду:"
+  },
+  "batch.navigate_away": {
+    "other": "Можете затворити ову страницу или прећи на другу — обрада ће се завршити у позадини."
+  },
+  "batch.col_file": {
+    "other": "Фајл"
+  },
+  "results.col_entrepreneur": {
+    "other": "Предузетник"
+  },
+  "sidebar.slips": {
+    "other": "Уплатнице"
+  },
+  "e_slips.title": {
+    "other": "Моје уплатнице"
+  },
+  "e_slips.upload_pdf": {
+    "other": "Увези PDF"
+  },
+  "e_slips.new_slip": {
+    "other": "Нова уплатница"
+  },
+  "e_slips.empty": {
+    "other": "Немате уплатница. Додајте прву."
+  },
+  "e_slips.merged_badge": {
+    "other": "Спојено"
+  },
+  "e_slips.advance_header": {
+    "other": "Аванс"
+  },
+  "e_slip.back": {
+    "other": "← Назад на уплатнице"
+  },
+  "e_slip_upload.title": {
+    "other": "Увези уплатнице из PDF-а"
+  },
+  "e_slip_upload.pib_missing": {
+    "other": "Ваш ПИБ није постављен. Контактирајте рачуновођу или га унесите у "
+  },
+  "e_slip_upload.go_to_profile": {
+    "other": "профилу"
+  },
+  "e_slip_upload.description": {
+    "other": "Изаберите PDF фајл са уплатницама за увоз."
+  },
+  "e_slip_upload.file_label": {
+    "other": "PDF фајл"
+  },
+  "e_slip_upload.submit": {
+    "other": "Увези"
+  },
+  "e_slip_upload.success": {
+    "other": "Уплатнице су успешно увезене. "
+  },
+  "e_slip_upload.view_slips": {
+    "other": "Погледај уплатнице"
+  },
+  "e_slip_upload.results_header": {
+    "other": "Резултати увоза"
+  },
+  "e_slip_upload.col_status": {
+    "other": "Статус"
+  },
+  "slip_merge.title": {
+    "other": "Спој уплатница"
+  },
+  "slip_merge.heading": {
+    "other": "Спај уплатница за"
+  },
+  "slip_merge.back": {
+    "other": "Назад на предузетника"
+  },
+  "slip_merge.conflicts_note": {
+    "other": "Пронађена су неслагања. Изаберите верзију коју желите да задржите за свако неслагање."
+  },
+  "slip_merge.no_conflicts": {
+    "other": "Нема неслагања — спајање може бити извршено аутоматски."
+  },
+  "slip_merge.accountant_version": {
+    "other": "Верзија рачуновође"
+  },
+  "slip_merge.entrepreneur_version": {
+    "other": "Верзија предузетника"
+  },
+  "slip_merge.keep_this": {
+    "other": "Задржи ову верзију"
+  },
+  "slip_merge.advance_label": {
+    "other": "аванс"
+  },
+  "slip_merge.auto_merge_header": {
+    "other": "Аутоматско спајање (без неслагања)"
+  },
+  "slip_merge.finalize": {
+    "other": "Заврши спајање"
+  },
+  "slip_history.merged": {
+    "other": "Спојено у рачуновођин налог"
+  },
+  "entrepreneur_detail.unpair_btn": {
+    "other": "Прекини везу са предузетником"
+  },
+  "entrepreneur_detail.unpair_confirm": {
+    "other": "Ово ће копирати све КПО записе и уплатнице на налог предузетника и уклонити везу. Настави?"
+  },
+  "entrepreneur_detail.merged_success": {
+    "other": "Уплатнице су успешно спојене."
+  },
+  "entrepreneur_detail.unpaired_success": {
+    "other": "Веза са предузетником је прекинута. Сви записи су прекопирани."
+  },
+  "profile.unpair_btn": {
+    "other": "Прекини везу са рачуновођом"
+  },
+  "profile.unpair_confirm": {
+    "other": "Ово ће копирати све КПО записе и уплатнице са налога рачуновође на твој налог и уклонити везу. Настави?"
+  },
+  "profile.unpaired_success": {
+    "other": "Веза са рачуновођом је прекинута. Сви записи су прекопирани."
+  },
+  "notice.unpaired_by_accountant": {
+    "other": "Рачуновођа је прекинуо везу са твојим налогом. Сви КПО записи и уплатнице су прекопирани на твој налог."
+  },
+  "notice.unpaired_by_entrepreneur": {
+    "other": "Предузетник је прекинуо везу са твојим налогом."
+  }
 }

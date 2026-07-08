@@ -23,7 +23,7 @@
   <form method="POST" action="/a/process" enctype="multipart/form-data" class="flex gap-3 items-center flex-wrap">
     <input type="file" id="pdfs" name="pdfs" accept=".pdf" multiple
            class="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-white file:text-gray-700 hover:file:bg-gray-50">
-    <button type="submit"
+    <button id="btn-process-upload" type="submit"
             class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
       {{T "entrepreneur_list.upload_submit"}}
     </button>

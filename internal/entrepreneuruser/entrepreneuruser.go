@@ -92,6 +92,28 @@ func (r *Repo) UpdatePasswordHash(ctx context.Context, id uuid.UUID, password st
 	return err
 }
 
+// GetPendingNotice returns the pending notice key for the given user, or "".
+func (r *Repo) GetPendingNotice(ctx context.Context, id uuid.UUID) (string, error) {
+	var n string
+	err := r.db.QueryRowContext(ctx, `SELECT pending_notice FROM entrepreneur_users WHERE id = $1`, id).Scan(&n)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return n, err
+}
+
+// SetPendingNotice stores a notice key for the given user.
+func (r *Repo) SetPendingNotice(ctx context.Context, id uuid.UUID, key string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE entrepreneur_users SET pending_notice = $1 WHERE id = $2`, key, id)
+	return err
+}
+
+// ClearPendingNotice removes the pending notice for the given user.
+func (r *Repo) ClearPendingNotice(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE entrepreneur_users SET pending_notice = '' WHERE id = $1`, id)
+	return err
+}
+
 func CheckPassword(u User, password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {

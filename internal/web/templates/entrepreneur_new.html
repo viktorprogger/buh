@@ -29,13 +29,13 @@
     <div>
       <label for="mb" class="block text-sm font-medium text-gray-700 mb-1">{{T "entrepreneur_new.label_mb"}}</label>
       <input type="text" id="mb" name="mb" value="{{.MB}}"
-             placeholder="{{T "entrepreneur_new.ph_mb"}}"
+             placeholder="{{T "entrepreneur_new.ph_mb"}}" pattern="\d{8}" maxlength="8"
              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
     </div>
     <div>
       <label for="pib" class="block text-sm font-medium text-gray-700 mb-1">{{T "entrepreneur_new.label_pib"}} <span class="text-red-500">*</span></label>
       <input type="text" id="pib" name="pib" value="{{.PIB}}" required
-             placeholder="{{T "entrepreneur_new.ph_pib"}}"
+             placeholder="{{T "entrepreneur_new.ph_pib"}}" pattern="\d{9}" maxlength="9"
              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
     </div>
     <div>
@@ -63,7 +63,7 @@
              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
     </div>
     <div class="flex gap-3 pt-2">
-      <button type="submit"
+      <button id="btn-save-entrepreneur" type="submit"
               class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
         {{T "entrepreneur_new.save"}}
       </button>

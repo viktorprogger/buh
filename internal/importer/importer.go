@@ -111,7 +111,11 @@ func (imp *Importer) ProcessFileData(ctx context.Context, accountantID uuid.UUID
 	if err != nil {
 		return nil, EntrepreneurResult{}, fmt.Errorf("грешка при чувању")
 	}
-	tmp.Write(data)
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return nil, EntrepreneurResult{}, fmt.Errorf("грешка при чувању: %w", err)
+	}
 	tmp.Close()
 	tmpPath := tmp.Name()
 	defer os.Remove(tmpPath)
@@ -186,7 +190,7 @@ func (imp *Importer) ProcessFileData(ctx context.Context, accountantID uuid.UUID
 		advance := multipleYears && pp.purposeYear == maxYear
 		currency, amount := splitAmount(pp.pay.I)
 		rec := sliprecord.SlipRecord{
-			EntrepreneurID: e.ID,
+			ManagedEntrepreneurID: e.ID,
 			PaymentCode:    pp.pay.SF,
 			Amount:         amount,
 			Currency:       currency,
@@ -219,6 +223,113 @@ func (imp *Importer) ProcessFileData(ctx context.Context, accountantID uuid.UUID
 	}
 
 	return slipResults, EntrepreneurResult{Entrepreneur: e, IsNew: isNew}, nil
+}
+
+// ProcessFileDataForEntrepreneurUser processes a PDF for a standalone entrepreneur user.
+// It validates that the PIB extracted from the PDF matches expectedPIB before saving.
+// Returns an error if the PIB doesn't match or no QR codes are found.
+func (imp *Importer) ProcessFileDataForEntrepreneurUser(ctx context.Context, entrepreneurUserID uuid.UUID, expectedPIB string, filename string, data []byte) ([]SlipResult, error) {
+	tmp, err := os.CreateTemp("", "buh-upload-*.pdf")
+	if err != nil {
+		return nil, fmt.Errorf("грешка при чувању")
+	}
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return nil, fmt.Errorf("грешка при чувању: %w", err)
+	}
+	tmp.Close()
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+
+	info, _ := extractor.ExtractEntrepreneurInfo(tmpPath)
+	if info.PIB != "" && info.PIB != expectedPIB {
+		return nil, fmt.Errorf("ПДФ припада другом предузетнику (ПИБ %s)", info.PIB)
+	}
+
+	_, codes, err := extractor.ExtractQRCodes(tmpPath)
+	if err != nil {
+		return nil, fmt.Errorf("грешка при читању QR кода: %w", err)
+	}
+
+	amountByAccount, _ := extractor.ExtractAmountsByAccount(tmpPath)
+
+	type parsedPayment struct {
+		pay         *ips.Payment
+		purposeYear int
+	}
+	var payments []parsedPayment
+	for _, code := range codes {
+		if !ips.IsIPS(code) {
+			continue
+		}
+		pay, parseErr := ips.Parse(code)
+		if parseErr != nil {
+			continue
+		}
+		if (pay.I == "" || pay.I == "RSD0,00") && amountByAccount != nil {
+			if amt, ok := amountByAccount[pay.R]; ok {
+				pay.I = amt
+			}
+		}
+		payments = append(payments, parsedPayment{pay: pay, purposeYear: extractPurposeYear(pay.S)})
+	}
+
+	if len(payments) == 0 {
+		return nil, fmt.Errorf("нису пронађени QR кодови")
+	}
+
+	minYear, maxYear := 0, 0
+	for _, p := range payments {
+		if p.purposeYear == 0 {
+			continue
+		}
+		if minYear == 0 || p.purposeYear < minYear {
+			minYear = p.purposeYear
+		}
+		if p.purposeYear > maxYear {
+			maxYear = p.purposeYear
+		}
+	}
+	decisionYear := minYear
+	multipleYears := minYear != 0 && maxYear != 0 && minYear != maxYear
+
+	var slipResults []SlipResult
+	for _, pp := range payments {
+		advance := multipleYears && pp.purposeYear == maxYear
+		currency, amount := splitAmount(pp.pay.I)
+		eid := entrepreneurUserID
+		rec := sliprecord.SlipRecord{
+			EntrepreneurUserID: &eid,
+			PaymentCode:        pp.pay.SF,
+			Amount:             amount,
+			Currency:           currency,
+			Purpose:            pp.pay.S,
+			PayeeAccount:       pp.pay.R,
+			Reference:          pp.pay.RO,
+			Payee:              pp.pay.N,
+			Payer:              pp.pay.P,
+			Year:               decisionYear,
+			Advance:            advance,
+		}
+		oldSlip, saved, upsertStatus, upsertErr := imp.slips.FindOrUpdateByPurpose(ctx, rec)
+		if upsertErr != nil {
+			return nil, fmt.Errorf("грешка при чувању уплатнице: %w", upsertErr)
+		}
+		if imp.history != nil && upsertStatus != sliprecord.UpsertUnchanged {
+			var changes map[string]any
+			if upsertStatus == sliprecord.UpsertCreated {
+				changes = sliprecord.Snapshot(saved)
+			} else {
+				changes = sliprecord.Diff(oldSlip, saved)
+			}
+			if logErr := imp.history.Log(ctx, saved.ID, sliphistory.EventImported, "entrepreneur", entrepreneurUserID, changes); logErr != nil {
+				log.Printf("slip history log failed: %v", logErr)
+			}
+		}
+		slipResults = append(slipResults, SlipResult{Slip: saved, Status: upsertStatusString(upsertStatus)})
+	}
+	return slipResults, nil
 }
 
 func upsertStatusString(s sliprecord.UpsertStatus) string {

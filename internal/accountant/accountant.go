@@ -105,6 +105,28 @@ func (r *Repo) UpdatePasswordHash(ctx context.Context, id, password string) erro
 	return err
 }
 
+// GetPendingNotice returns the pending notice key for the given accountant, or "".
+func (r *Repo) GetPendingNotice(ctx context.Context, id string) (string, error) {
+	var n string
+	err := r.db.QueryRowContext(ctx, `SELECT pending_notice FROM accountants WHERE id = $1`, id).Scan(&n)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return n, err
+}
+
+// SetPendingNotice stores a notice key for the given accountant.
+func (r *Repo) SetPendingNotice(ctx context.Context, id, key string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE accountants SET pending_notice = $1 WHERE id = $2`, key, id)
+	return err
+}
+
+// ClearPendingNotice removes the pending notice for the given accountant.
+func (r *Repo) ClearPendingNotice(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE accountants SET pending_notice = '' WHERE id = $1`, id)
+	return err
+}
+
 // CheckPassword verifies the plaintext password against the stored bcrypt hash.
 // Returns ErrInvalidCredentials on mismatch.
 func CheckPassword(a *Accountant, password string) error {

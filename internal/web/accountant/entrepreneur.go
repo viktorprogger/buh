@@ -18,6 +18,7 @@ import (
 	"buh/internal/i18n"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
+	"buh/internal/validate"
 	"buh/internal/web/shared"
 )
 
@@ -233,11 +234,12 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 			TotalRSD:         inv.TotalRSD,
 		})
 	}
+	shared.MarkFirstOutOfOrder(kpoRows)
 	sort.Slice(kpoRows, func(i, j int) bool {
 		return kpoRows[i].Date.Before(kpoRows[j].Date)
 	})
 
-	slips, err := h.slips.ListByEntrepreneur(r.Context(), id)
+	slips, err := h.slips.ListByManagedEntrepreneur(r.Context(), id)
 	if err != nil {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
@@ -291,8 +293,24 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		vatAlert.IsAccountant = true
 	}
 
+	var editError string
+	if errCode := r.URL.Query().Get("edit_error"); errCode != "" {
+		l := i18n.FromContext(r.Context())
+		switch errCode {
+		case "required":
+			editError = l.T("entrepreneur_detail.error_required_fields")
+		case "invalid_pib":
+			editError = l.T("entrepreneur_detail.error_invalid_pib")
+		case "invalid_mb":
+			editError = l.T("entrepreneur_detail.error_invalid_mb")
+		}
+	}
+
 	shared.RenderTemplate(w, r, h.tmpl.Entrepreneur, map[string]any{
 		"Entrepreneur":     e,
+		"MergedSuccess":    r.URL.Query().Get("merged") == "1",
+		"UnpairedSuccess":  r.URL.Query().Get("unpaired") == "1",
+		"EditError":        editError,
 		"KPOBooks":         books,
 		"CurrentBook":      currentBook,
 		"KPOEntries":       entries,
@@ -322,13 +340,24 @@ func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 	name := strings.TrimSpace(r.FormValue("name"))
 	pib := strings.TrimSpace(r.FormValue("pib"))
 
-	if name == "" || pib == "" {
+	mb := strings.TrimSpace(r.FormValue("mb"))
+	l := i18n.FromContext(r.Context())
+	var createErr string
+	switch {
+	case name == "" || pib == "":
+		createErr = l.T("entrepreneur_new.error_required_fields")
+	case !validate.PIB(pib):
+		createErr = l.T("entrepreneur_new.error_invalid_pib")
+	case mb != "" && !validate.MB(mb):
+		createErr = l.T("entrepreneur_new.error_invalid_mb")
+	}
+	if createErr != "" {
 		shared.RenderTemplate(w, r, h.tmpl.EntrepreneurNew, map[string]any{
-			"Error":        i18n.FromContext(r.Context()).T("entrepreneur_new.error_required_fields"),
+			"Error":        createErr,
 			"Name":         name,
 			"PIB":          pib,
 			"Title":        strings.TrimSpace(r.FormValue("title")),
-			"MB":           strings.TrimSpace(r.FormValue("mb")),
+			"MB":           mb,
 			"Address":      strings.TrimSpace(r.FormValue("address")),
 			"BankAccount":  strings.TrimSpace(r.FormValue("bank_account")),
 			"TaxpayerCode": strings.TrimSpace(r.FormValue("taxpayer_code")),
@@ -348,7 +377,7 @@ func (h *Handler) handleEntrepreneurNewSubmit(w http.ResponseWriter, r *http.Req
 		return
 	}
 	e.Title = strings.TrimSpace(r.FormValue("title"))
-	e.MB = strings.TrimSpace(r.FormValue("mb"))
+	e.MB = mb
 	e.Address = strings.TrimSpace(r.FormValue("address"))
 	e.BankAccount = strings.TrimSpace(r.FormValue("bank_account"))
 	e.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
@@ -375,9 +404,17 @@ func (h *Handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 	name := strings.TrimSpace(r.FormValue("name"))
 	pib := strings.TrimSpace(r.FormValue("pib"))
 	title := strings.TrimSpace(r.FormValue("title"))
+	updateMB := strings.TrimSpace(r.FormValue("mb"))
 
-	if name == "" || pib == "" {
-		http.Redirect(w, r, "/a/entrepreneurs/"+idStr, http.StatusFound)
+	switch {
+	case name == "" || pib == "":
+		http.Redirect(w, r, "/a/entrepreneurs/"+idStr+"?edit_error=required", http.StatusFound)
+		return
+	case !validate.PIB(pib):
+		http.Redirect(w, r, "/a/entrepreneurs/"+idStr+"?edit_error=invalid_pib", http.StatusFound)
+		return
+	case updateMB != "" && !validate.MB(updateMB):
+		http.Redirect(w, r, "/a/entrepreneurs/"+idStr+"?edit_error=invalid_mb", http.StatusFound)
 		return
 	}
 	e.Name = name
@@ -385,7 +422,7 @@ func (h *Handler) handleEntrepreneurUpdate(w http.ResponseWriter, r *http.Reques
 	e.Title = title
 	e.Address = strings.TrimSpace(r.FormValue("address"))
 	e.BankAccount = strings.TrimSpace(r.FormValue("bank_account"))
-	e.MB = strings.TrimSpace(r.FormValue("mb"))
+	e.MB = updateMB
 	e.TaxpayerCode = strings.TrimSpace(r.FormValue("taxpayer_code"))
 	e.ActivityCode = strings.TrimSpace(r.FormValue("activity_code"))
 	if err := h.entrepreneurs.Update(r.Context(), e); err != nil {
@@ -446,5 +483,9 @@ func (h *Handler) handleBatchStatus(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusInternalServerError)
 		return
 	}
-	shared.RenderTemplate(w, r, h.tmpl.UploadBatch, summary)
+	shared.RenderTemplate(w, r, h.tmpl.UploadBatch, map[string]any{
+		"Pending": summary.Pending,
+		"Done":    summary.Done,
+		"Failed":  summary.Failed,
+	})
 }

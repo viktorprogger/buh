@@ -6,6 +6,21 @@
 <div class="mb-4 text-sm text-gray-500">
   <a href="/a/" class="hover:text-primary">{{T "entrepreneur_detail.back"}}</a>
 </div>
+{{if .MergedSuccess}}
+<div class="mb-4 bg-green-50 border border-green-200 rounded-lg px-6 py-3 text-sm text-green-800">
+  {{T "entrepreneur_detail.merged_success"}}
+</div>
+{{end}}
+{{if .UnpairedSuccess}}
+<div class="mb-4 bg-green-50 border border-green-200 rounded-lg px-6 py-3 text-sm text-green-800">
+  {{T "entrepreneur_detail.unpaired_success"}}
+</div>
+{{end}}
+{{if .EditError}}
+<div class="mb-4 bg-red-50 border border-red-200 rounded-lg px-6 py-3 text-sm text-red-700">
+  {{.EditError}}
+</div>
+{{end}}
 <!-- ── Entrepreneur card ──────────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
@@ -62,7 +77,16 @@
       </div>
     </div>
     {{if .Entrepreneur.IsPaired}}
-    <div class="mt-3 text-xs text-gray-400">{{T "entrepreneur_detail.managed_note"}}</div>
+    <div class="mt-3 flex items-center gap-4">
+      <div class="text-xs text-gray-400">{{T "entrepreneur_detail.managed_note"}}</div>
+      <form method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}/unpair" class="inline">
+        <button type="submit"
+                onclick="return confirm('{{T "entrepreneur_detail.unpair_confirm"}}')"
+                class="rounded border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50">
+          {{T "entrepreneur_detail.unpair_btn"}}
+        </button>
+      </form>
+    </div>
     {{end}}
   </div>
 
@@ -84,12 +108,13 @@
       <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-mb">{{T "entrepreneur_detail.label_mb"}}</label>
         <input id="f-mb" type="text" name="mb" value="{{.Entrepreneur.MB}}"
-               placeholder="{{T "entrepreneur_detail.ph_mb"}}"
+               placeholder="{{T "entrepreneur_detail.ph_mb"}}" pattern="\d{8}" maxlength="8"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1" for="f-pib">{{T "entrepreneur_detail.label_pib"}}</label>
         <input id="f-pib" type="text" name="pib" value="{{.Entrepreneur.PIB}}" required
+               pattern="\d{9}" maxlength="9"
                class="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary">
       </div>
       <div>
@@ -137,6 +162,7 @@ function eEdit(on) {
   document.getElementById('e-edit-btn').classList.toggle('hidden', on);
   if (on) document.getElementById('f-title').focus();
 }
+{{if .EditError}}eEdit(true);{{end}}
 </script>
 </div>
 
@@ -168,7 +194,7 @@ function eEdit(on) {
         {{end}}
       </select>
       {{end}}
-      <button type="button"
+      <button id="btn-toggle-add-year" type="button"
               onclick="var f=document.getElementById('add-year-form');f.style.display=f.style.display==='none'?'flex':'none'"
               class="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
         {{T "kpo.add_year"}}
@@ -178,7 +204,7 @@ function eEdit(on) {
         <input type="number" name="year" min="2000" max="2100" placeholder="{{T "kpo.add_year_ph"}}"
                class="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                title="{{T "kpo.add_year_title"}}">
-        <button type="submit"
+        <button id="btn-open-year" type="submit"
                 class="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover">
           {{T "kpo.add_year_submit"}}
         </button>
@@ -214,6 +240,13 @@ function eEdit(on) {
       <tbody id="kpo-tbody" class="divide-y divide-gray-100">
 
         {{range .KPORows}}
+        {{if .WarnOutOfOrder}}
+        <tr>
+          <td colspan="8" class="px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400">
+            {{T "kpo.order_warning"}}
+          </td>
+        </tr>
+        {{end}}
         {{if .IsAdvanceInvoice}}
         <!-- Advance invoice row — muted, not counted in KPO totals -->
         <tr class="opacity-50 hover:opacity-70"
@@ -379,7 +412,7 @@ function eEdit(on) {
       <span class="text-sm text-green-700 font-medium">{{T "kpo.finalized_at"}} {{.CurrentBook.FinalizedAtStr}}</span>
       <form method="POST"
             action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/unfinalize">
-        <button type="submit"
+        <button id="btn-kpo-unlock" type="submit"
                 class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
           {{T "kpo.unlock"}}
         </button>
@@ -388,7 +421,7 @@ function eEdit(on) {
       <form method="POST"
             action="/a/entrepreneurs/{{.Entrepreneur.ID}}/kpo/{{.SelectedYear}}/finalize"
             onsubmit="return confirm('{{T "kpo.finalize_confirm_q"}} {{.SelectedYear}} {{T "kpo.finalize_confirm_year"}} {{T "kpo.finalize_confirm_detail"}}')">
-        <button type="submit"
+        <button id="btn-kpo-finalize" type="submit"
                 class="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
           {{T "kpo.finalize"}}
         </button>

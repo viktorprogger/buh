@@ -40,6 +40,11 @@ type Templates struct {
 	EntrepreneurBankAccounts *template.Template
 	EntrepreneurInvoices     *template.Template
 	EntrepreneurProfile      *template.Template
+	EntrepreneurSlips        *template.Template
+	EntrepreneurSlip         *template.Template
+	EntrepreneurSlipNew      *template.Template
+	EntrepreneurSlipUpload   *template.Template
+	SlipMerge                *template.Template
 }
 
 // i18nPlaceholder is a stub T function used at parse time.
@@ -121,5 +126,10 @@ func ParseTemplates(tfs fs.FS) Templates {
 		EntrepreneurBankAccounts: mustEntrepreneurPageTmpl(tfs, "entrepreneur_bank_accounts.html"),
 		EntrepreneurInvoices:     mustEntrepreneurPageTmpl(tfs, "entrepreneur_invoices.html"),
 		EntrepreneurProfile:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_profile.html"),
+		EntrepreneurSlips:        mustEntrepreneurPageTmpl(tfs, "entrepreneur_slips.html"),
+		EntrepreneurSlip:         mustEntrepreneurPageTmpl(tfs, "entrepreneur_slip.html", "templates/slip_styles.html"),
+		EntrepreneurSlipNew:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_slip_new.html", "templates/slip_styles.html"),
+		EntrepreneurSlipUpload:   mustEntrepreneurPageTmpl(tfs, "entrepreneur_slip_upload.html"),
+		SlipMerge:                mustPageTmpl(tfs, "slip_merge_slips.html", nil),
 	}
 }

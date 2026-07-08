@@ -168,3 +168,12 @@ func (r *Repo) Pair(ctx context.Context, managedID, entrepreneurUserID uuid.UUID
 	)
 	return err
 }
+
+// Unpair removes the entrepreneur_user link from a managed entrepreneur.
+func (r *Repo) Unpair(ctx context.Context, managedID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE managed_entrepreneurs SET entrepreneur_user_id = NULL, paired_at = NULL WHERE id = $1`,
+		managedID,
+	)
+	return err
+}

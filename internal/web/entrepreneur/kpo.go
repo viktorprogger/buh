@@ -93,6 +93,7 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 			TotalRSD:         inv.TotalRSD,
 		})
 	}
+	shared.MarkFirstOutOfOrder(kpoRows)
 	sort.Slice(kpoRows, func(i, j int) bool {
 		return kpoRows[i].Date.Before(kpoRows[j].Date)
 	})
@@ -315,7 +316,7 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 	pdfBytes, err := kpo.GeneratePDF(book, entries, info)
 	if err != nil {
 		log.Printf("kpo pdf generation error: %v", err)
-		http.Error(w, "PDF generation failed", http.StatusInternalServerError)
+		http.Error(w, i18n.FromContext(r.Context()).T("error.pdf_generation_failed"), http.StatusInternalServerError)
 		return
 	}
 
