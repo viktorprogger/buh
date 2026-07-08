@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-const PerPage = 20
+const PerPage = 10
 
 // ListState carries the current sort column, direction, and page for a paginated list.
 type ListState struct {
