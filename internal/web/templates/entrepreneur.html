@@ -237,11 +237,11 @@ function eEdit(on) {
           {{if not .CurrentBook.IsFinalized}}<th class="w-10"></th>{{end}}
         </tr>
       </thead>
-      <tbody id="kpo-tbody" class="divide-y divide-gray-100">
+      <tbody id="kpo-tbody" class="divide-y divide-gray-100" data-warn-text="{{T "kpo.order_warning"}}">
 
         {{range .KPORows}}
         {{if .WarnOutOfOrder}}
-        <tr>
+        <tr data-warn="order">
           <td colspan="8" class="px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400">
             {{T "kpo.order_warning"}}
           </td>
@@ -249,7 +249,7 @@ function eEdit(on) {
         {{end}}
         {{if .IsAdvanceInvoice}}
         <!-- Advance invoice row — muted, not counted in KPO totals -->
-        <tr class="opacity-50 hover:opacity-70"
+        <tr class="opacity-50 hover:opacity-70" data-advance="true"
             title="{{T "kpo.advance_tooltip"}}">
           <td class="px-3 py-2 text-center text-gray-400 text-xs select-none">{{T "kpo.advance_label"}}</td>
           <td class="px-3 py-2 text-gray-500">{{.Date.Format "02.01.2006."}}</td>
@@ -264,7 +264,7 @@ function eEdit(on) {
         </tr>
         {{else}}
         <!-- Regular KPO entry -->
-        <tr class="hover:bg-gray-50" data-id="{{.EntryID}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
+        <tr class="hover:bg-gray-50" data-id="{{.EntryID}}" data-date="{{.Date.Format "2006-01-02"}}"{{if not $.CurrentBook.IsFinalized}} draggable="true"{{end}}>
           <!-- Ordinal / drag handle -->
           <td class="px-3 py-2 text-center text-gray-400 text-xs{{if not $.CurrentBook.IsFinalized}} cursor-grab select-none{{end}}">
             {{if not $.CurrentBook.IsFinalized}}<span class="text-gray-300 mr-0.5">⠿</span>{{end}}<span class="row-ordinal">{{.OrdinalNumber}}</span>
@@ -681,12 +681,37 @@ function initDateInput(el) {
     if (!tbody.contains(e.relatedTarget)) { clearIndicator(overRow); overRow = null; }
   });
 
+  function updateOrderWarnings() {
+    Array.from(tbody.querySelectorAll('tr[data-warn="order"]')).forEach(function(r) { r.remove(); });
+    var warnText = tbody.dataset.warnText;
+    var prevDate = '';
+    var warned = false;
+    Array.from(tbody.children).forEach(function(row) {
+      if (warned || row.dataset.warn || row.dataset.advance || !row.dataset.id) return;
+      var dateStr = row.dataset.date || '';
+      if (prevDate && dateStr && dateStr < prevDate) {
+        var warnRow = document.createElement('tr');
+        warnRow.dataset.warn = 'order';
+        var td = document.createElement('td');
+        td.colSpan = 8;
+        td.className = 'px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400';
+        td.textContent = warnText;
+        warnRow.appendChild(td);
+        tbody.insertBefore(warnRow, row);
+        warned = true;
+        return;
+      }
+      if (dateStr) prevDate = dateStr;
+    });
+  }
+
   tbody.addEventListener('drop', function(e) {
     e.preventDefault();
     if (!dragRow || !overRow || overRow === dragRow) { clearIndicator(overRow); overRow = null; return; }
     clearIndicator(overRow);
     tbody.insertBefore(dragRow, dropBefore ? overRow : overRow.nextElementSibling);
     tbody.querySelectorAll('tr[data-id] .row-ordinal').forEach(function(span, i) { span.textContent = i + 1; });
+    updateOrderWarnings();
     overRow = null;
   });
 
