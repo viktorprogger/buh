@@ -78,6 +78,11 @@ func mustPageTmpl(tfs fs.FS, name string, funcs template.FuncMap, extra ...strin
 	return template.Must(t.ParseFS(tfs, files...))
 }
 
+func mustPublicPageTmpl(tfs fs.FS, name string) *template.Template {
+	t := template.New(name).Funcs(baseFuncs)
+	return template.Must(t.ParseFS(tfs, "templates/public_base.html", "templates/"+name))
+}
+
 var entrepreneurBaseFuncs = template.FuncMap{
 	"currentYear": func() int { return time.Now().Year() },
 }
@@ -108,8 +113,8 @@ func ParseTemplates(tfs fs.FS) Templates {
 		SlipNew:         mustPageTmpl(tfs, "slip_new.html", nil, slipExtra...),
 		Placeholder:     mustPageTmpl(tfs, "placeholder.html", nil),
 		ErrPage:         mustPageTmpl(tfs, "error.html", nil),
-		PausalLimitInfo: mustPageTmpl(tfs, "pausal_limit_info.html", nil),
-		VATLimitInfo:    mustPageTmpl(tfs, "vat_limit_info.html", nil),
+		PausalLimitInfo: mustPublicPageTmpl(tfs, "pausal_limit_info.html"),
+		VATLimitInfo:    mustPublicPageTmpl(tfs, "vat_limit_info.html"),
 		ClientForm:      mustEntrepreneurPageTmpl(tfs, "client_form.html"),
 		BankAccountForm: mustEntrepreneurPageTmpl(tfs, "bank_account_form.html"),
 		CorrespondentForm:        mustEntrepreneurPageTmpl(tfs, "correspondent_form.html"),
