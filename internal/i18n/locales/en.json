@@ -1455,10 +1455,7 @@
     "other": "Flat-rate entrepreneurs are exempt from full business bookkeeping, but only up to a certain annual income:"
   },
   "pausal_limit_info.until_2026": {
-    "other": "Until 2026 (inclusive): RSD 6,000,000"
-  },
-  "pausal_limit_info.from_2027": {
-    "other": "From 2027: RSD 8,000,000"
+    "other": "RSD 6,000,000"
   },
   "pausal_limit_info.limit_note": {
     "other": "The limit is based on turnover — total income from goods and service sales in the calendar year."

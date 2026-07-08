@@ -9,10 +9,7 @@ import (
 	"time"
 )
 
-func PausalalLimitForYear(year int) int64 {
-	if year >= 2027 {
-		return 8_000_000
-	}
+func PausalalLimitForYear(_ int) int64 {
 	return 6_000_000
 }
 
