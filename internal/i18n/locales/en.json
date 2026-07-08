@@ -102,7 +102,7 @@
     "other": "Upload PDF Decision"
   },
   "entrepreneur_list.upload_desc": {
-    "other": "Select up to 4 PDF files from eTax. The entrepreneur will be recognized automatically."
+    "other": "Select up to 10 PDF files from eTax. The entrepreneur will be recognized automatically."
   },
   "entrepreneur_list.upload_submit": {
     "other": "Process"
