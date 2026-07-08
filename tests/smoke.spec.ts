@@ -82,7 +82,7 @@ test.describe('accountant', () => {
   test('entrepreneur detail page — address and bank account fields visible in edit mode', async ({ page }) => {
     await page.goto(entPath);
     await expect(page).not.toHaveURL(/login/);
-    await page.getByRole('button', { name: 'Измени' }).click();
+    await page.click('#e-edit-btn');
     await expect(page.locator('#f-address')).toBeVisible();
     await expect(page.locator('#f-bank')).toBeVisible();
   });
@@ -100,7 +100,7 @@ test.describe('accountant', () => {
     await page.fill('input[name="N"]', 'Пореска управа');
     await page.fill('input[name="R"]', '840-3553531843-20');
     await page.fill('input[name="amount"]', '5000');
-    await page.getByRole('button', { name: 'Сачувај и преузми PDF' }).click();
+    await page.click('#btn-save-slip-acc');
     await page.waitForURL(/\/a\/slips\//);
     await expect(page.getByText('Уплатница је креирана')).toBeVisible();
   });

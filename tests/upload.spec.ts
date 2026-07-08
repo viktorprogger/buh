@@ -13,7 +13,7 @@ test.describe('upload решење', () => {
     const fileInput = page.locator('input[name="pdfs"]');
     await fileInput.setInputFiles(path.join(__dirname, 'fixtures', 'resenye.pdf'));
 
-    await page.getByRole('button', { name: 'Обради' }).click();
+    await page.click('#btn-process-upload');
 
     await page.waitForURL(/\/a\/import\/batches\//);
     await expect(page.locator('h1')).toBeVisible();

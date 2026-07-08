@@ -92,13 +92,13 @@ test('can finalize (укњижити) a year', async ({ page }) => {
   await page.goto(url);
 
   page.on('dialog', d => d.accept());
-  await page.getByRole('button', { name: 'Укњижи' }).click();
+  await page.click('#btn-kpo-finalize');
   await page.waitForURL(/entrepreneurs/);
 
   await expect(page.getByText(/Укњижено/)).toBeVisible();
   await expect(page.locator('#kpo-new-row')).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'Откључај' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Укњижи' })).not.toBeVisible();
+  await expect(page.locator('#btn-kpo-unlock')).toBeVisible();
+  await expect(page.locator('#btn-kpo-finalize')).not.toBeVisible();
 });
 
 // ── 8. Unfinalize a year (isolated entrepreneur) ───────────────────────────
@@ -107,14 +107,14 @@ test('can unfinalize (откључати) a finalized year', async ({ page }) =>
   await page.goto(url);
 
   page.on('dialog', d => d.accept());
-  await page.getByRole('button', { name: 'Укњижи' }).click();
+  await page.click('#btn-kpo-finalize');
   await page.waitForURL(/entrepreneurs/);
-  await expect(page.getByRole('button', { name: 'Откључај' })).toBeVisible();
+  await expect(page.locator('#btn-kpo-unlock')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Откључај' }).click();
+  await page.click('#btn-kpo-unlock');
   await page.waitForURL(/entrepreneurs/);
 
-  await expect(page.getByRole('button', { name: 'Укњижи' })).toBeVisible();
+  await expect(page.locator('#btn-kpo-finalize')).toBeVisible();
   await expect(page.locator('#kpo-new-row')).toBeVisible();
 });
 
@@ -122,9 +122,9 @@ test('can unfinalize (откључати) a finalized year', async ({ page }) =>
 test('can open a KPO for a previous year', async ({ page }) => {
   const prevYear = CURRENT_YEAR - 1;
   // Reveal the hidden year form first.
-  await page.getByRole('button', { name: '+ Додај годину' }).click();
+  await page.click('#btn-toggle-add-year');
   await page.fill('input[name="year"]', String(prevYear));
-  await page.getByRole('button', { name: 'Отвори' }).click();
+  await page.click('#btn-open-year');
   await page.waitForURL(new RegExp(`year=${prevYear}`));
 
   // Year select should show the previous year as selected.
@@ -135,9 +135,9 @@ test('can open a KPO for a previous year', async ({ page }) => {
 // ── 10. Multiple years show as tabs ────────────────────────────────────────
 test('all opened years appear as tabs', async ({ page }) => {
   for (const y of [CURRENT_YEAR - 2, CURRENT_YEAR - 3]) {
-    await page.getByRole('button', { name: '+ Додај годину' }).click();
+    await page.click('#btn-toggle-add-year');
     await page.fill('input[name="year"]', String(y));
-    await page.getByRole('button', { name: 'Отвори' }).click();
+    await page.click('#btn-open-year');
     await page.waitForURL(new RegExp(`year=${y}`));
   }
   await page.goto(entrepreneurUrl);

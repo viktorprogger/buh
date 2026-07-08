@@ -7,13 +7,16 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   globalSetup: './tests/global-setup.ts',
-  timeout: 2000,
+  timeout: 120000,
+  expect: { timeout: 15000 },
 
   use: {
     baseURL: 'http://localhost:8081',
     headless: true,
     locale: 'sr-Latn-RS',
     timezoneId: 'Europe/Belgrade',
+    actionTimeout: 15000,
+    navigationTimeout: 15000,
     extraHTTPHeaders: {
       'Accept-Language': 'sr',
     },

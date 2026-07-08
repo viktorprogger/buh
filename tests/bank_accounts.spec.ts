@@ -28,7 +28,7 @@ async function createLocalAccount(page: Page, bankName = 'Банка Тест', 
   await page.locator('input[name="account_type"][value="local"]').check();
   await page.fill('input[name="bank_name"]', bankName);
   await page.fill('input[name="account_number"]', accountNumber);
-  await page.getByRole('button', { name: 'Додај рачун' }).click();
+  await page.click('#btn-save-bank-account');
   await page.waitForURL('/e/bank-accounts');
 }
 
@@ -48,7 +48,7 @@ test('can edit a local bank account', async ({ page }) => {
   await createLocalAccount(page, bankName, '100-200300400-50');
   await page.getByRole('row', { name: new RegExp(bankName) }).getByRole('link', { name: 'Измени' }).click();
   await page.fill('input[name="bank_name"]', bankName + ' — измењена');
-  await page.getByRole('button', { name: 'Сачувај' }).click();
+  await page.click('#btn-save-bank-account');
   await page.waitForURL(/\/e\/bank-accounts\/[0-9a-f-]+\/edit$/);
   await page.goto('/e/bank-accounts');
   await expect(page.getByRole('cell', { name: bankName + ' — измењена' })).toBeVisible();
@@ -72,7 +72,7 @@ async function createForeignAccount(page: Page, bankName = 'Deutsche Bank', iban
   await page.fill('input[name="bank_name"]', bankName);
   await page.fill('input[name="iban"]', iban);
   await page.fill('input[name="swift"]', swift);
-  await page.getByRole('button', { name: 'Додај рачун' }).click();
+  await page.click('#btn-save-bank-account');
   await page.waitForURL('/e/bank-accounts');
 }
 
@@ -104,7 +104,7 @@ test('can add a correspondent bank to a foreign account', async ({ page }) => {
   await page.fill('input[name="bank_name"]', 'JP Morgan Chase');
   await page.fill('input[name="swift"]', 'CHASUS33');
   await page.fill('input[name="bank_address"]', '270 Park Ave, New York');
-  await page.getByRole('button', { name: 'Додај банку' }).click();
+  await page.click('#btn-save-correspondent');
   await page.waitForURL(/\/e\/bank-accounts\/[0-9a-f-]+\/edit$/);
   await expect(page.getByRole('cell', { name: 'JP Morgan Chase' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'CHASUS33' })).toBeVisible();
@@ -118,7 +118,7 @@ test('can delete a correspondent bank', async ({ page }) => {
   await page.getByRole('link', { name: '+ Додај' }).click();
   await page.fill('input[name="bank_name"]', 'Barclays');
   await page.fill('input[name="swift"]', 'BARCGB22');
-  await page.getByRole('button', { name: 'Додај банку' }).click();
+  await page.click('#btn-save-correspondent');
   await page.waitForURL(/\/e\/bank-accounts\/[0-9a-f-]+\/edit$/);
   await expect(page.getByRole('cell', { name: 'Barclays' })).toBeVisible();
   page.on('dialog', d => d.accept());
@@ -160,7 +160,7 @@ test('selecting a foreign account with correspondent bank shows correspondent se
   await page.getByRole('link', { name: '+ Додај' }).click();
   await page.fill('input[name="bank_name"]', 'Wells Fargo');
   await page.fill('input[name="swift"]', 'WFBIUS6S');
-  await page.getByRole('button', { name: 'Додај банку' }).click();
+  await page.click('#btn-save-correspondent');
   await page.waitForURL(/\/e\/bank-accounts\/[0-9a-f-]+\/edit$/);
   // Invoice form: select the foreign account and check correspondent section.
   await page.goto('/e/invoices/new');
@@ -179,7 +179,7 @@ test('bank account is saved with invoice and shown on detail page', async ({ pag
   await page.locator('[name="item_description[]"]').fill('Услуга са рачуном');
   await page.locator('[name="item_unit_price[]"]').fill('5000');
   await selectOptionByText(page, '#f-bank-account', new RegExp(bankName.slice(0, 8)));
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
   await expect(page.getByText(bankName.slice(0, 8))).toBeVisible();
   await expect(page.getByText('160-123456789012-95')).toBeVisible();
@@ -194,7 +194,7 @@ test('bank account and correspondent bank appear on invoice detail page', async 
   await page.getByRole('link', { name: '+ Додај' }).click();
   await page.fill('input[name="bank_name"]', 'PDF Кор Банка');
   await page.fill('input[name="swift"]', 'PDFXXX00');
-  await page.getByRole('button', { name: 'Додај банку' }).click();
+  await page.click('#btn-save-correspondent');
   await page.waitForURL(/\/e\/bank-accounts\/[0-9a-f-]+\/edit$/);
   // Create invoice.
   await page.goto('/e/invoices/new');
@@ -204,7 +204,7 @@ test('bank account and correspondent bank appear on invoice detail page', async 
   await page.locator('[name="item_unit_price[]"]').fill('8000');
   await selectOptionByText(page, '#f-bank-account', new RegExp(bankName.slice(0, 8)));
   await selectOptionByText(page, '#f-corr-bank', /PDF Кор Банка/);
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
   // PDF download.
   const [download] = await Promise.all([

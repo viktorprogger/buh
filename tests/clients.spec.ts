@@ -30,7 +30,7 @@ test('can edit a client', async ({ page }) => {
   await createLocalClient(page, name);
   await page.getByRole('row', { name: new RegExp(name) }).getByRole('link', { name: 'Измени' }).click();
   await page.fill('input[name="name"]', name + ' — измењен');
-  await page.getByRole('button', { name: 'Сачувај' }).click();
+  await page.click('#btn-save-client');
   await page.waitForURL('/e/clients');
   await expect(page.getByRole('cell', { name: name + ' — измењен' })).toBeVisible();
 });
@@ -49,7 +49,7 @@ test('can delete a client', async ({ page }) => {
 
 test('client name is required', async ({ page }) => {
   await page.goto('/e/clients/new');
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await expect(page.getByText('Назив клијента је обавезан.')).toBeVisible();
 });
 
@@ -58,7 +58,7 @@ test('local client requires PIB', async ({ page }) => {
   await page.fill('input[name="name"]', 'Фирма д.о.о.');
   // MB filled, PIB intentionally left blank
   await page.fill('input[name="registration_number"]', uniqueMb());
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await expect(page.getByText('ПИБ је обавезан за домаће клијенте.')).toBeVisible();
 });
 
@@ -67,7 +67,7 @@ test('local client requires MB', async ({ page }) => {
   await page.fill('input[name="name"]', 'Фирма д.о.о.');
   await page.fill('input[name="pib"]', uniquePib());
   // registration_number intentionally left blank
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await expect(page.getByText('Матични број је обавезан за домаће клијенте.')).toBeVisible();
 });
 
@@ -105,7 +105,7 @@ test('foreign client requires Tax ID', async ({ page }) => {
   await page.fill('input[name="name"]', 'Foreign Co Ltd');
   await page.check('input[name="is_foreign"]');
   // registration_number intentionally left blank
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await expect(page.getByText('Порески / регистрациони број је обавезан за стране клијенте.')).toBeVisible();
 });
 

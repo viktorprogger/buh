@@ -77,7 +77,7 @@ test('saving a client from invoice creation returns to invoice page', async ({ p
   await page.fill('input[name="name"]', 'Клијент из фактуре ' + Date.now());
   await page.fill('input[name="pib"]', uniquePib());
   await page.fill('input[name="registration_number"]', uniqueMb());
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await page.waitForURL('/e/invoices/new');
 });
 
@@ -90,7 +90,7 @@ test('creating a standard invoice auto-adds a KPO entry', async ({ page }) => {
   await page.locator('[name="item_description[]"]').fill('IT услуге');
   await page.locator('[name="item_unit_price[]"]').fill('50000');
   await page.locator('[name="item_quantity[]"]').fill('1');
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   await page.goto('/e/kpo/' + CURRENT_YEAR);
@@ -107,7 +107,7 @@ test('advance invoice appears muted in KPO section with tooltip', async ({ page 
   await page.fill('#f-issue', `${CURRENT_YEAR}-06-20`);
   await page.locator('[name="item_description[]"]').fill('Аванс за пројекат');
   await page.locator('[name="item_unit_price[]"]').fill('20000');
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   await page.goto('/e/kpo/' + CURRENT_YEAR);
@@ -125,7 +125,7 @@ test('invoice detail page shows correct data', async ({ page }) => {
   await page.locator('[name="item_description[]"]').fill('Консалтинг');
   await page.locator('[name="item_unit_price[]"]').fill('30000');
   await page.fill('#f-notes', 'Тест напомена');
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   await expect(page.getByText('DETAIL/1')).toBeVisible();
@@ -146,7 +146,7 @@ test('invoice detail shows PIB and MB for local client', async ({ page }) => {
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="pib"]', pib);
   await page.fill('#f-reg', mb);
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await page.waitForURL('/e/clients');
 
   await page.goto('/e/invoices/new');
@@ -158,7 +158,7 @@ test('invoice detail shows PIB and MB for local client', async ({ page }) => {
   await page.fill('#f-issue', `${CURRENT_YEAR}-06-01`);
   await page.locator('[name="item_description[]"]').fill('Услуга');
   await page.locator('[name="item_unit_price[]"]').fill('1000');
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   await expect(page.getByText(`PIB:`)).toBeVisible();
@@ -182,7 +182,7 @@ test('invoice detail shows Tax ID label for foreign client', async ({ page }) =>
   await page.fill('#f-issue', `${CURRENT_YEAR}-06-01`);
   await page.locator('[name="item_description[]"]').fill('Export service');
   await page.locator('[name="item_unit_price[]"]').fill('2000');
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   await expect(page.getByText('Tax ID / Reg No.:')).toBeVisible();
@@ -202,7 +202,7 @@ test('live preview shows PIB and MB for local client', async ({ page }) => {
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="pib"]', pib);
   await page.fill('#f-reg', mb);
-  await page.getByRole('button', { name: 'Додај клијента' }).click();
+  await page.click('#btn-save-client');
   await page.waitForURL('/e/clients');
 
   await page.goto('/e/invoices/new');
@@ -242,7 +242,7 @@ test('PDF download returns a PDF file', async ({ page }) => {
   await page.fill('#f-issue', `${CURRENT_YEAR}-04-01`);
   await page.locator('[name="item_description[]"]').fill('PDF услуга');
   await page.locator('[name="item_unit_price[]"]').fill('10000');
-  await page.getByRole('button', { name: /Креирај фактуру/ }).click();
+  await page.click('#btn-create-invoice');
   await page.waitForURL(/\/e\/invoices\/[0-9a-f-]+$/);
 
   const [download] = await Promise.all([
