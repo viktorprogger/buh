@@ -195,6 +195,16 @@ func (h *handler) handleSetLanguage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
+	if sess, ok := h.sessions.Get(r); ok {
+		switch sess.UserType {
+		case auth.UserTypeAccountant:
+			http.Redirect(w, r, "/a/", http.StatusFound)
+			return
+		case auth.UserTypeEntrepreneur:
+			http.Redirect(w, r, "/e/", http.StatusFound)
+			return
+		}
+	}
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		email := strings.TrimSpace(r.FormValue("email"))
