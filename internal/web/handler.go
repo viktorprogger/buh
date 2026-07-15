@@ -146,6 +146,17 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 			h.renderError(w, r, http.StatusNotFound)
 			return
 		}
+		sess, ok := h.sessions.Get(r)
+		if ok {
+			switch sess.UserType {
+			case auth.UserTypeAccountant:
+				http.Redirect(w, r, "/a/", http.StatusFound)
+				return
+			case auth.UserTypeEntrepreneur:
+				http.Redirect(w, r, "/e/", http.StatusFound)
+				return
+			}
+		}
 		http.Redirect(w, r, "/login", http.StatusFound)
 	})
 
