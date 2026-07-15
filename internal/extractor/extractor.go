@@ -14,11 +14,14 @@ import (
 
 	"github.com/makiuchi-d/gozxing"
 	mqrcode "github.com/makiuchi-d/gozxing/multi/qrcode"
+	"buh/internal/validate"
 )
 
 var (
-	// rePIB matches "ПИБ:" followed by optional whitespace/newlines and captures the numeric ID.
-	rePIB = regexp.MustCompile(`ПИБ:\s*\n?\s*(\d+)`)
+	// rePIBSection captures everything after "ПИБ:" up to the end of text.
+	rePIBSection = regexp.MustCompile(`(?s)ПИБ:(.*)`)
+	// reNineDigits finds any standalone 9-digit number (not adjacent to other digits or dashes).
+	reNineDigits = regexp.MustCompile(`(?:^|[^\d-])(\d{9})(?:[^\d-]|$)`)
 	// reBusinessName matches "ПОСЛОВНО СЕДИШТЕ:" and captures the firm name on the same line.
 	reBusinessName = regexp.MustCompile(`ПОСЛОВНО СЕДИШТЕ:\s*(.+)`)
 
@@ -47,8 +50,13 @@ func ExtractEntrepreneurInfo(pdfPath string) (EntrepreneurInfo, error) {
 
 	var info EntrepreneurInfo
 
-	if m := rePIB.FindStringSubmatch(text); m != nil {
-		info.PIB = strings.TrimSpace(m[1])
+	if m := rePIBSection.FindStringSubmatch(text); m != nil {
+		for _, dm := range reNineDigits.FindAllStringSubmatch(m[1], -1) {
+			if validate.PIB(dm[1]) {
+				info.PIB = dm[1]
+				break
+			}
+		}
 	}
 	if m := reBusinessName.FindStringSubmatch(text); m != nil {
 		info.Name = strings.TrimSpace(m[1])
