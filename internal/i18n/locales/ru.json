@@ -1742,6 +1742,9 @@
   "slip_history.merged": {
     "other": "Объединено в аккаунт бухгалтера"
   },
+  "entrepreneur_detail.invite_btn": {
+    "other": "Пригласить предпринимателя"
+  },
   "entrepreneur_detail.unpair_btn": {
     "other": "Отвязать предпринимателя"
   },

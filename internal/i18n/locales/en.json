@@ -1742,6 +1742,9 @@
   "slip_history.merged": {
     "other": "Merged into accountant's account"
   },
+  "entrepreneur_detail.invite_btn": {
+    "other": "Invite entrepreneur"
+  },
   "entrepreneur_detail.unpair_btn": {
     "other": "Unlink entrepreneur account"
   },

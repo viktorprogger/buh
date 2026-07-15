@@ -1742,6 +1742,9 @@
   "slip_history.merged": {
     "other": "Спојено у рачуновођин налог"
   },
+  "entrepreneur_detail.invite_btn": {
+    "other": "Позови предузетника"
+  },
   "entrepreneur_detail.unpair_btn": {
     "other": "Прекини везу са предузетником"
   },

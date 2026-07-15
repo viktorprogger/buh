@@ -87,6 +87,15 @@
         </button>
       </form>
     </div>
+    {{else}}
+    <div class="mt-3">
+      <form method="POST" action="/a/entrepreneurs/{{.Entrepreneur.ID}}/invite" class="inline">
+        <button type="submit"
+                class="rounded border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+          {{T "entrepreneur_detail.invite_btn"}}
+        </button>
+      </form>
+    </div>
     {{end}}
   </div>
 
