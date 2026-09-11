@@ -16,11 +16,13 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('slip detail', () => {
   let slipPath: string;
+  let slipPurpose: string;
 
   test.beforeAll(async ({ browser }) => {
     const page = await browser.newPage();
     await loginEntrepreneur(page, email, password);
-    slipPath = await createEntrepreneurSlip(page, 'Детаљ тест ' + Date.now());
+    slipPurpose = `detail-test-${Date.now()}`;
+    slipPath = await createEntrepreneurSlip(page, slipPurpose);
     await page.close();
   });
 
@@ -45,7 +47,7 @@ test.describe('slip detail', () => {
     const downloadPromise = page.waitForEvent('download');
     await page.click('#btn-download-slip');
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+    expect(download.suggestedFilename()).toBe(`uplatnica-slip-${slipPurpose}.pdf`);
   });
 
   test('delete removes slip from list', async ({ page }) => {

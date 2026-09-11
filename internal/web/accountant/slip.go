@@ -114,40 +114,40 @@ func (h *Handler) logSlipHistory(ctx context.Context, slipID uuid.UUID, event sl
 	}
 }
 
-func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.UUID) (sliprecord.SlipRecord, bool) {
+func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, id uuid.UUID) (sliprecord.SlipRecord, string, bool) {
 	accountantID, ok := h.accountantFromSession(r)
 	if !ok {
 		h.renderError(w, r, http.StatusForbidden)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	s, err := h.slips.FindByID(r.Context(), id)
 	if errors.Is(err, sliprecord.ErrNotFound) {
 		h.renderError(w, r, http.StatusNotFound)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	if err != nil {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	if s.ManagedEntrepreneurID == uuid.Nil {
 		// Slip is owned by an entrepreneur user, not a managed entrepreneur — accountant has no access.
 		h.renderError(w, r, http.StatusForbidden)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	e, err := h.entrepreneurs.FindByID(r.Context(), s.ManagedEntrepreneurID)
 	if errors.Is(err, entrepreneur.ErrNotFound) {
 		h.renderError(w, r, http.StatusNotFound)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	if err != nil {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	if e.AccountantID != accountantID {
 		h.renderError(w, r, http.StatusForbidden)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
-	return s, true
+	return s, e.Name, true
 }
 
 func slipFormToRecord(r *http.Request, existing sliprecord.SlipRecord) sliprecord.SlipRecord {
@@ -173,7 +173,7 @@ func (h *Handler) handleSlip(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	s, ok := h.findOwnedSlip(w, r, id)
+	s, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -198,7 +198,7 @@ func (h *Handler) handleSlipSave(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	existing, ok := h.findOwnedSlip(w, r, id)
+	existing, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -223,7 +223,7 @@ func (h *Handler) handleSlipDownload(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	existing, ok := h.findOwnedSlip(w, r, id)
+	existing, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -247,7 +247,7 @@ func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	s, ok := h.findOwnedSlip(w, r, id)
+	s, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -262,52 +262,63 @@ func (h *Handler) handleSlipDelete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/a/entrepreneurs/"+entrepreneurID.String(), http.StatusFound)
 }
 
+func (h *Handler) handleBulkSlipDownload(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.renderError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	seen := make(map[uuid.UUID]bool)
+	downloads := make([]shared.SlipDownload, 0, len(r.Form["slip_id"]))
+	for _, rawID := range r.Form["slip_id"] {
+		id, err := uuid.Parse(rawID)
+		if err != nil {
+			h.renderError(w, r, http.StatusBadRequest)
+			return
+		}
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		record, entrepreneurName, ok := h.findOwnedSlip(w, r, id)
+		if !ok {
+			return
+		}
+		downloads = append(downloads, shared.SlipDownload{Record: record, EntrepreneurName: entrepreneurName})
+	}
+	if len(downloads) == 0 {
+		h.renderError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	archive, err := shared.ZipSlipPDFs(downloads)
+	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, shared.SlipArchiveFilename(downloads[0].EntrepreneurName, downloads[0].Record.Payer)))
+	_, _ = w.Write(archive)
+}
+
 func (h *Handler) handleSlipPDF(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	s, ok := h.findOwnedSlip(w, r, id)
+	s, entrepreneurName, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
-	pay := &ips.Payment{
-		K:  ips.CodePR,
-		V:  "01",
-		C:  "1",
-		R:  s.PayeeAccount,
-		N:  s.Payee,
-		SF: s.PaymentCode,
-		S:  s.Purpose,
-		RO: s.Reference,
-		O:  "",
-		P:  s.Payer,
-	}
-	pay.I = ips.FormatAmount(s.Currency, strings.ReplaceAll(s.Amount, ",", "."))
-
-	tmp, err := os.CreateTemp("", "buh-slip-*.pdf")
+	pdfBytes, filename, err := shared.GenerateSlipPDF(s, entrepreneurName)
 	if err != nil {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		h.renderError(w, r, http.StatusInternalServerError)
 		return
 	}
-	tmp.Close()
-	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
-
-	if err := slip.GeneratePDF(pay, tmpPath); err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", i18n.FromContext(r.Context()).T("error.server_error"), err), http.StatusInternalServerError)
-		return
-	}
-	pdfBytes, err := os.ReadFile(tmpPath)
-	if err != nil {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
-		return
-	}
-	filename := fmt.Sprintf("uplatnica-%s.pdf", shared.SanitizeFilename(pay.N))
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	w.Write(pdfBytes)
+	_, _ = w.Write(pdfBytes)
 }
 
 func (h *Handler) handleSlipNewForm(w http.ResponseWriter, r *http.Request) {
@@ -398,16 +409,16 @@ func (h *Handler) handleSlipNewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	rec := sliprecord.SlipRecord{
 		ManagedEntrepreneurID: id,
-		PaymentCode:    pay.SF,
-		Amount:         shared.FormatAmount(form.Amount),
-		Currency:       form.Currency,
-		Purpose:        pay.S,
-		PayeeAccount:   rawAccount,
-		Reference:      pay.RO,
-		Payee:          pay.N,
-		Payer:          pay.P,
-		Year:           form.Year,
-		Advance:        form.Advance,
+		PaymentCode:           pay.SF,
+		Amount:                shared.FormatAmount(form.Amount),
+		Currency:              form.Currency,
+		Purpose:               pay.S,
+		PayeeAccount:          rawAccount,
+		Reference:             pay.RO,
+		Payee:                 pay.N,
+		Payer:                 pay.P,
+		Year:                  form.Year,
+		Advance:               form.Advance,
 	}
 	saved, err := h.slips.Save(context.Background(), rec)
 	if err != nil {

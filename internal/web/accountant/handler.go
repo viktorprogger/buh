@@ -103,6 +103,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /entrepreneurs/{id}/slips/merge/{year}/done", h.handleSlipMergeDone)
 	mux.HandleFunc("POST /entrepreneurs/{id}/unpair", h.handleUnpair)
 	mux.HandleFunc("POST /entrepreneurs/{id}/invite", h.handleAccountantInviteEntrepreneur)
+	mux.HandleFunc("POST /slips/download", h.handleBulkSlipDownload)
 	mux.HandleFunc("GET /slips/{id}", h.handleSlip)
 	mux.HandleFunc("POST /slips/{id}/save", h.handleSlipSave)
 	mux.HandleFunc("POST /slips/{id}/download", h.handleSlipDownload)

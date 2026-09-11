@@ -5,7 +5,12 @@
 {{define "content"}}
 <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
   <h1 class="text-2xl font-bold text-gray-900">{{T "e_slips.title"}}</h1>
-  <div class="flex gap-2">
+  <div class="flex flex-wrap gap-2">
+    <form id="bulk-slip-download" method="POST" action="/e/slips/download"></form>
+    <button id="btn-download-selected" type="submit" form="bulk-slip-download" onclick="return bulkDownloadSelected()"
+            class="hidden rounded border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+      {{T "slips.download_selected"}}
+    </button>
     <a href="/e/slips/upload"
        class="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
       {{T "e_slips.upload_pdf"}}
@@ -25,7 +30,7 @@
 
 {{if .LatestYear.Year}}
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6">
-  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
     <h2 class="text-base font-semibold text-gray-800">{{.LatestYear.Year}}</h2>
     {{if index .MergedYears .LatestYear.Year}}
     <span class="text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded px-2 py-0.5">{{T "e_slips.merged_badge"}}</span>
@@ -35,6 +40,7 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-gray-50 border-b border-gray-200">
+        <th class="w-10 px-2 py-3 text-center"><input class="slip-select-all h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox" onchange="toggleSlipTable(this)" aria-label="{{T "slip_table.select_all_label"}}"></th>
         <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_date"}}</th>
         <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_purpose"}}</th>
         <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">{{T "slip_table.col_payee"}}</th>
@@ -43,22 +49,23 @@
     </thead>
     <tbody class="divide-y divide-gray-100">
       {{range .LatestYear.Regular}}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/e/slips/{{.ID}}'">
-        <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
-        <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
-      </tr>
+      {{template "entrepreneur_slip_row" .}}
       {{end}}
     </tbody>
   </table>
   {{end}}
   {{if .LatestYear.Advance}}
-  <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-t border-gray-100">{{T "e_slips.advance_header"}}</div>
-  <table class="w-full text-sm">
+  <table class="w-full text-sm border-t border-gray-100">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200">
+        <th class="w-10 px-2 py-2 text-center"><input class="slip-select-all h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox" onchange="toggleSlipTable(this)" aria-label="{{T "slip_table.select_all_label"}}"></th>
+        <th colspan="4" class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{T "e_slips.advance_header"}}</th>
+      </tr>
+    </thead>
     <tbody class="divide-y divide-gray-100">
       {{range .LatestYear.Advance}}
       <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/e/slips/{{.ID}}'">
+        <td class="w-10 px-2 py-3 text-center" onclick="event.stopPropagation()"><input class="slip-select h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox" name="slip_id" value="{{.ID}}" form="bulk-slip-download" aria-label="{{T "slip_table.select_label"}}"></td>
         <td class="px-4 py-3 text-gray-400">{{.GeneratedAt.Format "02.01.2006."}}</td>
         <td class="px-4 py-3 text-gray-500 italic">{{.Purpose}}</td>
         <td class="px-4 py-3 text-gray-500">{{.Payee}}</td>
@@ -81,14 +88,15 @@
   </summary>
   {{if .Regular}}
   <table class="w-full text-sm border-t border-gray-100">
+    <thead>
+      <tr class="bg-gray-50 border-b border-gray-200">
+        <th class="w-10 px-2 py-2 text-center"><input class="slip-select-all h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox" onchange="toggleSlipTable(this)" aria-label="{{T "slip_table.select_all_label"}}"></th>
+        <th colspan="4" class="sr-only">{{T "slip_table.select_all_label"}}</th>
+      </tr>
+    </thead>
     <tbody class="divide-y divide-gray-100">
       {{range .Regular}}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/e/slips/{{.ID}}'">
-        <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
-        <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
-        <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
-      </tr>
+      {{template "entrepreneur_slip_row" .}}
       {{end}}
     </tbody>
   </table>
@@ -96,5 +104,40 @@
 </details>
 {{end}}
 
+<script>
+function updateBulkDownloadSelected() {
+  document.getElementById('btn-download-selected').classList.toggle(
+    'hidden', document.querySelectorAll('.slip-select:checked').length === 0
+  );
+  document.querySelectorAll('.slip-select-all').forEach(function(master) {
+    var slips = master.closest('table').querySelectorAll('.slip-select');
+    var selected = master.closest('table').querySelectorAll('.slip-select:checked').length;
+    master.checked = slips.length > 0 && selected === slips.length;
+    master.indeterminate = selected > 0 && selected < slips.length;
+  });
+}
+function toggleSlipTable(master) {
+  master.closest('table').querySelectorAll('.slip-select').forEach(function(box) {
+    box.checked = master.checked;
+  });
+  updateBulkDownloadSelected();
+}
+document.addEventListener('change', function(event) {
+  if (event.target.matches('.slip-select')) updateBulkDownloadSelected();
+});
+function bulkDownloadSelected() {
+  return document.querySelectorAll('.slip-select:checked').length > 0;
+}
+</script>
 {{end}}
+{{end}}
+
+{{define "entrepreneur_slip_row"}}
+<tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/e/slips/{{.ID}}'">
+  <td class="w-10 px-2 py-3 text-center" onclick="event.stopPropagation()"><input class="slip-select h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox" name="slip_id" value="{{.ID}}" form="bulk-slip-download" aria-label="{{T "slip_table.select_label"}}"></td>
+  <td class="px-4 py-3 text-gray-600">{{.GeneratedAt.Format "02.01.2006."}}</td>
+  <td class="px-4 py-3 text-gray-800">{{.Purpose}}</td>
+  <td class="px-4 py-3 text-gray-800">{{.Payee}}</td>
+  <td class="px-4 py-3 text-gray-800 font-medium">{{.Amount}} {{.Currency}}</td>
+</tr>
 {{end}}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func PausalalLimitForYear(_ int) int64 {
@@ -46,16 +47,43 @@ func FormatAmount(s string) string {
 	return fmt.Sprintf("%.2f", Round2(ParseAmount(s)))
 }
 
+// Slug converts user-visible text into a portable lowercase filename component.
+func Slug(s string) string {
+	s = strings.NewReplacer("ђ", "dj", "Ђ", "Dj", "đ", "dj", "Đ", "Dj", "џ", "dz", "Џ", "Dz").Replace(s)
+	var b strings.Builder
+	separator := false
+	for _, r := range strings.ToLower(s) {
+		r = transliterate(r)
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+			separator = false
+		} else if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			// Non-Latin letters are not portable filename components.
+			separator = true
+		} else if b.Len() > 0 {
+			separator = true
+		}
+		if separator && b.Len() > 0 && !strings.HasSuffix(b.String(), "-") {
+			b.WriteByte('-')
+		}
+	}
+	return strings.Trim(b.String(), "-")
+}
+
+func transliterate(r rune) rune {
+	for _, pair := range []struct{ from, to rune }{{'š', 's'}, {'č', 'c'}, {'ć', 'c'}, {'ž', 'z'}, {'љ', 'l'}, {'њ', 'n'}, {'џ', 'd'}, {'ђ', 'd'}, {'ј', 'j'}, {'ћ', 'c'}, {'ч', 'c'}, {'ш', 's'}, {'ж', 'z'}, {'а', 'a'}, {'б', 'b'}, {'в', 'v'}, {'г', 'g'}, {'д', 'd'}, {'е', 'e'}, {'з', 'z'}, {'и', 'i'}, {'к', 'k'}, {'л', 'l'}, {'м', 'm'}, {'н', 'n'}, {'о', 'o'}, {'п', 'p'}, {'р', 'r'}, {'с', 's'}, {'т', 't'}, {'у', 'u'}, {'ф', 'f'}, {'х', 'h'}, {'ц', 'c'}} {
+		if r == pair.from {
+			return pair.to
+		}
+	}
+	return r
+}
+
 func SanitizeFilename(s string) string {
-	r := strings.NewReplacer(" ", "-", "/", "-", "\\", "-", ":", "-")
-	s = r.Replace(s)
-	if len(s) > 40 {
-		s = s[:40]
+	if slug := Slug(s); slug != "" {
+		return slug
 	}
-	if s == "" {
-		s = "slip"
-	}
-	return s
+	return "slip"
 }
 
 func ParseDayMonth(s string, year int) (time.Time, error) {

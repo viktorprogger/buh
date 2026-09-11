@@ -127,6 +127,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /slips/new", h.handleESlipNewSubmit)
 	mux.HandleFunc("GET /slips/upload", h.handleESlipUploadForm)
 	mux.HandleFunc("POST /slips/upload", h.handleESlipUploadSubmit)
+	mux.HandleFunc("POST /slips/download", h.handleBulkSlipDownload)
 	mux.HandleFunc("GET /slips/{id}", h.handleESlip)
 	mux.HandleFunc("POST /slips/{id}/save", h.handleESlipSave)
 	mux.HandleFunc("POST /slips/{id}/download", h.handleESlipDownload)

@@ -22,37 +22,43 @@ import (
 	"buh/internal/web/shared"
 )
 
-func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, slipID uuid.UUID) (sliprecord.SlipRecord, bool) {
+func (h *Handler) findOwnedSlip(w http.ResponseWriter, r *http.Request, slipID uuid.UUID) (sliprecord.SlipRecord, string, bool) {
 	userID, ok := h.entrepreneurUserFromSession(r)
 	if !ok {
 		h.renderError(w, r, http.StatusForbidden)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	s, err := h.slips.FindByID(r.Context(), slipID)
 	if errors.Is(err, sliprecord.ErrNotFound) {
 		h.renderError(w, r, http.StatusNotFound)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 	if err != nil {
 		h.renderError(w, r, http.StatusInternalServerError)
-		return sliprecord.SlipRecord{}, false
+		return sliprecord.SlipRecord{}, "", false
 	}
 
-	// Direct ownership.
+	// Direct ownership. Prefer the paired profile's official name for slips
+	// created before the entrepreneur was paired; retain the stored payer when unpaired.
 	if s.EntrepreneurUserID != nil && *s.EntrepreneurUserID == userID {
-		return s, true
+		if h.entrepreneurs != nil {
+			if managed, err := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID); err == nil && managed.ID != uuid.Nil {
+				return s, managed.Name, true
+			}
+		}
+		return s, s.Payer, true
 	}
 
 	// Post-merge: slip belongs to the managed entrepreneur paired with this user.
 	if s.ManagedEntrepreneurID != (uuid.UUID{}) {
 		managed, err := h.entrepreneurs.FindByEntrepreneurUserID(r.Context(), userID)
 		if err == nil && managed.ID == s.ManagedEntrepreneurID {
-			return s, true
+			return s, managed.Name, true
 		}
 	}
 
 	h.renderError(w, r, http.StatusForbidden)
-	return sliprecord.SlipRecord{}, false
+	return sliprecord.SlipRecord{}, "", false
 }
 
 func (h *Handler) logSlipHistory(ctx context.Context, slipID uuid.UUID, event sliphistory.Event, actorID uuid.UUID, changes map[string]any) {
@@ -104,7 +110,7 @@ func (h *Handler) handleESlip(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	s, ok := h.findOwnedSlip(w, r, id)
+	s, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -139,7 +145,7 @@ func (h *Handler) handleESlipSave(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	existing, ok := h.findOwnedSlip(w, r, id)
+	existing, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -164,7 +170,7 @@ func (h *Handler) handleESlipDownload(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	existing, ok := h.findOwnedSlip(w, r, id)
+	existing, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -188,7 +194,7 @@ func (h *Handler) handleESlipDelete(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	s, ok := h.findOwnedSlip(w, r, id)
+	s, _, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
@@ -202,51 +208,63 @@ func (h *Handler) handleESlipDelete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/e/slips", http.StatusFound)
 }
 
+func (h *Handler) handleBulkSlipDownload(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.renderError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	seen := make(map[uuid.UUID]bool)
+	downloads := make([]shared.SlipDownload, 0, len(r.Form["slip_id"]))
+	for _, rawID := range r.Form["slip_id"] {
+		id, err := uuid.Parse(rawID)
+		if err != nil {
+			h.renderError(w, r, http.StatusBadRequest)
+			return
+		}
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		record, entrepreneurName, ok := h.findOwnedSlip(w, r, id)
+		if !ok {
+			return
+		}
+		downloads = append(downloads, shared.SlipDownload{Record: record, EntrepreneurName: entrepreneurName})
+	}
+	if len(downloads) == 0 {
+		h.renderError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	archive, err := shared.ZipSlipPDFs(downloads)
+	if err != nil {
+		h.renderError(w, r, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, shared.SlipArchiveFilename(downloads[0].EntrepreneurName, downloads[0].Record.Payer)))
+	_, _ = w.Write(archive)
+}
+
 func (h *Handler) handleESlipPDF(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		h.renderError(w, r, http.StatusNotFound)
 		return
 	}
-	s, ok := h.findOwnedSlip(w, r, id)
+	s, entrepreneurName, ok := h.findOwnedSlip(w, r, id)
 	if !ok {
 		return
 	}
-	pay := &ips.Payment{
-		K:  ips.CodePR,
-		V:  "01",
-		C:  "1",
-		R:  s.PayeeAccount,
-		N:  s.Payee,
-		SF: s.PaymentCode,
-		S:  s.Purpose,
-		RO: s.Reference,
-		P:  s.Payer,
-	}
-	pay.I = ips.FormatAmount(s.Currency, strings.ReplaceAll(s.Amount, ",", "."))
-
-	tmp, err := os.CreateTemp("", "buh-slip-*.pdf")
+	pdfBytes, filename, err := shared.GenerateSlipPDF(s, entrepreneurName)
 	if err != nil {
 		h.renderError(w, r, http.StatusInternalServerError)
 		return
 	}
-	tmp.Close()
-	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
-
-	if err := slip.GeneratePDF(pay, tmpPath); err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", i18n.FromContext(r.Context()).T("error.server_error"), err), http.StatusInternalServerError)
-		return
-	}
-	pdfBytes, err := os.ReadFile(tmpPath)
-	if err != nil {
-		h.renderError(w, r, http.StatusInternalServerError)
-		return
-	}
-	filename := fmt.Sprintf("uplatnica-%s.pdf", shared.SanitizeFilename(pay.N))
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	w.Write(pdfBytes)
+	_, _ = w.Write(pdfBytes)
 }
 
 func (h *Handler) handleESlipNewForm(w http.ResponseWriter, r *http.Request) {
