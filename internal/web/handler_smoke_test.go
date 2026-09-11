@@ -3,6 +3,7 @@ package web_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"buh/internal/accountant"
@@ -63,6 +64,19 @@ func TestPublicRoutes(t *testing.T) {
 				t.Errorf("GET %s: got %d, want %d", tc.path, w.Code, tc.want)
 			}
 		})
+	}
+}
+
+func TestNotFoundRendersErrorPage(t *testing.T) {
+	h := newHandler(t)
+
+	w := get(h, "/does-not-exist")
+	body := w.Body.String()
+	if !strings.Contains(body, "Страница није пронађена") {
+		t.Errorf("404 response does not contain the error title: %s", body)
+	}
+	if !strings.Contains(body, "Тражена страница не постоји.") {
+		t.Errorf("404 response does not contain the error message: %s", body)
 	}
 }
 

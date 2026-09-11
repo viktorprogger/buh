@@ -17,6 +17,9 @@ export const login = loginAccountant;
 
 export async function loginEntrepreneur(page: Page, email: string, password: string) {
   await page.goto('/login');
+  // Registration and pairing helpers leave the page logged in. Since /login
+  // redirects authenticated users, keep the existing entrepreneur session.
+  if (new URL(page.url()).pathname === '/e/') return;
   await page.click('#tab-entrepreneur');
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
@@ -131,14 +134,14 @@ export async function createAccountantSlip(
 export async function createEntrepreneurSlip(
   page: Page,
   purpose: string,
-  options?: { year?: number; advance?: boolean },
+  options?: { year?: number; advance?: boolean; amount?: string },
 ): Promise<string> {
   await page.goto('/e/slips/new');
   await page.fill('input[name="SF"]', '253');
   await page.fill('input[name="S"]', purpose);
   await page.fill('input[name="N"]', 'Пореска управа');
   await page.fill('input[name="R"]', '840-3553531843-20');
-  await page.fill('input[name="amount"]', '5000');
+  await page.fill('input[name="amount"]', options?.amount ?? '5000');
   await page.fill('input[name="year"]', String(options?.year ?? CURRENT_YEAR));
 
   if (options?.advance) {
@@ -149,7 +152,7 @@ export async function createEntrepreneurSlip(
   await page.waitForURL('/e/slips');
 
   // Click the row with the slip to navigate to its detail page
-  await page.locator('tr').filter({ hasText: purpose }).click();
+  await page.locator('tr').filter({ hasText: purpose }).first().click();
   await page.waitForURL(/\/e\/slips\/[0-9a-f-]+/);
 
   return new URL(page.url()).pathname;

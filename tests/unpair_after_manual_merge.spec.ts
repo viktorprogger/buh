@@ -34,7 +34,10 @@ test.beforeAll(async ({ browser }) => {
 
   // Accountant and entrepreneur both create a slip with the same purpose but different amounts
   await createAccountantSlip(accPage, entPath, PURPOSE, ACCOUNTANT_AMOUNT);
-  await createEntrepreneurSlip(entPage, PURPOSE, { year: CURRENT_YEAR });
+  await createEntrepreneurSlip(entPage, PURPOSE, {
+    year: CURRENT_YEAR,
+    amount: ENTREPRENEUR_AMOUNT,
+  });
 
   // Accountant opens the merge view — conflict is shown
   await accPage.goto(`${entPath}/slips/merge/${CURRENT_YEAR}`);

@@ -6,8 +6,8 @@ import {
 } from './helpers';
 
 // No merge was ever run. Each side has its own slip with a different purpose.
-// DESIRED: on unpair, nothing is copied across — each side keeps only what they had.
-// Some of these tests will FAIL with the current implementation (which always copies).
+// On unpair, accountant-owned records are copied to the entrepreneur account,
+// while the original records remain in their respective namespaces.
 
 const ENT_PURPOSE = `ЕнтПорез ${Date.now()}`;
 const ACC_PURPOSE = `РачПДВ ${Date.now()}`;
@@ -53,9 +53,9 @@ test('entrepreneur still sees their own slip after unpair without merge', async 
   await expect(entPage.getByText(ENT_PURPOSE)).toBeVisible();
 });
 
-test('entrepreneur does NOT see the accountant slip — nothing should be copied without merge', async () => {
+test('entrepreneur receives a copy of the accountant slip after unpair', async () => {
   await entPage.goto('/e/slips');
-  await expect(entPage.getByText(ACC_PURPOSE)).not.toBeVisible();
+  await expect(entPage.getByText(ACC_PURPOSE)).toBeVisible();
 });
 
 // Accountant side

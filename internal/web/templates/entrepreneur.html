@@ -181,7 +181,10 @@ function eEdit(on) {
 <!-- ── KPO section ───────────────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden mb-6" id="kpo">
   <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
-    <h2 class="text-lg font-semibold text-gray-900">{{T "kpo.section_title"}}</h2>
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900">{{T "kpo.section_title"}}</h2>
+      <div class="text-xs text-gray-500">{{T "kpo.rsd_note"}}</div>
+    </div>
     <div class="flex flex-wrap gap-2 items-center">
       <!-- Invoices are created by the entrepreneur on /e/invoices/new -->
       {{if .Entrepreneur.IsPaired}}
@@ -222,6 +225,9 @@ function eEdit(on) {
   </div>
 
   <!-- Entry table -->
+  {{if .HasPendingRates}}
+  <div class="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-900">{{T "kpo.pending_rate"}}</div>
+  {{end}}
   <div class="overflow-x-auto">
     <!-- Forms outside the table (inputs reference them via form="…") -->
     <form id="kpo-new" method="POST"
@@ -240,6 +246,7 @@ function eEdit(on) {
           <th class="px-3 py-2 text-left">{{T "kpo.col_date"}}</th>
           <th class="px-3 py-2 text-left">{{T "kpo.col_invoice"}}</th>
           <th class="px-3 py-2 text-left">{{T "kpo.col_description"}}</th>
+          <th class="px-3 py-2 text-center">{{T "kpo.col_currency"}}</th>
           <th class="px-3 py-2 text-right">{{T "kpo.col_product"}}</th>
           <th class="px-3 py-2 text-right">{{T "kpo.col_service"}}</th>
           <th class="px-3 py-2 text-right">{{T "kpo.col_total"}}</th>
@@ -251,7 +258,7 @@ function eEdit(on) {
         {{range .KPORows}}
         {{if .WarnOutOfOrder}}
         <tr data-warn="order">
-          <td colspan="8" class="px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400">
+          <td colspan="9" class="px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400">
             {{T "kpo.order_warning"}}
           </td>
         </tr>
@@ -266,6 +273,7 @@ function eEdit(on) {
             <span>{{.InvoiceNum}}</span>
           </td>
           <td class="px-3 py-2 text-gray-500 text-xs">{{.ClientName}}</td>
+          <td class="px-3 py-2 text-center text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-500">{{fmtMoney .TotalRSD}}</td>
@@ -307,21 +315,31 @@ function eEdit(on) {
                    class="edit-input w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
+          <!-- Currency and original values -->
+          <td class="px-3 py-2 text-center">
+            <span class="view-val font-mono text-gray-800">{{.Currency}}</span>
+            {{if ne .Currency "RSD"}}
+              {{if eq .RateStatus "pending"}}<div class="view-val text-xs text-amber-700">{{T "kpo.pending_rate_badge"}}</div>{{else}}{{$rateTooltip := TWith "kpo.rate_tooltip" "Currency" .Currency "Date" (.RateEffectiveDate.Format "02.01.2006")}}<div class="view-val inline-flex items-center gap-1 text-xs text-gray-400"><span>{{printf "%.4f" .RateMiddle}} RSD = {{.RateUnit}} {{.Currency}}</span><span data-rate-info tabindex="0" role="img" aria-label="{{$rateTooltip}}" title="{{$rateTooltip}}" class="cursor-help rounded text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-1 focus:ring-primary">ⓘ</span></div>{{end}}
+            {{end}}
+            {{if not $.CurrentBook.IsFinalized}}
+            {{template "currency_picker" dict "ID" (printf "currency-edit-%s" .EntryID) "Name" "currency" "Value" .Currency "Form" (printf "edit-%s" .EntryID) "Edit" true "Currencies" $.Currencies}}
+            {{end}}
+          </td>
           <!-- Product revenue -->
           <td class="px-3 py-2 text-right">
-            <span class="view-val font-mono text-gray-800">{{fmtMoney .ProductRevenue}}</span>
+            {{if eq .RateStatus "pending"}}<span class="view-val font-mono text-amber-700">—</span>{{else}}<span class="view-val font-mono text-gray-800">{{fmtMoney .ProductRevenue}}</span>{{end}}
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="product_revenue"
-                   value="{{printf "%.2f" .ProductRevenue}}" style="display:none"
+                   value="{{printf "%.2f" .OriginalProductRevenue}}" style="display:none"
                    class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
           <!-- Service revenue -->
           <td class="px-3 py-2 text-right">
-            <span class="view-val font-mono text-gray-800">{{fmtMoney .ServiceRevenue}}</span>
+            {{if eq .RateStatus "pending"}}<span class="view-val font-mono text-amber-700">—</span>{{else}}<span class="view-val font-mono text-gray-800">{{fmtMoney .ServiceRevenue}}</span>{{end}}
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="service_revenue"
-                   value="{{printf "%.2f" .ServiceRevenue}}" style="display:none"
+                   value="{{printf "%.2f" .OriginalServiceRevenue}}" style="display:none"
                    class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
@@ -356,10 +374,14 @@ function eEdit(on) {
         <!-- Totals row (shown only when there are regular KPO entries) -->
         {{if .KPOEntries}}
         <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold text-sm">
-          <td colspan="4" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
+          {{if .HasPendingRates}}
+          <td colspan="8" class="px-3 py-2 text-right text-xs text-amber-700 uppercase tracking-wide">{{T "kpo.pending_rate_badge"}}</td>
+          {{else}}
+          <td colspan="5" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
           <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalProduct}}</td>
           <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalService}}</td>
           <td class="px-3 py-2 text-right font-mono">{{fmtMoney .TotalAll}}</td>
+          {{end}}
           {{if not .CurrentBook.IsFinalized}}<td></td>{{end}}
         </tr>
         {{end}}
@@ -386,6 +408,9 @@ function eEdit(on) {
                    id="kpo-description"
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                    aria-label="{{T "kpo.field_description"}}">
+          </td>
+          <td class="px-1 py-1" aria-label="{{T "kpo.field_currency"}}">
+            {{template "currency_picker" dict "ID" "currency-new" "Name" "currency" "Value" "RSD" "Form" "kpo-new" "Currencies" .Currencies}}
           </td>
           <td class="px-1 py-1">
             <input form="kpo-new" type="text" name="product_revenue" value="0"
@@ -441,12 +466,19 @@ function eEdit(on) {
 
 <!-- ── Payment slips section ─────────────────────────────────────────────── -->
 <div class="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
-  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
     <h2 class="text-lg font-semibold text-gray-900">{{T "slips.section_title"}}</h2>
-    <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/slips/new"
-       class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
-      {{T "slips.add_new"}}
-    </a>
+    <div class="flex items-center gap-2">
+      <form id="bulk-slip-download" method="POST" action="/a/slips/download"></form>
+      <button id="btn-download-selected" type="submit" form="bulk-slip-download" onclick="return bulkDownloadSelected()"
+              class="hidden rounded border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        {{T "slips.download_selected"}}
+      </button>
+      <a href="/a/entrepreneurs/{{.Entrepreneur.ID}}/slips/new"
+         class="inline-flex items-center rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+        {{T "slips.add_new"}}
+      </a>
+    </div>
   </div>
 
   {{if or .LatestSlipYear.Regular .LatestSlipYear.Advance .PrevSlipYears}}
@@ -520,6 +552,29 @@ function eEdit(on) {
 </div>
 
 <script>
+function updateBulkDownloadSelected() {
+  document.getElementById('btn-download-selected').classList.toggle(
+    'hidden', document.querySelectorAll('.slip-select:checked').length === 0
+  );
+  document.querySelectorAll('.slip-select-all').forEach(function(master) {
+    var slips = master.closest('table').querySelectorAll('.slip-select');
+    var selected = master.closest('table').querySelectorAll('.slip-select:checked').length;
+    master.checked = slips.length > 0 && selected === slips.length;
+    master.indeterminate = selected > 0 && selected < slips.length;
+  });
+}
+function toggleSlipTable(master) {
+  master.closest('table').querySelectorAll('.slip-select').forEach(function(box) {
+    box.checked = master.checked;
+  });
+  updateBulkDownloadSelected();
+}
+document.addEventListener('change', function(event) {
+  if (event.target.matches('.slip-select')) updateBulkDownloadSelected();
+});
+function bulkDownloadSelected() {
+  return document.querySelectorAll('.slip-select:checked').length > 0;
+}
 function slipTab(name) {
   var latest = document.getElementById('slip-tab-latest');
   var prev = document.getElementById('slip-tab-prev');
@@ -702,7 +757,7 @@ function initDateInput(el) {
         var warnRow = document.createElement('tr');
         warnRow.dataset.warn = 'order';
         var td = document.createElement('td');
-        td.colSpan = 8;
+        td.colSpan = 9;
         td.className = 'px-3 py-1.5 bg-yellow-50 text-yellow-800 text-xs border-l-4 border-yellow-400';
         td.textContent = warnText;
         warnRow.appendChild(td);
