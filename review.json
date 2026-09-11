@@ -1,0 +1,32 @@
+[
+  {
+    "file": "internal/web/accountant/slip_merge.go",
+    "line": 132,
+    "summary": "Accountant can delete any slip in the system by supplying an arbitrary UUID as the `discard` form field — no ownership check on the loser slip.",
+    "failure_scenario": "Accountant A POSTs to /a/entrepreneurs/{their-eid}/slips/merge/{year}/pick with discard={slip-uuid-owned-by-accountant-B}. findOwnedEntrepreneur verifies their entrepreneur but loserID is accepted verbatim. h.slips.Delete(ctx, loserID) at line 132 deletes by ID with no ownership filter, destroying another accountant's slip record."
+  },
+  {
+    "file": "internal/sliprecord/sliprecord.go",
+    "line": 270,
+    "summary": "CopyToEntrepreneurUser has no ON CONFLICT clause, so a double-submit or partial-failure retry during unpair duplicates every slip record.",
+    "failure_scenario": "User double-clicks the unpair button (or kpoBooks.CopyToEntrepreneurUser fails and the user retries). The slip INSERT runs twice with no idempotency guard. The kpo counterpart correctly uses ON CONFLICT ... DO NOTHING; slips do not. Result: N original slips become 2N rows owned by the same entrepreneur_user_id."
+  },
+  {
+    "file": "internal/web/accountant/slip.go",
+    "line": 132,
+    "summary": "findOwnedSlip uses ManagedEntrepreneurID (zero UUID for entrepreneur-user-owned slips) to look up the managed entrepreneur, producing a misleading 404 instead of enforcing access control.",
+    "failure_scenario": "An accountant directly requests GET /a/slips/{id} where the slip was uploaded by an entrepreneur user (EntrepreneurUserID set, ManagedEntrepreneurID = zero UUID). Line 132 calls entrepreneurs.FindByID(ctx, zero-UUID), gets ErrNotFound, renders HTTP 404. The slip is not protected — it's just unreachable, and the error gives no indication of the actual ownership mismatch."
+  },
+  {
+    "file": "internal/importer/importer.go",
+    "line": 308,
+    "summary": "All-upsert failures in ProcessFileDataForEntrepreneurUser are silently swallowed; the function returns (nil, nil), making the caller report success with zero slips saved.",
+    "failure_scenario": "PDF has 3 valid QR codes; DB connection drops after parsing. All FindOrUpdateByPurpose calls fail; each is silently continued. slipResults stays empty. Line 324 returns ([]SlipResult{}, nil). The HTTP handler sees no error, renders the upload result as Done=true with an empty results table. User believes the upload succeeded; no slips were saved."
+  },
+  {
+    "file": "internal/importer/importer.go",
+    "line": 232,
+    "summary": "tmp.Write(data) return value is ignored; a disk-full error leaves the temp file empty and produces a misleading 'no QR codes found' error instead of reporting the write failure.",
+    "failure_scenario": "Server disk is full. os.CreateTemp succeeds (inode exists) but tmp.Write(data) returns (0, 'no space left on device') — the error is discarded. extractor.ExtractQRCodes runs on an empty file and either errors ('грешка при читању QR кода') or returns no codes ('нису пронађени QR кодови'). The real cause — disk full — is invisible to the user and operator."
+  }
+]

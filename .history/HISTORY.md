@@ -1,0 +1,49 @@
+# Task History
+
+- [2026-09-11 Uplatnica download filenames](2026-09-11-uplatnica-download-filenames.md) — Single and bulk slip downloads now use official entrepreneur and purpose slugs while preserving ZIP delivery
+- [2026-09-11 Container output for visit logging](2026-09-11-container-visit-logging.md) — Authenticated visit diagnostics now go to the container logger for `docker logs`
+- [2026-08-23 Trusted HTML for in-app update descriptions](2026-08-23-in-app-updates-html-content.md) — Migration-authored semantic HTML bodies rendered through the trusted template type; test fixture excluded from production migration
+- [2026-08-23 Currency picker overlay positioning](2026-08-23-currency-picker-overlay.md) — Body-level fixed overlay prevents clipping in scrollable KPO tables while preserving keyboard and mobile behavior
+- [2026-08-19 In-app updates](2026-08-19-in-app-updates.md) — Multilingual manually seeded updates with registration cutoffs and per-user read state
+- [2026-08-17 KPO currency picker and pending historical rates](2026-08-17-kpo-currency-picker-pending-rates.md) — Searchable full NBS currency selection with explicit pending-rate persistence and lazy retry; no fallback conversion
+- [2026-08-17 KPO NBS exchange-rate conversion](2026-08-17-kpo-nbs-exchange-rates.md) — On-demand NBS historical middle-rate fetch with PostgreSQL cache; KPO stores original currency amounts and immutable RSD conversion snapshots
+- [2026-07-08 Bulk Slip Download](2026-07-08-bulk-slip-download.md) — Added individual slip selection and one-click download of all visible slips; endpoints return authorized individual PDFs in a ZIP archive
+- [2026-07-08 Security Bug Fixes Round 2](2026-07-08-security-bug-fixes-round2.md) — Fixed ownership, deduplication, authorization, persistence-error, and temporary-file error bugs
+- [2026-07-07 PIB and MB Validation](2026-07-07-pib-mb-validation.md) — 9-digit+check-digit validation for PIB, 8-digit for MB; error display in all entrepreneur forms
+- [2026-07-07 Unpair Feature](2026-07-07-unpair-feature.md) — Both accountant and entrepreneur can initiate unpair; KPO books and slips are copied on unpair
+- [2026-07-06 Entrepreneur Slip Management](2026-07-06-entrepreneur-slips.md) — Entrepreneur CRUD, PDF upload, ownership checks, slip merge UI, and unpair copy feature
+- [2026-07-06 i18n Hardcoded Strings Sweep](2026-07-06-i18n-hardcoded-sweep.md) — Removed hardcoded user-facing strings across PDF, invoice, and form flows
+- [2026-07-04 Container Restart Resilience](2026-07-04-container-restart-resilience.md) — Persisted session encryption keys in the database for restart resilience
+- [2026-07-04 DB Upload Queue](2026-07-04-upload-queue.md) — Database-backed upload queue with background workers and graceful HTTP shutdown
+- [2026-07-03 Accountant UX Sweep](2026-07-03-accountant-ux-sweep.md) — Fixed the highest-priority issues from a Playwright UX review
+- [2026-07-03 Slip History / Audit Log](2026-07-03-slip-history.md) — Added a JSONB slip history timeline with actor attribution
+- [2026-07-03 KPO PDF Export](2026-07-03-kpo-pdf-export.md) — Added portrait A4 KPO PDF export with entrepreneur header, entries, totals, and status
+- [2026-07-03 PAUS PDF amount extraction](2026-07-03-paus-amount-extraction.md) — Extracted monthly amounts from PDF text near matching account numbers
+- [2026-07-03 Pausal limit alerting](2026-07-03-pausal-alert.md) — Added milestone alerts to accountant, entrepreneur, and invoice flows
+- [2026-07-03 HTMX Pagination & Sorting](2026-07-03-htmx-lists.md) — Added HTMX sorting and pagination for core lists
+- [2026-07-03 Entrepreneur Profile Editing](2026-07-03-entrepreneur-profile.md) — Added entrepreneur profile editing and accountant invitation prompt
+- [2026-07-03 i18n Multilingual](2026-07-03-i18n-multilingual.md) — Added Serbian, English, and Russian localization with persistent language preference
+- [2026-07-02 Client Local vs Foreign Fields](2026-07-02-client-local-foreign-fields.md) — Added conditional local/foreign client identity fields and validation
+- [2026-07-02 Entrepreneur Create CLI Command](2026-07-02-entre-create-cmd.md) — Added `buh entre-create` with password and restore options
+- [2026-07-02 Merge Settings Page into Entrepreneur Detail](2026-07-02-merge-settings-into-detail.md) — Moved entrepreneur address and bank editing into the detail card
+- [2026-07-01 Security & correctness bug fixes](2026-07-01-security-bug-fixes.md) — Fixed authorization, persistence, error handling, and concurrent KPO entry issues
+- [2026-07-01 Entrepreneur/Accountant User Split](2026-07-01-entrepreneur-user-split.md) — Added separate user types, route namespaces, pairing, and KPO merge flow
+- [2026-07-01 Handler Split](2026-07-01-handler-split.md) — Split web handlers by actor and responsibility
+- [2026-06-30 Clients, Invoicing & Bank Accounts](2026-06-30-clients-invoicing-bank-accounts.md) — Added clients, invoices, PDF generation, KPO entries, and structured bank accounts
+- [2026-06-30 Error Pages](2026-06-30-error-pages.md) — Added styled 403 and 404 pages
+- [2026-06-30 Slip History Year/Advance Tabs](2026-06-30-slip-year-advance-tabs.md) — Added year and advance navigation for slips
+- [2026-06-29 Entrepreneur Card](2026-06-29-entrepreneur-card.md) — Added editable entrepreneur title/name/PIB card and turnover badge
+- [2026-06-28 KPO Book](2026-06-28-kpo-book.md) — Added per-entrepreneur yearly KPO ledger with finalization and tests
+- [2026-06-26 Pico to Tailwind](2026-06-26-pico-to-tailwind.md) — Replaced Pico CSS with Tailwind v4
+- [2026-06-26 Import Flow](2026-06-26-import-flow.md) — Added save-on-upload import with created/updated/unchanged summaries
+- [2026-06-26 Accountant Create CLI Command](2026-06-26-accountant-create-cmd.md) — Added `buh accountant-create` with restore and password options
+- [2026-06-25 Slip Save and Two-Step Download](2026-06-25-slip-save-download.md) — Added save/download actions and PDF endpoint
+- [2026-06-25 Roadmap Implementation](2026-06-25-roadmap-implementation.md) — Initial product buildout with Docker, Postgres, auth, extraction, and persistence
+- [2026-06-25 Pico CSS UI](2026-06-25-pico-css-ui.md) — Added embedded templates, navigation, and core pages
+- [2026-06-25 Manual Slip Creation](2026-06-25-manual-slip-creation.md) — Added manual slip creation and PDF validation
+- [2026-06-25 Entrepreneur Extraction](2026-06-25-entrepreneur-extraction.md) — Extracted entrepreneur data from APR/ePorezi PDFs
+- [2026-06-25 Entrepreneur DB Persistence](2026-06-25-entrepreneur-db-persistence.md) — Added entrepreneur and slip persistence with migrations
+- [2026-06-25 Manual Entrepreneur Creation Form](2026-06-25-entrepreneur-creation-form.md) — Added entrepreneur create routes and template
+- [2026-06-24 Web Server Prototype](2026-06-24-web-server.md) — Added the first HTTP upload, slip display, and PDF download flow
+- [2026-06-24 Cobra Refactor](2026-06-24-cobra-refactor.md) — Refactored commands around Cobra
+- [2026-06-23 QR Extractor](2026-06-23-qr-extractor.md) — Extracted IPS QR codes from Serbian APR tax PDFs

@@ -18,3 +18,10 @@ Before making any non-obvious architectural decision, **always consider at least
 Do this for decisions involving: storage format, protocol choice, package structure, external dependencies, concurrency model, or any design tradeoff where a future reader would ask "why not X?"
 
 Mechanical choices (variable names, trivial refactors) do not need ADRs.
+
+## Frontend
+
+Frontend is built using the default go templating.
+For styling Tailwind V4 is used, and we should always follow the Tailwind best practices.
+For dynamic data load HTMX should always be used.
+
