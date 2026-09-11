@@ -26,6 +26,7 @@ import (
 	"buh/internal/sliphistory"
 	"buh/internal/slipmerge"
 	"buh/internal/sliprecord"
+	"buh/internal/updates"
 	"buh/internal/uploadqueue"
 	webaccountant "buh/internal/web/accountant"
 	webentrepreneur "buh/internal/web/entrepreneur"
@@ -46,6 +47,7 @@ type handler struct {
 	invitations       *invitation.Repo
 	entrepreneurs     *entrepreneur.Repo
 	tmpl              shared.Templates
+	updates           *updates.Repo
 }
 
 func (h *handler) renderError(w http.ResponseWriter, r *http.Request, code int) {
@@ -77,6 +79,7 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 	bankAccounts := bankaccount.NewRepo(db)
 	invitations := invitation.NewRepo(db)
 	tmpl := shared.ParseTemplates(templateFS)
+	updatesRepo := updates.NewRepo(db)
 	bundle := i18n.NewBundle()
 
 	uploadQueue := uploadqueue.NewRepo(db)
@@ -120,6 +123,7 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 		invitations:       invitations,
 		entrepreneurs:     entrepreneurs,
 		tmpl:              tmpl,
+		updates:           updatesRepo,
 	}
 
 	mux := http.NewServeMux()
@@ -131,6 +135,7 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 	mux.HandleFunc("/terms", h.handleTerms)
 	mux.HandleFunc("/info/pausal-limit", h.handlePausalLimitInfo)
 	mux.HandleFunc("/info/vat-limit", h.handleVATLimitInfo)
+	mux.Handle("GET /updates", h.updatesMiddleware(http.HandlerFunc(h.handleUpdates)))
 
 	// Public entrepreneur routes (no auth middleware).
 	mux.HandleFunc("GET /e/register", eH.HandleRegisterForm)
@@ -138,8 +143,8 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 	mux.HandleFunc("GET /invite/{token}", h.handleInviteToken)
 	mux.HandleFunc("POST /invite/{token}/accept", h.handleInviteAccept)
 
-	mux.Handle("/a/", http.StripPrefix("/a", middleware.RequireAccountant(sessions, aH.Routes())))
-	mux.Handle("/e/", http.StripPrefix("/e", middleware.RequireEntrepreneur(sessions, eH.Routes())))
+	mux.Handle("/a/", h.updatesMiddleware(http.StripPrefix("/a", middleware.RequireAccountant(sessions, aH.Routes()))))
+	mux.Handle("/e/", h.updatesMiddleware(http.StripPrefix("/e", middleware.RequireEntrepreneur(sessions, eH.Routes()))))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

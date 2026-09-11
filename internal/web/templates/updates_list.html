@@ -1,0 +1,18 @@
+{{define "updates_list"}}
+{{if .Updates.Items}}
+<div class="space-y-4">
+  {{range .Updates.Items}}
+  <article data-testid="update-item" data-read="{{.Read}}"
+           class="rounded-lg border p-5 {{if .Read}}border-gray-200 bg-gray-50 text-gray-500 opacity-70{{else}}border-primary/30 bg-white shadow-sm{{end}}">
+    <div class="flex items-start justify-between gap-4">
+      <h2 class="font-semibold text-lg {{if .Read}}text-gray-600{{else}}text-gray-900{{end}}">{{.Title}}</h2>
+      <time class="shrink-0 text-xs text-gray-500" datetime="{{.PublishedAt.Format "2006-01-02"}}">{{.PublishedAt.Format "02.01.2006"}}</time>
+    </div>
+    <div class="mt-3 text-sm">{{.Body}}</div>
+  </article>
+  {{end}}
+</div>
+{{else}}
+<p class="text-gray-500">{{T "updates.empty"}}</p>
+{{end}}
+{{end}}

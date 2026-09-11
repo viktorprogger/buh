@@ -7,9 +7,11 @@ import (
 	"net/http"
 
 	"buh/internal/i18n"
+	"buh/internal/updates"
 )
 
 type ctxNoticeKey struct{}
+type ctxUpdatesKey struct{}
 
 // WithNotice injects a pending notice i18n key into the context.
 func WithNotice(ctx context.Context, key string) context.Context {
@@ -19,6 +21,18 @@ func WithNotice(ctx context.Context, key string) context.Context {
 // NoticeFromContext returns the pending notice key stored in the context, or "".
 func NoticeFromContext(ctx context.Context) string {
 	v, _ := ctx.Value(ctxNoticeKey{}).(string)
+	return v
+}
+
+// WithUpdates adds the authenticated user's updates view to the request context.
+func WithUpdates(ctx context.Context, view updates.View) context.Context {
+	return context.WithValue(ctx, ctxUpdatesKey{}, &view)
+}
+
+// UpdatesFromContext returns the updates view stored in the request context,
+// or nil for public requests.
+func UpdatesFromContext(ctx context.Context) *updates.View {
+	v, _ := ctx.Value(ctxUpdatesKey{}).(*updates.View)
 	return v
 }
 
@@ -33,9 +47,10 @@ func cloneWithT(tmpl *template.Template, r *http.Request) *template.Template {
 		return tmpl
 	}
 	t.Funcs(template.FuncMap{
-		"T":     l.T,
-		"TWith": l.TWith,
-		"lang":  l.Lang,
+		"T":       l.T,
+		"TWith":   l.TWith,
+		"lang":    l.Lang,
+		"updates": func() *updates.View { return UpdatesFromContext(r.Context()) },
 	})
 	return t
 }
@@ -63,15 +78,18 @@ func RenderNamedTemplate(w http.ResponseWriter, r *http.Request, tmpl *template.
 }
 
 func RenderError(w http.ResponseWriter, r *http.Request, errPage *template.Template, code int) {
-	type errData struct {
-		Code    int
-		Title   string
-		Message string
-	}
 	l := i18n.FromContext(r.Context())
-	data := map[int]errData{
-		http.StatusNotFound:  {404, l.T("error.not_found_title"), l.T("error.not_found_message")},
-		http.StatusForbidden: {403, l.T("error.forbidden_title"), l.T("error.forbidden_message")},
+	data := map[int]map[string]any{
+		http.StatusNotFound: {
+			"Code":    404,
+			"Title":   l.T("error.not_found_title"),
+			"Message": l.T("error.not_found_message"),
+		},
+		http.StatusForbidden: {
+			"Code":    403,
+			"Title":   l.T("error.forbidden_title"),
+			"Message": l.T("error.forbidden_message"),
+		},
 	}
 	d, ok := data[code]
 	if !ok {

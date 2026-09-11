@@ -8,6 +8,9 @@
   "nav.logout": {
     "other": "Выйти"
   },
+  "nav.updates": {
+    "other": "Обновления"
+  },
   "nav.profile": {
     "other": "Профиль"
   },
@@ -37,6 +40,9 @@
   },
   "sidebar.profile": {
     "other": "Профиль"
+  },
+  "sidebar.updates": {
+    "other": "Обновления"
   },
   "sidebar.logout": {
     "other": "Выйти"
@@ -395,6 +401,9 @@
   "slips.add_new": {
     "other": "+ Новое поручение"
   },
+  "slips.download_selected": {
+    "other": "Скачать выбранные"
+  },
   "slips.tab_current": {
     "other": "Текущие"
   },
@@ -415,6 +424,12 @@
   },
   "slips.advance_label": {
     "other": "Аванс"
+  },
+  "slip_table.select_label": {
+    "other": "Выбрать поручение"
+  },
+  "slip_table.select_all_label": {
+    "other": "Выбрать все поручения в этом разделе"
   },
   "slip_table.col_date": {
     "other": "Дата"

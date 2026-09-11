@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/sliprecord"
+	"buh/internal/updates"
 )
 
 type Templates struct {
@@ -27,7 +28,7 @@ type Templates struct {
 	CorrespondentForm *template.Template
 	InvoiceNew        *template.Template
 	InvoiceDetail     *template.Template
-	UploadBatch *template.Template
+	UploadBatch       *template.Template
 	// Entrepreneur-side templates
 	EntrepreneurRegister     *template.Template
 	EntrepreneurDashboard    *template.Template
@@ -45,6 +46,8 @@ type Templates struct {
 	EntrepreneurSlipNew      *template.Template
 	EntrepreneurSlipUpload   *template.Template
 	SlipMerge                *template.Template
+	Updates                  *template.Template
+	EntrepreneurUpdates      *template.Template
 }
 
 // i18nPlaceholder is a stub T function used at parse time.
@@ -56,9 +59,20 @@ func i18nPlaceholderWith(key string, _ ...interface{}) string { return key }
 
 // baseFuncs are always included in every template's FuncMap.
 var baseFuncs = template.FuncMap{
-	"T":     i18nPlaceholder,
-	"TWith": i18nPlaceholderWith,
-	"lang":  func() string { return "sr" },
+	"T":       i18nPlaceholder,
+	"TWith":   i18nPlaceholderWith,
+	"lang":    func() string { return "sr" },
+	"updates": func() *updates.View { return nil },
+	"dict": func(values ...any) map[string]any {
+		out := make(map[string]any, len(values)/2)
+		for i := 0; i+1 < len(values); i += 2 {
+			key, ok := values[i].(string)
+			if ok {
+				out[key] = values[i+1]
+			}
+		}
+		return out
+	},
 }
 
 func mergedFuncs(extra template.FuncMap) template.FuncMap {
@@ -104,21 +118,21 @@ func ParseTemplates(tfs fs.FS) Templates {
 		},
 	}
 	return Templates{
-		Login:           template.Must(template.New("login.html").Funcs(baseFuncs).ParseFS(tfs, "templates/login.html")),
-		Index:           mustPageTmpl(tfs, "index.html", nil),
-		Entrepreneur:    mustPageTmpl(tfs, "entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html", "templates/pausal_alert.html", "templates/vat_alert.html"),
-		EntrepreneurNew: mustPageTmpl(tfs, "entrepreneur_new.html", nil),
-		UploadBatch:     mustPageTmpl(tfs, "upload_batch.html", nil),
-		Slip:            mustPageTmpl(tfs, "slip.html", nil, slipExtra...),
-		SlipNew:         mustPageTmpl(tfs, "slip_new.html", nil, slipExtra...),
-		Placeholder:     mustPageTmpl(tfs, "placeholder.html", nil),
-		ErrPage:         mustPageTmpl(tfs, "error.html", nil),
-		PausalLimitInfo: mustPublicPageTmpl(tfs, "pausal_limit_info.html"),
-		VATLimitInfo:    mustPublicPageTmpl(tfs, "vat_limit_info.html"),
-		ClientForm:      mustEntrepreneurPageTmpl(tfs, "client_form.html"),
-		BankAccountForm: mustEntrepreneurPageTmpl(tfs, "bank_account_form.html"),
+		Login:                    template.Must(template.New("login.html").Funcs(baseFuncs).ParseFS(tfs, "templates/login.html")),
+		Index:                    mustPageTmpl(tfs, "index.html", nil),
+		Entrepreneur:             mustPageTmpl(tfs, "entrepreneur.html", entrepreneurFuncs, "templates/slip_table.html", "templates/pausal_alert.html", "templates/vat_alert.html", "templates/currency_picker.html"),
+		EntrepreneurNew:          mustPageTmpl(tfs, "entrepreneur_new.html", nil),
+		UploadBatch:              mustPageTmpl(tfs, "upload_batch.html", nil),
+		Slip:                     mustPageTmpl(tfs, "slip.html", nil, slipExtra...),
+		SlipNew:                  mustPageTmpl(tfs, "slip_new.html", nil, slipExtra...),
+		Placeholder:              mustPageTmpl(tfs, "placeholder.html", nil),
+		ErrPage:                  mustPageTmpl(tfs, "error.html", nil),
+		PausalLimitInfo:          mustPublicPageTmpl(tfs, "pausal_limit_info.html"),
+		VATLimitInfo:             mustPublicPageTmpl(tfs, "vat_limit_info.html"),
+		ClientForm:               mustEntrepreneurPageTmpl(tfs, "client_form.html"),
+		BankAccountForm:          mustEntrepreneurPageTmpl(tfs, "bank_account_form.html"),
 		CorrespondentForm:        mustEntrepreneurPageTmpl(tfs, "correspondent_form.html"),
-		InvoiceNew:               mustEntrepreneurPageTmpl(tfs, "invoice_new.html"),
+		InvoiceNew:               mustEntrepreneurPageTmpl(tfs, "invoice_new.html", "templates/currency_picker.html"),
 		InvoiceDetail:            mustEntrepreneurPageTmpl(tfs, "invoice.html"),
 		EntrepreneurRegister:     template.Must(template.New("entrepreneur_register.html").Funcs(baseFuncs).ParseFS(tfs, "templates/entrepreneur_register.html")),
 		EntrepreneurDashboard:    mustEntrepreneurPageTmpl(tfs, "entrepreneur_dashboard.html"),
@@ -126,7 +140,7 @@ func ParseTemplates(tfs fs.FS) Templates {
 		InviteAccept:             mustPageTmpl(tfs, "invite_accept.html", nil),
 		EntrepreneurInviteAcc:    mustEntrepreneurPageTmpl(tfs, "entrepreneur_invite_accountant.html"),
 		KpoMerge:                 mustPageTmpl(tfs, "kpo_merge.html", template.FuncMap{"add": func(a, b int) int { return a + b }}),
-		EntrepreneurKPO:          mustEntrepreneurPageTmpl(tfs, "entrepreneur_kpo.html", "templates/pausal_alert.html", "templates/vat_alert.html"),
+		EntrepreneurKPO:          mustEntrepreneurPageTmpl(tfs, "entrepreneur_kpo.html", "templates/pausal_alert.html", "templates/vat_alert.html", "templates/currency_picker.html"),
 		EntrepreneurClients:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_clients.html"),
 		EntrepreneurBankAccounts: mustEntrepreneurPageTmpl(tfs, "entrepreneur_bank_accounts.html"),
 		EntrepreneurInvoices:     mustEntrepreneurPageTmpl(tfs, "entrepreneur_invoices.html"),
@@ -136,5 +150,7 @@ func ParseTemplates(tfs fs.FS) Templates {
 		EntrepreneurSlipNew:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_slip_new.html", "templates/slip_styles.html"),
 		EntrepreneurSlipUpload:   mustEntrepreneurPageTmpl(tfs, "entrepreneur_slip_upload.html"),
 		SlipMerge:                mustPageTmpl(tfs, "slip_merge_slips.html", nil),
+		Updates:                  mustPageTmpl(tfs, "updates.html", nil, "templates/updates_list.html"),
+		EntrepreneurUpdates:      mustEntrepreneurPageTmpl(tfs, "entrepreneur_updates.html", "templates/updates_list.html"),
 	}
 }

@@ -8,6 +8,7 @@
 <style>{{block "style" .}}{{end}}</style>
 {{block "head_extra" .}}{{end}}
 <script src="/static/htmx.min.js"></script>
+<script src="/static/currency-picker.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
 {{block "nav" .}}
@@ -16,6 +17,7 @@
     <a href="/" class="font-semibold text-white hover:text-slate-200">{{T "app.title"}}</a>
     <nav class="flex gap-4 items-center">
       <a href="/" class="text-slate-300 hover:text-white text-sm">{{T "nav.entrepreneurs"}}</a>
+      {{with updates}}<a href="/updates" class="text-slate-300 hover:text-white text-sm">{{T "nav.updates"}}{{if .UnreadCount}} <span class="bg-red-500 text-white rounded-full px-1.5 text-xs">{{.UnreadCount}}</span>{{end}}</a>{{end}}
       <form method="POST" action="/language" class="flex gap-1 items-center">
         <span class="text-slate-400 text-xs mr-1">{{T "lang.switch_label"}}:</span>
         <button type="submit" name="lang" value="sr" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "sr"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">SR</button>

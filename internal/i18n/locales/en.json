@@ -8,6 +8,9 @@
   "nav.logout": {
     "other": "Log out"
   },
+  "nav.updates": {
+    "other": "Updates"
+  },
   "nav.profile": {
     "other": "Profile"
   },
@@ -37,6 +40,9 @@
   },
   "sidebar.profile": {
     "other": "Profile"
+  },
+  "sidebar.updates": {
+    "other": "Updates"
   },
   "sidebar.logout": {
     "other": "Log out"
@@ -418,6 +424,12 @@
   },
   "slips.advance_label": {
     "other": "Advance"
+  },
+  "slip_table.select_label": {
+    "other": "Select slip"
+  },
+  "slip_table.select_all_label": {
+    "other": "Select all slips in this section"
   },
   "slip_table.col_date": {
     "other": "Date"
@@ -898,6 +910,12 @@
   },
   "invoices.next": {
     "other": "Next →"
+  },
+  "invoice.error_exchange_rate": {
+    "other": "The NBS exchange rate is unavailable for the invoice date. The invoice was saved and will be retried later."
+  },
+  "invoice.error_invalid_currency": {
+    "other": "Unsupported currency."
   },
   "invoice_new.title": {
     "other": "New Invoice"

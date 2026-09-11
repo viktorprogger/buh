@@ -8,6 +8,9 @@
   "nav.logout": {
     "other": "Одјава"
   },
+  "nav.updates": {
+    "other": "Ажурирања"
+  },
   "nav.profile": {
     "other": "Профил"
   },
@@ -37,6 +40,9 @@
   },
   "sidebar.profile": {
     "other": "Профил"
+  },
+  "sidebar.updates": {
+    "other": "Ажурирања"
   },
   "sidebar.logout": {
     "other": "Одјава"
@@ -395,6 +401,9 @@
   "slips.add_new": {
     "other": "+ Нова уплатница"
   },
+  "slips.download_selected": {
+    "other": "Преузми изабране"
+  },
   "slips.tab_current": {
     "other": "Текуће"
   },
@@ -415,6 +424,12 @@
   },
   "slips.advance_label": {
     "other": "Аванс"
+  },
+  "slip_table.select_label": {
+    "other": "Изабери уплатницу"
+  },
+  "slip_table.select_all_label": {
+    "other": "Изабери све уплатнице у овом одељку"
   },
   "slip_table.col_date": {
     "other": "Датум"

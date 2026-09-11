@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/app.css">
 <style>{{block "style" .}}{{end}}</style>
 <script src="/static/htmx.min.js"></script>
+<script src="/static/currency-picker.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
 <div class="flex h-screen overflow-hidden">
@@ -48,6 +49,11 @@
       </a>
     </nav>
     <div class="px-4 py-3 border-t border-slate-700 space-y-2">
+      {{with updates}}
+      <a href="/updates" class="flex items-center text-sm text-slate-400 hover:text-white">
+        {{T "sidebar.updates"}}{{if .UnreadCount}} <span class="ml-2 bg-red-500 text-white rounded-full px-1.5 text-xs">{{.UnreadCount}}</span>{{end}}
+      </a>
+      {{end}}
       <form method="POST" action="/language" class="flex gap-1 items-center">
         <span class="text-slate-400 text-xs mr-1">{{T "lang.switch_label"}}:</span>
         <button type="submit" name="lang" value="sr" class="text-xs px-1.5 py-0.5 rounded {{if eq (lang) "sr"}}bg-slate-500 text-white{{else}}text-slate-400 hover:text-white{{end}}">SR</button>
