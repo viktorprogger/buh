@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jung-kurt/gofpdf"
 	"buh/internal/pdffonts"
+	"github.com/jung-kurt/gofpdf"
 )
 
 // EntrepreneurInfo holds the entrepreneur's profile data for the KPO PDF header.
@@ -112,9 +112,14 @@ func GeneratePDF(book Book, entries []Entry, info EntrepreneurInfo) ([]byte, err
 	// ── Table rows ────────────────────────────────────────────────────────────
 	pdf.SetFont("dejavu", "", 8)
 	var totalProd, totalSvc float64
+	var pendingRates bool
 	for _, e := range entries {
-		totalProd += e.ProductRevenue
-		totalSvc += e.ServiceRevenue
+		if e.HasPendingRate() {
+			pendingRates = true
+		} else {
+			totalProd += e.ProductRevenue
+			totalSvc += e.ServiceRevenue
+		}
 
 		// Build column 2 content: date on first line, invoice + description on second
 		descParts := []string{e.CollectionDate.Format("02.01.2006.")}
@@ -129,18 +134,30 @@ func GeneratePDF(book Book, entries []Entry, info EntrepreneurInfo) ([]byte, err
 		rowH := 6.0
 		pdf.CellFormat(wNum, rowH, fmt.Sprintf("%d", e.OrdinalNumber), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(wDesc, rowH, col2, "1", 0, "L", false, 0, "")
-		pdf.CellFormat(wProd, rowH, fmt.Sprintf("%.2f", e.ProductRevenue), "1", 0, "R", false, 0, "")
-		pdf.CellFormat(wSvc, rowH, fmt.Sprintf("%.2f", e.ServiceRevenue), "1", 0, "R", false, 0, "")
-		pdf.CellFormat(wTotal, rowH, fmt.Sprintf("%.2f", e.Total()), "1", 1, "R", false, 0, "")
+		if e.HasPendingRate() {
+			pdf.CellFormat(wProd, rowH, "—", "1", 0, "R", false, 0, "")
+			pdf.CellFormat(wSvc, rowH, "—", "1", 0, "R", false, 0, "")
+			pdf.CellFormat(wTotal, rowH, "—", "1", 1, "R", false, 0, "")
+		} else {
+			pdf.CellFormat(wProd, rowH, fmt.Sprintf("%.2f", e.ProductRevenue), "1", 0, "R", false, 0, "")
+			pdf.CellFormat(wSvc, rowH, fmt.Sprintf("%.2f", e.ServiceRevenue), "1", 0, "R", false, 0, "")
+			pdf.CellFormat(wTotal, rowH, fmt.Sprintf("%.2f", e.Total()), "1", 1, "R", false, 0, "")
+		}
 	}
 
 	// ── Totals row ────────────────────────────────────────────────────────────
 	pdf.SetFont("dejavu", "B", 8)
 	pdf.SetFillColor(245, 245, 245)
 	pdf.CellFormat(wNum+wDesc, 7, "UKUPNO:", "1", 0, "R", true, 0, "")
-	pdf.CellFormat(wProd, 7, fmt.Sprintf("%.2f", totalProd), "1", 0, "R", true, 0, "")
-	pdf.CellFormat(wSvc, 7, fmt.Sprintf("%.2f", totalSvc), "1", 0, "R", true, 0, "")
-	pdf.CellFormat(wTotal, 7, fmt.Sprintf("%.2f", totalProd+totalSvc), "1", 1, "R", true, 0, "")
+	if pendingRates {
+		pdf.CellFormat(wProd, 7, "—", "1", 0, "R", true, 0, "")
+		pdf.CellFormat(wSvc, 7, "—", "1", 0, "R", true, 0, "")
+		pdf.CellFormat(wTotal, 7, "—", "1", 1, "R", true, 0, "")
+	} else {
+		pdf.CellFormat(wProd, 7, fmt.Sprintf("%.2f", totalProd), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(wSvc, 7, fmt.Sprintf("%.2f", totalSvc), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(wTotal, 7, fmt.Sprintf("%.2f", totalProd+totalSvc), "1", 1, "R", true, 0, "")
+	}
 
 	// ── Footer ────────────────────────────────────────────────────────────────
 	pdf.Ln(6)

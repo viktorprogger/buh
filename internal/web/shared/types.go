@@ -17,12 +17,19 @@ type KPORow struct {
 	Date             time.Time
 	InvoiceNum       string
 	// Regular KPO entry fields:
-	EntryID        uuid.UUID
-	OrdinalNumber  int
-	Description    string
-	ProductRevenue float64
-	ServiceRevenue float64
-	EntryTotal     float64
+	EntryID                uuid.UUID
+	OrdinalNumber          int
+	Description            string
+	ProductRevenue         float64
+	ServiceRevenue         float64
+	EntryTotal             float64
+	OriginalProductRevenue float64
+	OriginalServiceRevenue float64
+	Currency               string
+	RateUnit               int
+	RateMiddle             float64
+	RateEffectiveDate      time.Time
+	RateStatus             string
 	// Advance invoice fields:
 	InvoiceID  uuid.UUID
 	ClientName string

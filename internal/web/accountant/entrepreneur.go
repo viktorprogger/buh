@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/entrepreneur"
+	"buh/internal/exchangerate"
 	"buh/internal/i18n"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
@@ -177,6 +178,10 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 
 	var entries []kpo.Entry
 	if currentBook.ID != (uuid.UUID{}) {
+		if err := h.kpoBooks.RetryPendingRates(r.Context(), currentBook.ID); err != nil {
+			http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+			return
+		}
 		entries, err = h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
 		if err != nil {
 			http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
@@ -213,15 +218,22 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	var kpoRows []shared.KPORow
 	for i, en := range entries {
 		kpoRows = append(kpoRows, shared.KPORow{
-			IsAdvanceInvoice: false,
-			Date:             en.CollectionDate,
-			InvoiceNum:       en.InvoiceNumber,
-			Description:      en.Description,
-			EntryID:          en.ID,
-			OrdinalNumber:    i + 1,
-			ProductRevenue:   en.ProductRevenue,
-			ServiceRevenue:   en.ServiceRevenue,
-			EntryTotal:       en.Total(),
+			IsAdvanceInvoice:       false,
+			Date:                   en.CollectionDate,
+			InvoiceNum:             en.InvoiceNumber,
+			Description:            en.Description,
+			EntryID:                en.ID,
+			OrdinalNumber:          i + 1,
+			ProductRevenue:         en.ProductRevenue,
+			ServiceRevenue:         en.ServiceRevenue,
+			EntryTotal:             en.Total(),
+			OriginalProductRevenue: en.OriginalProductRevenue,
+			OriginalServiceRevenue: en.OriginalServiceRevenue,
+			Currency:               en.Currency,
+			RateUnit:               en.RateUnit,
+			RateMiddle:             en.RateMiddle,
+			RateEffectiveDate:      en.RateEffectiveDate,
+			RateStatus:             en.RateStatus,
 		})
 	}
 	for _, inv := range advanceInvoices {
@@ -247,11 +259,18 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	latestSlipYear, prevSlipYears := shared.GroupSlipsByYear(slips)
 
 	var totalProduct, totalService float64
+	var hasPendingRates bool
 	for _, en := range entries {
 		totalProduct += en.ProductRevenue
 		totalService += en.ServiceRevenue
+		hasPendingRates = hasPendingRates || en.HasPendingRate()
 	}
-
+	allPendingRates, err := h.kpoBooks.HasPendingRatesForManagedEntrepreneur(r.Context(), id)
+	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+	hasPendingRates = hasPendingRates || allPendingRates
 	currentYear := time.Now().Year()
 	pausalalLimit := shared.PausalalLimitForYear(currentYear)
 	var pausalalTotal float64
@@ -292,6 +311,10 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 	if vatAlert != nil {
 		vatAlert.IsAccountant = true
 	}
+	if hasPendingRates {
+		pausalAlert = nil
+		vatAlert = nil
+	}
 
 	var editError string
 	if errCode := r.URL.Query().Get("edit_error"); errCode != "" {
@@ -319,6 +342,8 @@ func (h *Handler) handleEntrepreneur(w http.ResponseWriter, r *http.Request) {
 		"TotalProduct":     totalProduct,
 		"TotalService":     totalService,
 		"TotalAll":         totalProduct + totalService,
+		"HasPendingRates":  hasPendingRates,
+		"Currencies":       exchangerate.Currencies(),
 		"LatestSlipYear":   latestSlipYear,
 		"PrevSlipYears":    prevSlipYears,
 		"PausalalYear":     currentYear,

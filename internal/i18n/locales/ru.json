@@ -239,11 +239,23 @@
   "kpo.section_title": {
     "other": "КПО — Книга доходов"
   },
+  "kpo.rsd_note": {
+    "other": "Суммы в таблице указаны в RSD; применённый курс показан рядом с валютой."
+  },
+  "kpo.rate_tooltip": {
+    "other": "Официальный курс НБС для {{.Currency}} на {{.Date}}"
+  },
   "kpo.error_finalized": {
     "other": "КПО финализована"
   },
   "kpo.error_bad_date": {
     "other": "Неверный формат даты (ожидается дд.мм)"
+  },
+  "kpo.error_exchange_rate": {
+    "other": "Курс НБС на эту дату недоступен. Запись сохранена, повторная попытка будет выполнена позже."
+  },
+  "kpo.error_invalid_currency": {
+    "other": "Неподдерживаемая валюта."
   },
   "kpo.download_pdf": {
     "other": "↓ PDF"
@@ -274,6 +286,9 @@
   },
   "kpo.col_description": {
     "other": "Описание"
+  },
+  "kpo.col_currency": {
+    "other": "Валюта"
   },
   "kpo.col_product": {
     "other": "Продажа товаров"
@@ -322,6 +337,9 @@
   },
   "kpo.field_description": {
     "other": "Описание"
+  },
+  "kpo.field_currency": {
+    "other": "Валюта"
   },
   "kpo.field_product": {
     "other": "Доход от продажи товаров"
@@ -877,6 +895,12 @@
   },
   "invoices.next": {
     "other": "Следующая →"
+  },
+  "invoice.error_exchange_rate": {
+    "other": "Курс НБС на дату счёта недоступен. Счёт сохранён, повторная попытка будет выполнена позже."
+  },
+  "invoice.error_invalid_currency": {
+    "other": "Неподдерживаемая валюта."
   },
   "invoice_new.title": {
     "other": "Новый счёт-фактура"
@@ -1771,5 +1795,33 @@
   },
   "notice.unpaired_by_entrepreneur": {
     "other": "Предприниматель отключил свою учётную запись."
+  },
+  "currency.search": {
+    "other": "Поиск валюты"
+  },
+  "currency.no_match": {
+    "other": "Точного совпадения нет"
+  },
+  "kpo.pending_rate": {
+    "other": "Курс НБС недоступен. Запись сохранена, повторная попытка будет выполнена позже."
+  },
+  "kpo.error_pending_rate": {
+    "other": "Нельзя завершить КПО, пока не загружены все курсы НБС."
+  },
+  "kpo.pending_rate_badge": {
+    "other": "курс НБС ожидается"
+  },
+  "invoice_new.pending_rate": {
+    "other": "Курс НБС будет загружен позже; счёт сохранён без выдуманной суммы в RSD."
+  },
+  "invoice_detail.pending_rate": {
+    "other": "Курс НБС на эту дату пока недоступен. Эквивалент в RSD будет обновлён позже."
+  }
+,
+  "updates.title": {
+    "other": "Обновления"
+  },
+  "updates.empty": {
+    "other": "Обновлений пока нет."
   }
 }

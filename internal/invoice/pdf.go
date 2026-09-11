@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jung-kurt/gofpdf"
 	"buh/internal/pdffonts"
+	"github.com/jung-kurt/gofpdf"
 )
 
 // IssuerInfo holds the entrepreneur's profile data needed for the invoice PDF.
@@ -257,7 +257,7 @@ func GeneratePDF(inv Invoice, items []Item, issuer IssuerInfo, client ClientInfo
 	// Total row
 	pdf.SetFont("dejavu", "B", 10)
 	totalLabel := fmt.Sprintf("%s %.2f %s", lbl.TotalDue, grandTotal, inv.Currency)
-	if inv.Currency != "RSD" {
+	if inv.Currency != "RSD" && inv.RateStatus != RateStatusPending {
 		totalLabel += fmt.Sprintf("  (≈ %.2f RSD)", inv.TotalRSD)
 	}
 	pdf.CellFormat(wDesc+wQty+wPrice+wDisc, 7, totalLabel, "1", 0, "R", true, 0, "")

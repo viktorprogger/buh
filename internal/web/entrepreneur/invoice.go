@@ -1,8 +1,10 @@
 package entrepreneur
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	htmltemplate "html/template"
 	"log"
 	"net/http"
@@ -13,11 +15,52 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/exchangerate"
 	"buh/internal/i18n"
 	"buh/internal/invoice"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
 )
+
+func (h *Handler) retryPendingInvoiceTotal(ctx context.Context, inv *invoice.Invoice, items []invoice.Item) error {
+	if inv.RateStatus != invoice.RateStatusPending {
+		return nil
+	}
+	var total float64
+	for _, item := range items {
+		total += item.LineTotal()
+	}
+	conversion, err := h.kpoBooks.Convert(ctx, inv.IssueDate, inv.Currency, total)
+	if err != nil {
+		if errors.Is(err, exchangerate.ErrUnavailable) {
+			return nil
+		}
+		return err
+	}
+	converted := shared.Round2(conversion.RSD)
+	if err := h.invoices.UpdateTotalRSD(ctx, inv.ID, converted); err != nil {
+		return err
+	}
+	inv.TotalRSD = converted
+	inv.RateStatus = invoice.RateStatusApplied
+	return nil
+}
+
+func (h *Handler) retryPendingInvoiceTotals(ctx context.Context, invoices []invoice.Invoice) error {
+	for i := range invoices {
+		if invoices[i].RateStatus != invoice.RateStatusPending {
+			continue
+		}
+		_, items, err := h.invoices.FindByID(ctx, invoices[i].ID)
+		if err != nil {
+			return err
+		}
+		if err := h.retryPendingInvoiceTotal(ctx, &invoices[i], items); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func (h *Handler) handleInvoiceList(w http.ResponseWriter, r *http.Request) {
 	userID, ok := h.entrepreneurUserFromSession(r)
@@ -27,6 +70,10 @@ func (h *Handler) handleInvoiceList(w http.ResponseWriter, r *http.Request) {
 	}
 	invoices, err := h.invoices.ListByEntrepreneurUser(r.Context(), userID)
 	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+	if err := h.retryPendingInvoiceTotals(r.Context(), invoices); err != nil {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
@@ -89,6 +136,7 @@ func (h *Handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
 	currentYear := now.Year()
 	pausalLimit := shared.PausalalLimitForYear(currentYear)
 	pausalCurrentTotal, _, _ := h.kpoBooks.SumForEntrepreneurUser(r.Context(), userID, currentYear)
+	hasPendingRates, _ := h.kpoBooks.HasPendingRatesForEntrepreneurUser(r.Context(), userID)
 	daysInYear := 365.0
 	if shared.IsLeapYear(currentYear) {
 		daysInYear = 366
@@ -103,26 +151,26 @@ func (h *Handler) handleInvoiceNewForm(w http.ResponseWriter, r *http.Request) {
 	vatDailyJSON, _ := json.Marshal(vatDailyRevenue)
 
 	shared.RenderTemplate(w, r, h.tmpl.InvoiceNew, map[string]any{
-		"BackURL":             "/e/invoices",
-		"ActionURL":           "/e/invoices",
-		"SettingsURL":         "/e/",
-		"ClientSearchURL":     "/e/clients/search",
-		"ClientNewURL":        "/e/clients/new?return_to=/e/invoices/new",
-		"Today":               now.Format("2006-01-02"),
-		"BankAccounts":        accounts,
-		"Currencies":          []string{"RSD", "EUR", "USD", "CHF", "GBP"},
-		"FXRates":             invoice.FXRates,
-		"ProfileComplete":     true,
-		"IssuerName":          issuerName,
-		"IssuerMB":            issuerMB,
-		"IssuerPIB":           issuerPIB,
-		"IssuerAddress":       issuerAddress,
-		"PausalCurrentTotal":  pausalCurrentTotal,
-		"PausalLimit":         pausalLimit,
-		"PausalYear":          currentYear,
-		"PausalYearPct":       pausalYearPct,
-		"VATLimit":            vatLimit,
-		"VATDailyRevenue":     htmltemplate.JS(vatDailyJSON),
+		"BackURL":            "/e/invoices",
+		"ActionURL":          "/e/invoices",
+		"SettingsURL":        "/e/",
+		"ClientSearchURL":    "/e/clients/search",
+		"ClientNewURL":       "/e/clients/new?return_to=/e/invoices/new",
+		"Today":              now.Format("2006-01-02"),
+		"BankAccounts":       accounts,
+		"Currencies":         exchangerate.Currencies(),
+		"ProfileComplete":    true,
+		"IssuerName":         issuerName,
+		"IssuerMB":           issuerMB,
+		"IssuerPIB":          issuerPIB,
+		"IssuerAddress":      issuerAddress,
+		"PausalCurrentTotal": pausalCurrentTotal,
+		"HasPendingRates":    hasPendingRates,
+		"PausalLimit":        pausalLimit,
+		"PausalYear":         currentYear,
+		"PausalYearPct":      pausalYearPct,
+		"VATLimit":           vatLimit,
+		"VATDailyRevenue":    htmltemplate.JS(vatDailyJSON),
 	})
 }
 
@@ -148,8 +196,9 @@ func (h *Handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currency := r.FormValue("currency")
-	if _, ok := invoice.FXRates[currency]; !ok {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.bad_request"), http.StatusBadRequest)
+	currency = strings.ToUpper(strings.TrimSpace(currency))
+	if err := exchangerate.ValidateCurrency(currency); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("invoice.error_invalid_currency"), http.StatusBadRequest)
 		return
 	}
 
@@ -220,7 +269,49 @@ func (h *Handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
 	for _, it := range items {
 		total += it.LineTotal()
 	}
-	inv.TotalRSD = invoice.ToRSD(total, inv.Currency)
+
+	convertAmount := func(amount float64) (float64, bool, error) {
+		conversion, err := h.kpoBooks.Convert(r.Context(), issueDate, inv.Currency, amount)
+		if err != nil {
+			if errors.Is(err, exchangerate.ErrUnavailable) {
+				return 0, false, nil
+			}
+			return 0, false, err
+		}
+		return shared.Round2(conversion.RSD), true, nil
+	}
+
+	totalRSD, totalApplied, err := convertAmount(total)
+	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("invoice.error_invalid_currency"), http.StatusBadRequest)
+		return
+	}
+	inv.TotalRSD = totalRSD
+	inv.OriginalTotal = total
+	if totalApplied {
+		inv.RateStatus = invoice.RateStatusApplied
+	} else {
+		inv.RateStatus = invoice.RateStatusPending
+	}
+
+	var productOriginal, serviceOriginal float64
+	for _, it := range items {
+		if it.IsProduct {
+			productOriginal += it.LineTotal()
+		} else {
+			serviceOriginal += it.LineTotal()
+		}
+	}
+	productRSD, _, err := convertAmount(productOriginal)
+	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("invoice.error_invalid_currency"), http.StatusBadRequest)
+		return
+	}
+	serviceRSD, _, err := convertAmount(serviceOriginal)
+	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("invoice.error_invalid_currency"), http.StatusBadRequest)
+		return
+	}
 
 	created, err := h.invoices.Create(r.Context(), inv, items)
 	if err != nil {
@@ -231,21 +322,15 @@ func (h *Handler) handleInvoiceCreate(w http.ResponseWriter, r *http.Request) {
 	if invType == invoice.TypeStandard {
 		year := issueDate.Year()
 		if book, err := h.kpoBooks.FindOrCreateForEntrepreneur(r.Context(), userID, year); err == nil && !book.IsFinalized() {
-			var prodRev, svcRev float64
-			for _, it := range items {
-				lineRSD := invoice.ToRSD(it.LineTotal(), inv.Currency)
-				if it.IsProduct {
-					prodRev += lineRSD
-				} else {
-					svcRev += lineRSD
-				}
-			}
 			_, _ = h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
-				KPOBookID:      book.ID,
-				CollectionDate: issueDate,
-				InvoiceNumber:  inv.InvoiceNumber,
-				ProductRevenue: prodRev,
-				ServiceRevenue: svcRev,
+				KPOBookID:              book.ID,
+				CollectionDate:         issueDate,
+				InvoiceNumber:          inv.InvoiceNumber,
+				ProductRevenue:         productRSD,
+				ServiceRevenue:         serviceRSD,
+				OriginalProductRevenue: productOriginal,
+				OriginalServiceRevenue: serviceOriginal,
+				Currency:               inv.Currency,
 			})
 		}
 	}
@@ -267,6 +352,10 @@ func (h *Handler) handleInvoice(w http.ResponseWriter, r *http.Request) {
 	inv, items, err := h.invoices.FindByID(r.Context(), iid)
 	if err != nil || inv.EntrepreneurUserID != userID {
 		h.renderError(w, r, http.StatusNotFound)
+		return
+	}
+	if err := h.retryPendingInvoiceTotal(r.Context(), &inv, items); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 
@@ -317,6 +406,10 @@ func (h *Handler) handleInvoicePDF(w http.ResponseWriter, r *http.Request) {
 	inv, items, err := h.invoices.FindByID(r.Context(), iid)
 	if err != nil || inv.EntrepreneurUserID != userID {
 		h.renderError(w, r, http.StatusNotFound)
+		return
+	}
+	if err := h.retryPendingInvoiceTotal(r.Context(), &inv, items); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
 

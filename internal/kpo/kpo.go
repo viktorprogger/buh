@@ -4,13 +4,25 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+
+	"buh/internal/exchangerate"
 )
 
-var ErrNotFound = errors.New("kpo: not found")
+var (
+	ErrNotFound     = errors.New("kpo: not found")
+	ErrPendingRates = errors.New("kpo: pending exchange rates")
+)
+
+const (
+	RateStatusApplied = "applied"
+	RateStatusPending = "pending"
+)
 
 // Book is a KPO ledger for one owner+year. Owner is either a managed_entrepreneur
 // (accountant side) XOR an entrepreneur_user (entrepreneur side), enforced by DB constraint.
@@ -37,25 +49,173 @@ func (b Book) FinalizedAtStr() string {
 
 // Entry is one line in a KPO book.
 type Entry struct {
-	ID             uuid.UUID
-	KPOBookID      uuid.UUID
-	OrdinalNumber  int // = position (1-based display order)
-	CollectionDate time.Time
-	InvoiceNumber  string
-	Description    string // client name / service description (column 2 of the official KPO form)
-	ProductRevenue float64
-	ServiceRevenue float64
-	CreatedAt      time.Time
+	ID                     uuid.UUID
+	KPOBookID              uuid.UUID
+	OrdinalNumber          int // = position (1-based display order)
+	CollectionDate         time.Time
+	InvoiceNumber          string
+	Description            string // client name / service description (column 2 of the official KPO form)
+	ProductRevenue         float64
+	ServiceRevenue         float64
+	OriginalProductRevenue float64
+	OriginalServiceRevenue float64
+	Currency               string
+	RateUnit               int
+	RateMiddle             float64
+	RateEffectiveDate      time.Time
+	RateFetchedAt          time.Time
+	RateSourceURL          string
+	RateStatus             string // applied or pending
+	CreatedAt              time.Time
 }
 
-func (e Entry) Total() float64 { return e.ProductRevenue + e.ServiceRevenue }
+func (e Entry) Total() float64       { return e.ProductRevenue + e.ServiceRevenue }
+func (e Entry) HasPendingRate() bool { return e.RateStatus == RateStatusPending }
 
 // Repo handles persistence of KPO books and entries.
 type Repo struct {
-	db *sql.DB
+	db        *sql.DB
+	converter *exchangerate.Service
 }
 
-func NewRepo(db *sql.DB) *Repo { return &Repo{db: db} }
+func NewRepo(db *sql.DB) *Repo {
+	return NewRepoWithConverter(db, exchangerate.NewService(exchangerate.NewNBSProvider(nil), &exchangerate.PostgresCache{DB: db}))
+}
+func NewRepoWithConverter(db *sql.DB, converter *exchangerate.Service) *Repo {
+	return &Repo{db: db, converter: converter}
+}
+
+// Convert exposes the configured historical-rate service to other domain flows
+// that create KPO entries, such as invoice creation.
+func (r *Repo) Convert(ctx context.Context, date time.Time, currency string, amount float64) (exchangerate.Conversion, error) {
+	return r.converter.Convert(ctx, date, currency, amount)
+}
+
+func (r *Repo) convert(ctx context.Context, e *Entry) error {
+	e.Currency = strings.ToUpper(strings.TrimSpace(e.Currency))
+	if e.Currency == "" {
+		e.Currency = "RSD"
+	}
+	// Callers provide original amounts. Keep this compatibility fallback for
+	// older internal callers that only populate the historical RSD fields.
+	if e.OriginalProductRevenue == 0 && e.OriginalServiceRevenue == 0 &&
+		(e.ProductRevenue != 0 || e.ServiceRevenue != 0) {
+		e.OriginalProductRevenue = e.ProductRevenue
+		e.OriginalServiceRevenue = e.ServiceRevenue
+	}
+	if e.Currency == "RSD" {
+		e.ProductRevenue = e.OriginalProductRevenue
+		e.ServiceRevenue = e.OriginalServiceRevenue
+		e.RateUnit = 1
+		e.RateMiddle = 1
+		e.RateEffectiveDate = e.CollectionDate
+		e.RateFetchedAt = time.Time{}
+		e.RateSourceURL = ""
+		e.RateStatus = RateStatusApplied
+		return nil
+	}
+	product, err := r.converter.Convert(ctx, e.CollectionDate, e.Currency, e.OriginalProductRevenue)
+	if err != nil {
+		if errors.Is(err, exchangerate.ErrUnavailable) {
+			r.markRatePending(e)
+			return nil
+		}
+		return err
+	}
+	service, err := r.converter.Convert(ctx, e.CollectionDate, e.Currency, e.OriginalServiceRevenue)
+	if err != nil {
+		if errors.Is(err, exchangerate.ErrUnavailable) {
+			r.markRatePending(e)
+			return nil
+		}
+		return err
+	}
+	e.ProductRevenue = math.Round(product.RSD*100) / 100
+	e.ServiceRevenue = math.Round(service.RSD*100) / 100
+	e.RateUnit = product.Rate.Unit
+	e.RateMiddle = product.Rate.Middle
+	e.RateEffectiveDate = product.Rate.EffectiveDate
+	e.RateFetchedAt = product.Rate.FetchedAt
+	e.RateSourceURL = product.Rate.SourceURL
+	e.RateStatus = RateStatusApplied
+	return nil
+}
+
+func (r *Repo) markRatePending(e *Entry) {
+	e.ProductRevenue = 0
+	e.ServiceRevenue = 0
+	e.RateUnit = 0
+	e.RateMiddle = 0
+	e.RateEffectiveDate = e.CollectionDate
+	e.RateFetchedAt = time.Time{}
+	e.RateSourceURL = ""
+	e.RateStatus = RateStatusPending
+}
+
+// RetryPendingRates attempts to resolve saved entries without changing their source amounts.
+// A temporary NBS/cache failure leaves the entry pending for the next attempt.
+func (r *Repo) RetryPendingRates(ctx context.Context, bookID uuid.UUID) error {
+	entries, err := r.ListEntries(ctx, bookID)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if !entry.HasPendingRate() {
+			continue
+		}
+		candidate := entry
+		if err := r.convert(ctx, &candidate); err != nil {
+			if errors.Is(err, exchangerate.ErrUnavailable) {
+				continue
+			}
+			return err
+		}
+		if candidate.HasPendingRate() {
+			continue
+		}
+		if _, err := r.db.ExecContext(ctx, `
+			UPDATE kpo_entries
+			SET product_revenue=$1, service_revenue=$2, rate_unit=$3, rate_middle=$4,
+			    rate_effective_date=$5, rate_fetched_at=$6, rate_source_url=$7, rate_status=$8
+			WHERE id=$9 AND kpo_book_id=$10 AND rate_status=$11`,
+			candidate.ProductRevenue, candidate.ServiceRevenue, candidate.RateUnit, candidate.RateMiddle,
+			candidate.RateEffectiveDate, candidate.RateFetchedAt, candidate.RateSourceURL,
+			candidate.RateStatus, candidate.ID, bookID, RateStatusPending); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *Repo) HasPendingRates(ctx context.Context, bookID uuid.UUID) (bool, error) {
+	var pending bool
+	err := r.db.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM kpo_entries WHERE kpo_book_id=$1 AND rate_status=$2)`,
+		bookID, RateStatusPending).Scan(&pending)
+	return pending, err
+}
+
+func (r *Repo) HasPendingRatesForEntrepreneurUser(ctx context.Context, userID uuid.UUID) (bool, error) {
+	var pending bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM kpo_entries ke
+			JOIN kpo_books kb ON kb.id=ke.kpo_book_id
+			WHERE kb.entrepreneur_user_id=$1 AND ke.rate_status=$2
+		)`, userID, RateStatusPending).Scan(&pending)
+	return pending, err
+}
+
+func (r *Repo) HasPendingRatesForManagedEntrepreneur(ctx context.Context, entrepreneurID uuid.UUID) (bool, error) {
+	var pending bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM kpo_entries ke
+			JOIN kpo_books kb ON kb.id=ke.kpo_book_id
+			WHERE kb.managed_entrepreneur_id=$1 AND ke.rate_status=$2
+		)`, entrepreneurID, RateStatusPending).Scan(&pending)
+	return pending, err
+}
 
 const bookCols = `id, managed_entrepreneur_id, entrepreneur_user_id, year, finalized_at, merged_at, created_at`
 
@@ -201,6 +361,9 @@ func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (Book, error) {
 
 // AddEntry inserts a new entry at the date-appropriate position, shifting later entries up.
 func (r *Repo) AddEntry(ctx context.Context, e Entry) (Entry, error) {
+	if err := r.convert(ctx, &e); err != nil {
+		return Entry{}, err
+	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Entry{}, err
@@ -228,10 +391,10 @@ func (r *Repo) AddEntry(ctx context.Context, e Entry) (Entry, error) {
 	}
 
 	if err = tx.QueryRowContext(ctx,
-		`INSERT INTO kpo_entries (kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, position)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO kpo_entries (kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, original_product_revenue, original_service_revenue, currency, rate_unit, rate_middle, rate_effective_date, rate_fetched_at, rate_source_url, rate_status, position)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 		 RETURNING id, kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, created_at, position`,
-		e.KPOBookID, e.CollectionDate, e.InvoiceNumber, e.Description, e.ProductRevenue, e.ServiceRevenue, newPos,
+		e.KPOBookID, e.CollectionDate, e.InvoiceNumber, e.Description, e.ProductRevenue, e.ServiceRevenue, e.OriginalProductRevenue, e.OriginalServiceRevenue, e.Currency, e.RateUnit, e.RateMiddle, e.RateEffectiveDate, e.RateFetchedAt, e.RateSourceURL, e.RateStatus, newPos,
 	).Scan(&e.ID, &e.KPOBookID, &e.CollectionDate, &e.InvoiceNumber, &e.Description, &e.ProductRevenue, &e.ServiceRevenue, &e.CreatedAt, &e.OrdinalNumber); err != nil {
 		return Entry{}, err
 	}
@@ -241,6 +404,9 @@ func (r *Repo) AddEntry(ctx context.Context, e Entry) (Entry, error) {
 
 // UpdateEntry updates an entry's fields and repositions it to match its new date.
 func (r *Repo) UpdateEntry(ctx context.Context, e Entry) error {
+	if err := r.convert(ctx, &e); err != nil {
+		return err
+	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -295,9 +461,9 @@ func (r *Repo) UpdateEntry(ctx context.Context, e Entry) error {
 
 	if _, err = tx.ExecContext(ctx,
 		`UPDATE kpo_entries
-		 SET collection_date = $1, invoice_number = $2, description = $3, product_revenue = $4, service_revenue = $5, position = $6
-		 WHERE id = $7`,
-		e.CollectionDate, e.InvoiceNumber, e.Description, e.ProductRevenue, e.ServiceRevenue, newPos, e.ID,
+		 SET collection_date=$1, invoice_number=$2, description=$3, product_revenue=$4, service_revenue=$5, original_product_revenue=$6, original_service_revenue=$7, currency=$8, rate_unit=$9, rate_middle=$10, rate_effective_date=$11, rate_fetched_at=$12, rate_source_url=$13, rate_status=$14, position=$15
+		 WHERE id=$16`,
+		e.CollectionDate, e.InvoiceNumber, e.Description, e.ProductRevenue, e.ServiceRevenue, e.OriginalProductRevenue, e.OriginalServiceRevenue, e.Currency, e.RateUnit, e.RateMiddle, e.RateEffectiveDate, e.RateFetchedAt, e.RateSourceURL, e.RateStatus, newPos, e.ID,
 	); err != nil {
 		return err
 	}
@@ -327,7 +493,7 @@ func (r *Repo) ReorderEntries(ctx context.Context, bookID uuid.UUID, ids []uuid.
 // ListEntries returns all entries for a book ordered by position.
 func (r *Repo) ListEntries(ctx context.Context, kpoBookID uuid.UUID) ([]Entry, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, kpo_book_id, collection_date, invoice_number, description, product_revenue, service_revenue, created_at, position
+		`SELECT id,kpo_book_id,collection_date,invoice_number,description,product_revenue,service_revenue,original_product_revenue,original_service_revenue,currency,rate_unit,rate_middle,rate_effective_date,rate_fetched_at,rate_source_url,rate_status,created_at,position
 		 FROM kpo_entries WHERE kpo_book_id = $1 ORDER BY position`,
 		kpoBookID,
 	)
@@ -340,7 +506,7 @@ func (r *Repo) ListEntries(ctx context.Context, kpoBookID uuid.UUID) ([]Entry, e
 		var e Entry
 		if err := rows.Scan(
 			&e.ID, &e.KPOBookID, &e.CollectionDate, &e.InvoiceNumber, &e.Description,
-			&e.ProductRevenue, &e.ServiceRevenue, &e.CreatedAt, &e.OrdinalNumber,
+			&e.ProductRevenue, &e.ServiceRevenue, &e.OriginalProductRevenue, &e.OriginalServiceRevenue, &e.Currency, &e.RateUnit, &e.RateMiddle, &e.RateEffectiveDate, &e.RateFetchedAt, &e.RateSourceURL, &e.RateStatus, &e.CreatedAt, &e.OrdinalNumber,
 		); err != nil {
 			return nil, err
 		}
@@ -379,7 +545,14 @@ func (r *Repo) DeleteEntry(ctx context.Context, bookID, entryID uuid.UUID) error
 
 // Finalize marks a book as finalized (read-only). No-op if already finalized.
 func (r *Repo) Finalize(ctx context.Context, bookID uuid.UUID) error {
-	_, err := r.db.ExecContext(ctx,
+	pending, err := r.HasPendingRates(ctx, bookID)
+	if err != nil {
+		return err
+	}
+	if pending {
+		return ErrPendingRates
+	}
+	_, err = r.db.ExecContext(ctx,
 		`UPDATE kpo_books SET finalized_at = now() WHERE id = $1 AND finalized_at IS NULL`,
 		bookID,
 	)
@@ -550,8 +723,8 @@ func (r *Repo) CopyToEntrepreneurUser(ctx context.Context, managedEntrepreneurID
 			DO NOTHING
 			RETURNING id, year
 		)
-		INSERT INTO kpo_entries (kpo_book_id, position, collection_date, invoice_number, description, product_revenue, service_revenue)
-		SELECT nb.id, ke.position, ke.collection_date, ke.invoice_number, ke.description, ke.product_revenue, ke.service_revenue
+		INSERT INTO kpo_entries (kpo_book_id, position, collection_date, invoice_number, description, product_revenue, service_revenue, original_product_revenue, original_service_revenue, currency, rate_unit, rate_middle, rate_effective_date, rate_fetched_at, rate_source_url, rate_status)
+		SELECT nb.id,ke.position,ke.collection_date,ke.invoice_number,ke.description,ke.product_revenue,ke.service_revenue,ke.original_product_revenue,ke.original_service_revenue,ke.currency,ke.rate_unit,ke.rate_middle,ke.rate_effective_date,ke.rate_fetched_at,ke.rate_source_url,ke.rate_status
 		FROM kpo_books sb
 		JOIN kpo_entries ke ON ke.kpo_book_id = sb.id
 		JOIN new_books nb ON nb.year = sb.year

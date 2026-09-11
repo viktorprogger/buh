@@ -75,7 +75,7 @@
           {{if eq (printf "%s" .InvoiceType) "advance"}}<span class="text-xs text-amber-600">{{T "invoices.type_advance"}}</span>{{else}}<span class="text-xs text-gray-600">{{T "invoices.type_standard"}}</span>{{end}}
         </td>
         <td class="px-4 py-2 text-gray-600">{{.IssueDate.Format "02.01.2006."}}</td>
-        <td class="px-4 py-2 text-right font-mono">{{printf "%.2f" .TotalRSD}}</td>
+        <td class="px-4 py-2 text-right font-mono">{{if eq .RateStatus "pending"}}<span class="text-amber-700">—</span>{{else}}{{printf "%.2f" .TotalRSD}}{{end}}</td>
         <td class="px-4 py-2 text-right">
           <a href="/e/invoices/{{.ID}}" class="text-xs text-primary hover:underline">{{T "invoices.view"}}</a>
         </td>

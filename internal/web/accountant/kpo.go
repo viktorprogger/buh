@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"buh/internal/entrepreneur"
+	"buh/internal/exchangerate"
 	"buh/internal/i18n"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
@@ -60,16 +61,16 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	productRev := shared.Round2(shared.ParseAmount(r.FormValue("product_revenue")))
 	serviceRev := shared.Round2(shared.ParseAmount(r.FormValue("service_revenue")))
+	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
+	if currency == "" {
+		currency = "RSD"
+	}
 
 	if _, err = h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
-		KPOBookID:      book.ID,
-		CollectionDate: collectionDate,
-		InvoiceNumber:  r.FormValue("invoice_number"),
-		Description:    strings.TrimSpace(r.FormValue("description")),
-		ProductRevenue: productRev,
-		ServiceRevenue: serviceRev,
+		KPOBookID: book.ID, CollectionDate: collectionDate, InvoiceNumber: r.FormValue("invoice_number"), Description: strings.TrimSpace(r.FormValue("description")),
+		ProductRevenue: productRev, ServiceRevenue: serviceRev, OriginalProductRevenue: productRev, OriginalServiceRevenue: serviceRev, Currency: currency,
 	}); err != nil {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		writeKPOEntryError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo-new", r.PathValue("id"), year), http.StatusFound)
@@ -98,20 +99,31 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	productRev := shared.Round2(shared.ParseAmount(r.FormValue("product_revenue")))
 	serviceRev := shared.Round2(shared.ParseAmount(r.FormValue("service_revenue")))
+	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
+	if currency == "" {
+		currency = "RSD"
+	}
 
 	if err = h.kpoBooks.UpdateEntry(r.Context(), kpo.Entry{
-		ID:             entryID,
-		KPOBookID:      book.ID,
-		CollectionDate: collectionDate,
-		InvoiceNumber:  r.FormValue("invoice_number"),
-		Description:    strings.TrimSpace(r.FormValue("description")),
-		ProductRevenue: productRev,
-		ServiceRevenue: serviceRev,
+		ID: entryID, KPOBookID: book.ID, CollectionDate: collectionDate, InvoiceNumber: r.FormValue("invoice_number"), Description: strings.TrimSpace(r.FormValue("description")),
+		ProductRevenue: productRev, ServiceRevenue: serviceRev, OriginalProductRevenue: productRev, OriginalServiceRevenue: serviceRev, Currency: currency,
 	}); err != nil {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		writeKPOEntryError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/a/entrepreneurs/%s?year=%d#kpo", r.PathValue("id"), year), http.StatusFound)
+}
+
+func writeKPOEntryError(w http.ResponseWriter, r *http.Request, err error) {
+	l := i18n.FromContext(r.Context())
+	switch {
+	case errors.Is(err, exchangerate.ErrUnsupportedCurrency):
+		http.Error(w, l.T("kpo.error_invalid_currency"), http.StatusBadRequest)
+	case errors.Is(err, exchangerate.ErrUnavailable):
+		http.Error(w, l.T("kpo.error_exchange_rate"), http.StatusBadGateway)
+	default:
+		http.Error(w, l.T("error.server_error"), http.StatusInternalServerError)
+	}
 }
 
 func (h *Handler) handleKPOReorderEntries(w http.ResponseWriter, r *http.Request) {
@@ -174,6 +186,10 @@ func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
+		if errors.Is(err, kpo.ErrPendingRates) {
+			http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_pending_rate"), http.StatusConflict)
+			return
+		}
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
@@ -289,12 +305,21 @@ func (h *Handler) handleKPOMergeCopyEntry(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if _, err := h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
-		KPOBookID:      accBook.ID,
-		CollectionDate: src.CollectionDate,
-		InvoiceNumber:  src.InvoiceNumber,
-		Description:    src.Description,
-		ProductRevenue: src.ProductRevenue,
-		ServiceRevenue: src.ServiceRevenue,
+		KPOBookID:              accBook.ID,
+		CollectionDate:         src.CollectionDate,
+		InvoiceNumber:          src.InvoiceNumber,
+		Description:            src.Description,
+		ProductRevenue:         src.ProductRevenue,
+		ServiceRevenue:         src.ServiceRevenue,
+		OriginalProductRevenue: src.OriginalProductRevenue,
+		OriginalServiceRevenue: src.OriginalServiceRevenue,
+		Currency:               src.Currency,
+		RateUnit:               src.RateUnit,
+		RateMiddle:             src.RateMiddle,
+		RateEffectiveDate:      src.RateEffectiveDate,
+		RateFetchedAt:          src.RateFetchedAt,
+		RateSourceURL:          src.RateSourceURL,
+		RateStatus:             src.RateStatus,
 	}); err != nil {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return

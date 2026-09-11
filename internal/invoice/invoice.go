@@ -14,47 +14,34 @@ var ErrNotFound = errors.New("invoice: not found")
 type Type string
 
 const (
-	TypeStandard Type = "standard"
-	TypeAdvance  Type = "advance"
+	RateStatusApplied      = "applied"
+	RateStatusPending      = "pending"
+	TypeStandard      Type = "standard"
+	TypeAdvance       Type = "advance"
 )
 
-// FXRates maps currency codes to their RSD equivalent (hardcoded, to be replaced with live API).
-var FXRates = map[string]float64{
-	"RSD": 1.0,
-	"EUR": 117.2,
-	"USD": 108.0,
-	"CHF": 122.0,
-	"GBP": 138.0,
-}
-
-func ToRSD(amount float64, currency string) float64 {
-	rate, ok := FXRates[currency]
-	if !ok {
-		rate = 1.0
-	}
-	return amount * rate
-}
-
 type Invoice struct {
-	ID                   uuid.UUID
-	EntrepreneurUserID   uuid.UUID
-	ClientID             *uuid.UUID
-	ClientName           string
-	InvoiceType          Type
-	InvoiceNumber        string
-	IssueDate            time.Time
-	PeriodStart          sql.NullTime
-	PeriodEnd            sql.NullTime
-	DueDate              sql.NullTime
-	Currency             string
-	Notes                string
-	TotalRSD             float64
-	BankAccountID        *uuid.UUID
-	CorrespondentBankID  *uuid.UUID
-	Language             string // "sr" or "en"; defaults to "sr"
-	NoVAT                bool   // include VAT disclaimer (Article 12)
-	NoSign               bool   // include "generated without stamp" note
-	CreatedAt            time.Time
+	ID                  uuid.UUID
+	EntrepreneurUserID  uuid.UUID
+	ClientID            *uuid.UUID
+	ClientName          string
+	InvoiceType         Type
+	InvoiceNumber       string
+	IssueDate           time.Time
+	PeriodStart         sql.NullTime
+	PeriodEnd           sql.NullTime
+	DueDate             sql.NullTime
+	Currency            string
+	Notes               string
+	TotalRSD            float64
+	OriginalTotal       float64
+	RateStatus          string
+	BankAccountID       *uuid.UUID
+	CorrespondentBankID *uuid.UUID
+	Language            string // "sr" or "en"; defaults to "sr"
+	NoVAT               bool   // include VAT disclaimer (Article 12)
+	NoSign              bool   // include "generated without stamp" note
+	CreatedAt           time.Time
 }
 
 type Item struct {
@@ -78,7 +65,7 @@ type Repo struct{ db *sql.DB }
 func NewRepo(db *sql.DB) *Repo { return &Repo{db: db} }
 
 const invCols = `id, entrepreneur_user_id, client_id, client_name, invoice_type, invoice_number,
-	issue_date, period_start, period_end, due_date, currency, notes, total_rsd,
+	issue_date, period_start, period_end, due_date, currency, notes, total_rsd, original_total, rate_status,
 	bank_account_id, correspondent_bank_id, language, no_vat, no_sign, created_at`
 
 func scanInv(row interface{ Scan(...any) error }, inv *Invoice) error {
@@ -89,7 +76,7 @@ func scanInv(row interface{ Scan(...any) error }, inv *Invoice) error {
 		&inv.ID, &inv.EntrepreneurUserID, &clientID, &inv.ClientName,
 		&inv.InvoiceType, &inv.InvoiceNumber,
 		&inv.IssueDate, &inv.PeriodStart, &inv.PeriodEnd, &inv.DueDate,
-		&inv.Currency, &inv.Notes, &inv.TotalRSD,
+		&inv.Currency, &inv.Notes, &inv.TotalRSD, &inv.OriginalTotal, &inv.RateStatus,
 		&bankAccountID, &correspondentBankID,
 		&inv.Language, &inv.NoVAT, &inv.NoSign,
 		&inv.CreatedAt,
@@ -142,15 +129,21 @@ func (r *Repo) Create(ctx context.Context, inv Invoice, items []Item) (Invoice, 
 	if lang == "" {
 		lang = "sr"
 	}
+	if inv.RateStatus == "" {
+		inv.RateStatus = RateStatusApplied
+	}
+	if inv.Currency == "RSD" && inv.OriginalTotal == 0 {
+		inv.OriginalTotal = inv.TotalRSD
+	}
 	err = scanInv(tx.QueryRowContext(ctx,
 		`INSERT INTO invoices (entrepreneur_user_id, client_id, client_name, invoice_type, invoice_number,
-		 issue_date, period_start, period_end, due_date, currency, notes, total_rsd,
+		 issue_date, period_start, period_end, due_date, currency, notes, total_rsd, original_total, rate_status,
 		 bank_account_id, correspondent_bank_id, language, no_vat, no_sign)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
 		 RETURNING `+invCols,
 		inv.EntrepreneurUserID, clientID, inv.ClientName, string(inv.InvoiceType), inv.InvoiceNumber,
 		inv.IssueDate, nullTime(inv.PeriodStart), nullTime(inv.PeriodEnd), nullTime(inv.DueDate),
-		inv.Currency, inv.Notes, inv.TotalRSD,
+		inv.Currency, inv.Notes, inv.TotalRSD, inv.OriginalTotal, inv.RateStatus,
 		bankAccountID, correspondentBankID, lang, inv.NoVAT, inv.NoSign,
 	), &inv)
 	if err != nil {
@@ -169,6 +162,14 @@ func (r *Repo) Create(ctx context.Context, inv Invoice, items []Item) (Invoice, 
 	}
 
 	return inv, tx.Commit()
+}
+
+// UpdateTotalRSD stores an authoritative conversion after a pending retry succeeds.
+func (r *Repo) UpdateTotalRSD(ctx context.Context, id uuid.UUID, total float64) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE invoices SET total_rsd=$1, rate_status=$2 WHERE id=$3 AND rate_status=$4`,
+		total, RateStatusApplied, id, RateStatusPending)
+	return err
 }
 
 func (r *Repo) FindByID(ctx context.Context, id uuid.UUID) (Invoice, []Item, error) {

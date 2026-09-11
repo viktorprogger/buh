@@ -80,10 +80,13 @@
     {{if ne .Invoice.Currency "RSD"}}
     <div>
       <span class="text-gray-500">{{T "invoice_detail.amount_rsd"}}</span>
-      <span class="ml-1 font-medium font-mono">{{printf "%.2f" .Invoice.TotalRSD}} RSD</span>
+      {{if eq .Invoice.RateStatus "pending"}}<span class="ml-1 font-medium text-amber-700">—</span>{{else}}<span class="ml-1 font-medium font-mono">{{printf "%.2f" .Invoice.TotalRSD}} RSD</span>{{end}}
     </div>
     {{end}}
   </div>
+  {{if eq .Invoice.RateStatus "pending"}}
+  <div class="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-900">{{T "invoice_detail.pending_rate"}}</div>
+  {{end}}
 
   <!-- Items table -->
   <div class="overflow-x-auto">

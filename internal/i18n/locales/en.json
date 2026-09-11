@@ -239,11 +239,23 @@
   "kpo.section_title": {
     "other": "KPO — Income Book"
   },
+  "kpo.rsd_note": {
+    "other": "Amounts in the table are RSD; the applied rate is shown next to the currency."
+  },
+  "kpo.rate_tooltip": {
+    "other": "Official NBS exchange rate for {{.Currency}} on {{.Date}}"
+  },
   "kpo.error_finalized": {
     "other": "KPO is finalized"
   },
   "kpo.error_bad_date": {
     "other": "Invalid date (expected dd.mm)"
+  },
+  "kpo.error_exchange_rate": {
+    "other": "The NBS exchange rate is unavailable for this date. The entry was saved and will be retried later."
+  },
+  "kpo.error_invalid_currency": {
+    "other": "Unsupported currency."
   },
   "kpo.download_pdf": {
     "other": "↓ PDF"
@@ -274,6 +286,9 @@
   },
   "kpo.col_description": {
     "other": "Description"
+  },
+  "kpo.col_currency": {
+    "other": "Currency"
   },
   "kpo.col_product": {
     "other": "Goods sales"
@@ -322,6 +337,9 @@
   },
   "kpo.field_description": {
     "other": "Description"
+  },
+  "kpo.field_currency": {
+    "other": "Currency"
   },
   "kpo.field_product": {
     "other": "Goods revenue"
@@ -376,6 +394,9 @@
   },
   "slips.add_new": {
     "other": "+ New Slip"
+  },
+  "slips.download_selected": {
+    "other": "Download selected"
   },
   "slips.tab_current": {
     "other": "Current"
@@ -1771,5 +1792,33 @@
   },
   "notice.unpaired_by_entrepreneur": {
     "other": "The entrepreneur has disconnected their account."
+  },
+  "currency.search": {
+    "other": "Search currency"
+  },
+  "currency.no_match": {
+    "other": "No exact match"
+  },
+  "kpo.pending_rate": {
+    "other": "The NBS rate is unavailable. The entry was saved and will be retried later."
+  },
+  "kpo.error_pending_rate": {
+    "other": "The KPO book cannot be finalized until all NBS rates are available."
+  },
+  "kpo.pending_rate_badge": {
+    "other": "NBS rate pending"
+  },
+  "invoice_new.pending_rate": {
+    "other": "The NBS rate will be fetched later; the invoice was saved without inventing an RSD amount."
+  },
+  "invoice_detail.pending_rate": {
+    "other": "The NBS rate for this date is not yet available. The RSD equivalent will be updated later."
+  }
+,
+  "updates.title": {
+    "other": "Updates"
+  },
+  "updates.empty": {
+    "other": "No updates yet."
   }
 }

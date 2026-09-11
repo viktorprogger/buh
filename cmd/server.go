@@ -532,6 +532,142 @@ CREATE UNIQUE INDEX slip_records_user_purpose_uniq
     ON slip_records (entrepreneur_user_id, purpose, year, advance)
     WHERE entrepreneur_user_id IS NOT NULL;`,
 		},
+		{
+			name: "040_create_exchange_rates",
+			sql: `CREATE TABLE IF NOT EXISTS exchange_rates (
+    requested_date DATE NOT NULL,
+    currency TEXT NOT NULL,
+    effective_date DATE NOT NULL,
+    unit INTEGER NOT NULL,
+    middle_rate NUMERIC(15,6) NOT NULL,
+    fetched_at TIMESTAMPTZ NOT NULL,
+    source_url TEXT NOT NULL,
+    PRIMARY KEY (requested_date, currency)
+);
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS original_product_revenue NUMERIC(15,2) NOT NULL DEFAULT 0;
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS original_service_revenue NUMERIC(15,2) NOT NULL DEFAULT 0;
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'RSD';
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS rate_unit INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS rate_middle NUMERIC(15,6) NOT NULL DEFAULT 1;
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS rate_effective_date DATE NOT NULL DEFAULT CURRENT_DATE;
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS rate_fetched_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS rate_source_url TEXT NOT NULL DEFAULT '';
+UPDATE kpo_entries
+SET original_product_revenue = product_revenue,
+    original_service_revenue = service_revenue,
+    currency = 'RSD', rate_unit = 1, rate_middle = 1,
+    rate_effective_date = collection_date, rate_source_url = ''
+WHERE currency = 'RSD';`,
+		},
+		{
+			name: "041_add_pending_rate_status",
+			sql: `ALTER TABLE kpo_entries ADD COLUMN IF NOT EXISTS rate_status TEXT NOT NULL DEFAULT 'applied';
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS original_total NUMERIC(15,2) NOT NULL DEFAULT 0;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS rate_status TEXT NOT NULL DEFAULT 'applied';
+UPDATE kpo_entries SET rate_status = 'applied' WHERE rate_status IS NULL OR rate_status = '';
+-- Before this migration invoices did not retain their source amount. Preserve
+-- their existing persisted RSD total instead of leaving the new field at zero.
+UPDATE invoices SET original_total = total_rsd WHERE original_total = 0;
+UPDATE invoices SET rate_status = 'applied' WHERE rate_status IS NULL OR rate_status = '';
+ALTER TABLE kpo_entries ADD CONSTRAINT kpo_entries_rate_status CHECK (rate_status IN ('applied','pending'));
+ALTER TABLE invoices ADD CONSTRAINT invoices_rate_status CHECK (rate_status IN ('applied','pending'));
+`,
+		},
+		{
+			name: "042_create_app_updates",
+			sql: `CREATE TABLE IF NOT EXISTS app_updates (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title_sr     TEXT NOT NULL,
+    body_sr      TEXT NOT NULL,
+    title_en     TEXT NOT NULL,
+    body_en      TEXT NOT NULL,
+    title_ru     TEXT NOT NULL,
+    body_ru      TEXT NOT NULL,
+    published_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS app_updates_published_at_idx
+    ON app_updates (published_at DESC);
+
+CREATE TABLE IF NOT EXISTS app_update_reads (
+    update_id UUID NOT NULL REFERENCES app_updates(id) ON DELETE CASCADE,
+    user_type TEXT NOT NULL CHECK (user_type IN ('accountant', 'entrepreneur')),
+    user_id   UUID NOT NULL,
+    read_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (update_id, user_type, user_id)
+);
+CREATE INDEX IF NOT EXISTS app_update_reads_user_idx
+    ON app_update_reads (user_type, user_id);
+
+-- Manual initial entries. Future entries should be added in a follow-up
+-- migration with explicit publication timestamps and all three translations.
+INSERT INTO app_updates (
+    id, title_sr, body_sr, title_en, body_en, title_ru, body_ru, published_at
+) VALUES
+(
+    '00000000-0000-0000-0000-000000000042',
+    'Избор валуте у КПО',
+    'У КПО књизи сада можете да изаберете валуту прихода. Износ у RSD се израчунава по историјском средњем курсу НБС-а за датум ставке.',
+    'Currency selection in the KPO book',
+    'You can now choose the income currency directly in the KPO book. The RSD amount is calculated using the NBS historical middle rate for the entry date.',
+    'Выбор валюты в КПО',
+    'Теперь в книге КПО можно выбрать валюту дохода. Сумма в RSD рассчитывается по историческому среднему курсу НБС на дату записи.',
+    '2026-08-17T00:00:00Z'
+),
+(
+    '00000000-0000-0000-0000-000000000043',
+    'Преузимање више уплатница одједном',
+    'На листи уплатница сада можете означити више ставки и преузети их заједно у једном ZIP архиву.',
+    'Download multiple payment slips at once',
+    'On the payment slips list, you can now select several slips and download them together in a single ZIP archive.',
+    'Скачивание нескольких платёжных поручений',
+    'В списке платёжных поручений теперь можно выбрать несколько записей и скачать их одним ZIP-архивом.',
+    '2026-08-18T00:00:00Z'
+)
+ON CONFLICT (id) DO NOTHING;
+`,
+		},
+		{
+			name: "043_update_initial_app_updates_content",
+			sql: `-- Render the initial production updates as semantic HTML and publish them on
+-- the intended date. Keep this migration limited to the two production rows.
+UPDATE app_updates
+SET body_sr = CASE id
+        WHEN '00000000-0000-0000-0000-000000000042' THEN '<p>У КПО књизи сада можете да изаберете валуту прихода. Износ у RSD се израчунава по историјском средњем курсу НБС-а за датум ставке.</p>'
+        WHEN '00000000-0000-0000-0000-000000000043' THEN '<p>На листи уплатница сада можете означити више ставки и преузети их заједно у једном ZIP архиву.</p>'
+    END,
+    body_en = CASE id
+        WHEN '00000000-0000-0000-0000-000000000042' THEN '<p>You can now choose the income currency directly in the KPO book. The RSD amount is calculated using the NBS historical middle rate for the entry date.</p>'
+        WHEN '00000000-0000-0000-0000-000000000043' THEN '<p>On the payment slips list, you can now select several slips and download them together in a single ZIP archive.</p>'
+    END,
+    body_ru = CASE id
+        WHEN '00000000-0000-0000-0000-000000000042' THEN '<p>Теперь в книге КПО можно выбрать валюту дохода. Сумма в RSD рассчитывается по историческому среднему курсу НБС на дату записи.</p>'
+        WHEN '00000000-0000-0000-0000-000000000043' THEN '<p>В списке платёжных поручений теперь можно выбрать несколько записей и скачать их одним ZIP-архивом.</p>'
+    END,
+    published_at = '2026-08-23T00:00:00Z'
+WHERE id IN (
+    '00000000-0000-0000-0000-000000000042',
+    '00000000-0000-0000-0000-000000000043'
+);
+`,
+		},
+		{
+			name: "044_add_kpo_rate_display_update",
+			sql: `-- Publish the KPO currency/rate display improvement in all supported languages.
+INSERT INTO app_updates (
+    id, title_sr, body_sr, title_en, body_en, title_ru, body_ru, published_at
+) VALUES (
+    '00000000-0000-0000-0000-000000000045',
+    'Побољшан приказ валуте и курса у КПО',
+    '<p>У КПО је исправљен приказ избора валуте и тренутног курса НБС-а. Валута и курс су сада приказани јасније.</p>',
+    'Improved currency and NBS rate display in KPO',
+    '<p>Currency selection and the current NBS exchange rate in KPO are now displayed more clearly.</p>',
+    'Улучшено отображение валюты и курса в КПО',
+    '<p>В КПО исправлено отображение выбора валюты и текущего курса НБС. Теперь валюта и курс отображаются понятнее.</p>',
+    '2026-08-26T00:00:00Z'
+)
+ON CONFLICT (id) DO NOTHING;
+`,
+		},
 	}
 
 	// Create migrations tracking table.

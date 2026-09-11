@@ -239,11 +239,23 @@
   "kpo.section_title": {
     "other": "КПО — Књига прихода"
   },
+  "kpo.rsd_note": {
+    "other": "Износи у табели су у RSD; примењени курс је приказан поред валуте."
+  },
+  "kpo.rate_tooltip": {
+    "other": "Званични курс НБС за {{.Currency}} на дан {{.Date}}"
+  },
   "kpo.error_finalized": {
     "other": "КПО је финализована"
   },
   "kpo.error_bad_date": {
     "other": "Неисправан датум (очекује се дд.мм)"
+  },
+  "kpo.error_exchange_rate": {
+    "other": "Курс НБС није доступан за овај датум. Ставка је сачувана и курс ће бити поново потражен касније."
+  },
+  "kpo.error_invalid_currency": {
+    "other": "Неподржана валута."
   },
   "kpo.download_pdf": {
     "other": "↓ PDF"
@@ -274,6 +286,9 @@
   },
   "kpo.col_description": {
     "other": "Опис"
+  },
+  "kpo.col_currency": {
+    "other": "Валута"
   },
   "kpo.col_product": {
     "other": "Продаја роба"
@@ -322,6 +337,9 @@
   },
   "kpo.field_description": {
     "other": "Опис"
+  },
+  "kpo.field_currency": {
+    "other": "Валута"
   },
   "kpo.field_product": {
     "other": "Приход од продаје роба"
@@ -877,6 +895,12 @@
   },
   "invoices.next": {
     "other": "Следећа →"
+  },
+  "invoice.error_exchange_rate": {
+    "other": "Курс НБС није доступан за датум рачуна. Рачун је сачуван, а курс ће бити поново потражен касније."
+  },
+  "invoice.error_invalid_currency": {
+    "other": "Неподржана валута."
   },
   "invoice_new.title": {
     "other": "Нова фактура"
@@ -1771,5 +1795,33 @@
   },
   "notice.unpaired_by_entrepreneur": {
     "other": "Предузетник је прекинуо везу са твојим налогом."
+  },
+  "currency.search": {
+    "other": "Претражи валуту"
+  },
+  "currency.no_match": {
+    "other": "Нема тачног поклапања"
+  },
+  "kpo.pending_rate": {
+    "other": "Курс НБС није доступан. Ставка је сачувана и курс ће бити поново потражен касније."
+  },
+  "kpo.error_pending_rate": {
+    "other": "КПО не може да се финализује док се не преузму сви курсеви НБС."
+  },
+  "kpo.pending_rate_badge": {
+    "other": "курс НБС на чекању"
+  },
+  "invoice_new.pending_rate": {
+    "other": "Курс НБС ће бити преузет касније; фактура је сачувана без измишљеног RSD износа."
+  },
+  "invoice_detail.pending_rate": {
+    "other": "Курс НБС за овај датум још није доступан. RSD противвредност ће бити ажурирана касније."
+  }
+,
+  "updates.title": {
+    "other": "Ажурирања"
+  },
+  "updates.empty": {
+    "other": "Нема нових ажурирања."
   }
 }

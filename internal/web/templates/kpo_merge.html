@@ -55,9 +55,13 @@
         <td class="px-4 py-2 text-gray-700">{{$e.CollectionDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-gray-800">{{$e.InvoiceNumber}}</td>
         <td class="px-4 py-2 text-gray-500 text-xs">{{$e.Description}}</td>
+        {{if $e.HasPendingRate}}
+        <td colspan="3" class="px-4 py-2 text-right font-mono text-amber-700">{{T "kpo.pending_rate_badge"}}</td>
+        {{else}}
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ProductRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ServiceRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">{{printf "%.2f" $e.Total}}</td>
+        {{end}}
         {{if not $.AccBook.IsFinalized}}
         <td class="px-4 py-2 text-right">
           <form method="POST"
@@ -108,9 +112,13 @@
         <td class="px-4 py-2 text-gray-700">{{$e.CollectionDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-gray-800">{{$e.InvoiceNumber}}</td>
         <td class="px-4 py-2 text-gray-500 text-xs">{{$e.Description}}</td>
+        {{if $e.HasPendingRate}}
+        <td colspan="3" class="px-4 py-2 text-right font-mono text-amber-700">{{T "kpo.pending_rate_badge"}}</td>
+        {{else}}
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ProductRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ServiceRevenue}}</td>
         <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">{{printf "%.2f" $e.Total}}</td>
+        {{end}}
       </tr>
       {{end}}
     </tbody>

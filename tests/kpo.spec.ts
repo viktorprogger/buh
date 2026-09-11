@@ -172,6 +172,9 @@ test('tab key moves focus through KPO numeric entry fields', async ({ page }) =>
   await expect(page.locator('#kpo-description')).toBeFocused();
 
   await page.keyboard.press('Tab');
+  await expect(page.locator('[data-picker-id="currency-new"] [data-currency-toggle]')).toBeFocused();
+
+  await page.keyboard.press('Tab');
   await expect(page.locator('#kpo-product')).toBeFocused();
 
   await page.keyboard.press('Tab');

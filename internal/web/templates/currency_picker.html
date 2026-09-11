@@ -1,0 +1,30 @@
+{{define "currency_picker"}}
+<div class="{{if .Edit}}edit-input {{end}}currency-picker relative"{{if .Edit}} style="display:none"{{end}} data-currency-picker data-picker-id="{{.ID}}">
+  <input type="hidden" name="{{.Name}}" value="{{.Value}}" data-currency-value{{if .Form}} form="{{.Form}}"{{end}}>
+  <button type="button"
+          class="currency-picker-toggle inline-flex w-full items-center justify-between gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+          aria-haspopup="listbox" aria-expanded="false" aria-controls="{{.ID}}-options"
+          data-currency-toggle>
+    <span data-currency-label>{{.Value}}</span><span aria-hidden="true" class="text-gray-400">⌄</span>
+  </button>
+  <div id="{{.ID}}-menu"
+       class="currency-picker-menu absolute left-0 z-30 mt-1 hidden w-40 rounded border border-gray-300 bg-white p-1 shadow-lg"
+       data-currency-menu>
+    <input type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"
+           class="w-full rounded border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+           placeholder="{{T "currency.search"}}"
+           aria-label="{{T "currency.search"}}"
+           aria-controls="{{.ID}}-options"
+           data-currency-search>
+    <div id="{{.ID}}-options" class="mt-1 max-h-48 overflow-y-auto" role="listbox" data-currency-options>
+      {{range .Currencies}}
+      <button type="button" role="option" tabindex="-1"
+              class="block w-full rounded px-2 py-1 text-left text-sm font-mono hover:bg-primary-light"
+              data-currency-option data-currency="{{.}}" id="{{$.ID}}-currency-{{.}}"
+              aria-selected="{{if eq . $.Value}}true{{else}}false{{end}}">{{.}}</button>
+      {{end}}
+      <div class="hidden px-2 py-1 text-xs text-gray-500" data-currency-empty>{{T "currency.no_match"}}</div>
+    </div>
+  </div>
+</div>
+{{end}}

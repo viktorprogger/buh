@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/exchangerate"
 	"buh/internal/i18n"
 	"buh/internal/kpo"
 	"buh/internal/web/shared"
@@ -27,6 +28,18 @@ func (h *Handler) eKPOBookFromPath(r *http.Request) (uuid.UUID, kpo.Book, int, e
 	}
 	book, err := h.kpoBooks.FindOrCreateForEntrepreneur(r.Context(), userID, year)
 	return userID, book, year, err
+}
+
+func writeKPOEntryError(w http.ResponseWriter, r *http.Request, err error) {
+	l := i18n.FromContext(r.Context())
+	switch {
+	case errors.Is(err, exchangerate.ErrUnsupportedCurrency):
+		http.Error(w, l.T("kpo.error_invalid_currency"), http.StatusBadRequest)
+	case errors.Is(err, exchangerate.ErrUnavailable):
+		http.Error(w, l.T("kpo.error_exchange_rate"), http.StatusBadGateway)
+	default:
+		http.Error(w, l.T("error.server_error"), http.StatusInternalServerError)
+	}
 }
 
 func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +66,10 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
+	if err := h.kpoBooks.RetryPendingRates(r.Context(), currentBook.ID); err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
 	entries, err := h.kpoBooks.ListEntries(r.Context(), currentBook.ID)
 	if err != nil {
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
@@ -72,15 +89,22 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 	var kpoRows []shared.KPORow
 	for i, en := range entries {
 		kpoRows = append(kpoRows, shared.KPORow{
-			IsAdvanceInvoice: false,
-			Date:             en.CollectionDate,
-			InvoiceNum:       en.InvoiceNumber,
-			Description:      en.Description,
-			EntryID:          en.ID,
-			OrdinalNumber:    i + 1,
-			ProductRevenue:   en.ProductRevenue,
-			ServiceRevenue:   en.ServiceRevenue,
-			EntryTotal:       en.Total(),
+			IsAdvanceInvoice:       false,
+			Date:                   en.CollectionDate,
+			InvoiceNum:             en.InvoiceNumber,
+			Description:            en.Description,
+			EntryID:                en.ID,
+			OrdinalNumber:          i + 1,
+			ProductRevenue:         en.ProductRevenue,
+			ServiceRevenue:         en.ServiceRevenue,
+			EntryTotal:             en.Total(),
+			OriginalProductRevenue: en.OriginalProductRevenue,
+			OriginalServiceRevenue: en.OriginalServiceRevenue,
+			Currency:               en.Currency,
+			RateUnit:               en.RateUnit,
+			RateMiddle:             en.RateMiddle,
+			RateEffectiveDate:      en.RateEffectiveDate,
+			RateStatus:             en.RateStatus,
 		})
 	}
 	for _, inv := range advanceInvoices {
@@ -99,10 +123,18 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 	})
 
 	var totalProduct, totalService float64
+	var hasPendingRates bool
 	for _, en := range entries {
 		totalProduct += en.ProductRevenue
 		totalService += en.ServiceRevenue
+		hasPendingRates = hasPendingRates || en.HasPendingRate()
 	}
+	allPendingRates, err := h.kpoBooks.HasPendingRatesForEntrepreneurUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		return
+	}
+	hasPendingRates = hasPendingRates || allPendingRates
 
 	currentYear := time.Now().Year()
 	pausalLimit := shared.PausalalLimitForYear(currentYear)
@@ -131,18 +163,24 @@ func (h *Handler) handleKPO(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vatAlert := shared.ComputeVATAlert(vatTotal, vatLimit)
+	if hasPendingRates {
+		pausalAlert = nil
+		vatAlert = nil
+	}
 
 	shared.RenderTemplate(w, r, h.tmpl.EntrepreneurKPO, map[string]any{
-		"CurrentBook":  currentBook,
-		"KPOBooks":     books,
-		"KPOEntries":   entries,
-		"KPORows":      kpoRows,
-		"SelectedYear": selectedYear,
-		"TotalProduct": totalProduct,
-		"TotalService": totalService,
-		"TotalAll":     totalProduct + totalService,
-		"PausalAlert":  pausalAlert,
-		"VATAlert":     vatAlert,
+		"CurrentBook":     currentBook,
+		"KPOBooks":        books,
+		"KPOEntries":      entries,
+		"KPORows":         kpoRows,
+		"SelectedYear":    selectedYear,
+		"TotalProduct":    totalProduct,
+		"TotalService":    totalService,
+		"TotalAll":        totalProduct + totalService,
+		"HasPendingRates": hasPendingRates,
+		"Currencies":      exchangerate.Currencies(),
+		"PausalAlert":     pausalAlert,
+		"VATAlert":        vatAlert,
 	})
 }
 
@@ -164,15 +202,15 @@ func (h *Handler) handleKPOAddEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	prodRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
 	svcRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("service_revenue"), ",", "."), 64)
+	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
+	if currency == "" {
+		currency = "RSD"
+	}
 	if _, err := h.kpoBooks.AddEntry(r.Context(), kpo.Entry{
-		KPOBookID:      book.ID,
-		CollectionDate: date,
-		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
-		Description:    strings.TrimSpace(r.FormValue("description")),
-		ProductRevenue: prodRev,
-		ServiceRevenue: svcRev,
+		KPOBookID: book.ID, CollectionDate: date, InvoiceNumber: strings.TrimSpace(r.FormValue("invoice_number")), Description: strings.TrimSpace(r.FormValue("description")),
+		ProductRevenue: prodRev, ServiceRevenue: svcRev, OriginalProductRevenue: prodRev, OriginalServiceRevenue: svcRev, Currency: currency,
 	}); err != nil {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		writeKPOEntryError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -201,16 +239,15 @@ func (h *Handler) handleKPOUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	prodRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("product_revenue"), ",", "."), 64)
 	svcRev, _ := strconv.ParseFloat(strings.ReplaceAll(r.FormValue("service_revenue"), ",", "."), 64)
+	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
+	if currency == "" {
+		currency = "RSD"
+	}
 	if err := h.kpoBooks.UpdateEntry(r.Context(), kpo.Entry{
-		ID:             entryID,
-		KPOBookID:      book.ID,
-		CollectionDate: date,
-		InvoiceNumber:  strings.TrimSpace(r.FormValue("invoice_number")),
-		Description:    strings.TrimSpace(r.FormValue("description")),
-		ProductRevenue: prodRev,
-		ServiceRevenue: svcRev,
+		ID: entryID, KPOBookID: book.ID, CollectionDate: date, InvoiceNumber: strings.TrimSpace(r.FormValue("invoice_number")), Description: strings.TrimSpace(r.FormValue("description")),
+		ProductRevenue: prodRev, ServiceRevenue: svcRev, OriginalProductRevenue: prodRev, OriginalServiceRevenue: svcRev, Currency: currency,
 	}); err != nil {
-		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
+		writeKPOEntryError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, "/e/kpo/"+strconv.Itoa(year)+"#kpo", http.StatusFound)
@@ -270,6 +307,10 @@ func (h *Handler) handleKPOFinalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.kpoBooks.Finalize(r.Context(), book.ID); err != nil {
+		if errors.Is(err, kpo.ErrPendingRates) {
+			http.Error(w, i18n.FromContext(r.Context()).T("kpo.error_pending_rate"), http.StatusConflict)
+			return
+		}
 		http.Error(w, i18n.FromContext(r.Context()).T("error.server_error"), http.StatusInternalServerError)
 		return
 	}
@@ -327,4 +368,3 @@ func (h *Handler) handleKPOPDF(w http.ResponseWriter, r *http.Request) {
 		log.Printf("kpo pdf write error: %v", err)
 	}
 }
-
