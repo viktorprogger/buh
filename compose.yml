@@ -14,7 +14,6 @@ services:
       retries: 5
 
   app:
-    profiles: ["dev"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -24,6 +23,7 @@ services:
       BUH_DATABASE_URL: "postgres://${POSTGRES_USER:-buh}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-buh}?sslmode=disable"
       BUH_SESSION_HASH_KEY: ${BUH_SESSION_HASH_KEY}
       BUH_SESSION_BLOCK_KEY: ${BUH_SESSION_BLOCK_KEY}
+      BUH_VISIT_LOGGING_ENABLED: ${BUH_VISIT_LOGGING_ENABLED:-false}
     ports:
       - "${APP_HOST_PORT:-8081}:8081"
     volumes:

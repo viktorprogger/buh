@@ -26,6 +26,7 @@ import (
 	"buh/internal/sliphistory"
 	"buh/internal/sliprecord"
 	"buh/internal/uploadqueue"
+	"buh/internal/visitlog"
 	"buh/internal/web"
 )
 
@@ -42,6 +43,9 @@ func init() {
 
 func runServer(cmd *cobra.Command, args []string) error {
 	cfg := config.Load()
+	if err := cfg.ValidateVisitLogging(); err != nil {
+		return fmt.Errorf("visit logging config: %w", err)
+	}
 
 	// Allow --port flag to override BUH_ADDR for convenience.
 	if p, _ := cmd.Flags().GetString("port"); p != "" {
@@ -95,6 +99,10 @@ func runServer(cmd *cobra.Command, args []string) error {
 	sessions := auth.NewSessionManager(hashKey, blockKey)
 	entrepreneurUserRepo := entrepreneuruser.NewRepo(db)
 	handler := web.NewHandler(accountantRepo, entrepreneurUserRepo, sessions, db)
+	if cfg.VisitLoggingEnabled {
+		resolver := visitlog.RepositoryResolver{Accountants: accountantRepo, Entrepreneurs: entrepreneurUserRepo}
+		handler = visitlog.Middleware(sessions, resolver, log.Default())(handler)
+	}
 
 	// Reset any stale 'processing' queue rows left by a previous crash.
 	queueRepo := uploadqueue.NewRepo(db)
@@ -512,7 +520,7 @@ ALTER TABLE entrepreneur_users ADD COLUMN IF NOT EXISTS pending_notice TEXT NOT 
 		},
 		{
 			name: "038_drop_not_null_managed_entrepreneur_id",
-			sql: `ALTER TABLE slip_records ALTER COLUMN managed_entrepreneur_id DROP NOT NULL;`,
+			sql:  `ALTER TABLE slip_records ALTER COLUMN managed_entrepreneur_id DROP NOT NULL;`,
 		},
 		{
 			name: "039_slip_records_user_purpose_unique",

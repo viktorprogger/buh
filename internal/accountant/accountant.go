@@ -69,6 +69,21 @@ func (r *Repo) FindByEmail(ctx context.Context, email string) (*Accountant, erro
 	return &a, nil
 }
 
+// FindByID returns the accountant with the given ID, or ErrNotFound.
+func (r *Repo) FindByID(ctx context.Context, id string) (*Accountant, error) {
+	var a Accountant
+	err := r.db.QueryRowContext(ctx,
+		`SELECT id, email, password_hash, language, created_at FROM accountants WHERE id = $1`, id,
+	).Scan(&a.ID, &a.Email, &a.PasswordHash, &a.Language, &a.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
 // Count returns the total number of accountants in the database.
 func (r *Repo) Count(ctx context.Context) (int, error) {
 	var n int
