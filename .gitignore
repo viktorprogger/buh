@@ -12,6 +12,7 @@ tmp/
 
 # Claude Code internal files
 .claude/
+.pi/
 
 # Go build output
 buh

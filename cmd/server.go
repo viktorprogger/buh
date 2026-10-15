@@ -772,19 +772,23 @@ func seedDefaultAccountant(repo *accountant.Repo) error {
 		return nil
 	}
 
-	defaultEmail := "admin@localhost"
-	defaultPassword := "pausal"
-
-	if v := os.Getenv("BUH_DEFAULT_EMAIL"); v != "" {
-		defaultEmail = v
-	}
-	if v := os.Getenv("BUH_DEFAULT_PASSWORD"); v != "" {
-		defaultPassword = v
+	defaultEmail := os.Getenv("BUH_DEFAULT_EMAIL")
+	defaultPassword := os.Getenv("BUH_DEFAULT_PASSWORD")
+	if defaultEmail == "" || defaultPassword == "" {
+		if os.Getenv("BUH_REQUIRE_EXPLICIT_ADMIN") == "true" {
+			return fmt.Errorf("BUH_DEFAULT_EMAIL and BUH_DEFAULT_PASSWORD are required when the database has no accountants")
+		}
+		if defaultEmail == "" {
+			defaultEmail = "admin@localhost"
+		}
+		if defaultPassword == "" {
+			defaultPassword = "pausal"
+		}
 	}
 
 	if _, err := repo.Create(context.Background(), defaultEmail, defaultPassword); err != nil {
 		return fmt.Errorf("create default accountant: %w", err)
 	}
-	log.Printf("WARNING: no accountants found — created default accountant email=%s password=%s  Change this immediately!", defaultEmail, defaultPassword)
+	log.Printf("WARNING: no accountants found — created default accountant email=%s; change this immediately", defaultEmail)
 	return nil
 }
