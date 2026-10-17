@@ -79,18 +79,18 @@ jobs:
       (needs.build.result == 'success' || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     steps:
-      - name: Check Europe/Berlin deployment window
+      - name: Check Europe/Belgrade deployment window
         id: window
         shell: bash
         run: |
-          hour="$(TZ=Europe/Berlin date +%H)"
+          hour="$(TZ=Europe/Belgrade date +%H)"
           hour="$((10#$hour))"
           if (( hour >= 20 && hour < 22 )); then
             echo "allowed=true" >> "$GITHUB_OUTPUT"
-            echo "Deployment window is open: $(TZ=Europe/Berlin date)"
+            echo "Deployment window is open: $(TZ=Europe/Belgrade date)"
           else
             echo "allowed=false" >> "$GITHUB_OUTPUT"
-            echo "Deployment deferred: current Europe/Berlin time is $(TZ=Europe/Berlin date)"
+            echo "Deployment deferred: current Europe/Belgrade time is $(TZ=Europe/Belgrade date)"
           fi
 
       - name: Deploy through the server-side locked script
