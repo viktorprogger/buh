@@ -170,10 +170,27 @@ jobs:
           if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" ]]; then
             echo '::warning::Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing'; exit 0
           fi
-          text="Deployment $outcome | repo=$WORKFLOW_REPOSITORY | event=$WORKFLOW_EVENT_NAME | ref=$WORKFLOW_REF_NAME | sha=$WORKFLOW_SHA | workflow=$WORKFLOW_SERVER_URL/$WORKFLOW_REPOSITORY/actions/runs/$WORKFLOW_RUN_ID"
-          [[ "${DEPLOY_CONFIG_REF:-}" =~ ^[0-9a-f]{40}$ ]] && text+=" | config=$DEPLOY_CONFIG_REF"
-          [[ "${DEPLOY_IMAGE:-}" =~ ^ghcr\.io/viktorprogger/buh@sha256:[0-9a-f]{64}$ ]] && text+=" | image=$DEPLOY_IMAGE"
-          [[ "${DEPLOY_FAILURE_CONTEXT:-}" =~ ^(ssh_exit=[0-9]+|failure=[a-z_]+)$ ]] && text+=" | $DEPLOY_FAILURE_CONTEXT"
+          case "$outcome" in
+            deployed) status="✅ Deployment deployed" ;;
+            no-op) status="ℹ️ Deployment no-op" ;;
+            *) status="❌ Deployment failed" ;;
+          esac
+          text="$status"
+          text+=$'\nRepository: '"$WORKFLOW_REPOSITORY"
+          text+=$'\nEvent: '"$WORKFLOW_EVENT_NAME"
+          text+=$'\nRef: '"$WORKFLOW_REF_NAME"
+          text+=$'\nCommit: '"${WORKFLOW_SHA:0:12}"
+          if [[ "${DEPLOY_CONFIG_REF:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            text+=$'\nConfig ref: '"${DEPLOY_CONFIG_REF:0:12}"
+          fi
+          if [[ "${DEPLOY_IMAGE:-}" =~ ^ghcr\.io/viktorprogger/buh@sha256:[0-9a-f]{64}$ ]]; then
+            image_digest="${DEPLOY_IMAGE#*@sha256:}"
+            text+=$'\nImage digest: '"${image_digest:0:16}"
+          fi
+          if [[ "$outcome" == failed && "${DEPLOY_FAILURE_CONTEXT:-}" =~ ^(ssh_exit=[0-9]+|failure=[a-z_]+)$ ]]; then
+            text+=$'\nFailure: '"$DEPLOY_FAILURE_CONTEXT"
+          fi
+          text+=$'\nWorkflow: '"$WORKFLOW_SERVER_URL/$WORKFLOW_REPOSITORY/actions/runs/$WORKFLOW_RUN_ID"
           args=(-d "chat_id=$TELEGRAM_CHAT_ID" --data-urlencode "text=$text")
           [[ -n "${TELEGRAM_THREAD_ID:-}" ]] && args+=(-d "message_thread_id=$TELEGRAM_THREAD_ID")
           curl --fail --silent --show-error --max-time 15 -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" "${args[@]}" >/dev/null \
