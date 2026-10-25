@@ -2,12 +2,16 @@
   "app.title": {
     "other": "Tax Payments"
   },
-  "access_request.title": { "other": "Request a separate accountant account" },
-  "access_request.description": { "other": "Enter your email so the operator can review your request." },
-  "access_request.email": { "other": "Email address" },
-  "access_request.submit": { "other": "Submit request" },
-  "access_request.success": { "other": "Request saved. You can enter another address." },
-  "access_request.another": { "other": "Enter another address" },
+  "access_request.title": { "other": "Create your own account" },
+  "access_request.description": { "other": "Work independently from your colleagues:" },
+  "access_request.benefit_1": { "other": "your account will contain only your own flat-rate tax payments;" },
+  "access_request.benefit_2": { "other": "other users won't be able to change your data by accident;" },
+  "access_request.benefit_3": { "other": "you'll sign in with your email instead of the shared account." },
+  "access_request.prompt": { "other": "Enter your work email below. I'll create a separate account for you and move your data there. Your current work will remain intact — nothing will be lost." },
+  "access_request.email": { "other": "Work email address" },
+  "access_request.submit": { "other": "Provide my email address" },
+  "access_request.success": { "other": "Your email address has been saved." },
+  "access_request.another": { "other": "Provide another email address" },
   "nav.entrepreneurs": {
     "other": "Entrepreneurs"
   },

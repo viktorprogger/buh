@@ -2,12 +2,16 @@
   "app.title": {
     "other": "Налоговые платежи"
   },
-  "access_request.title": { "other": "Запросить отдельную учетную запись бухгалтера" },
-  "access_request.description": { "other": "Введите электронную почту для рассмотрения оператором." },
-  "access_request.email": { "other": "Электронная почта" },
-  "access_request.submit": { "other": "Отправить запрос" },
-  "access_request.success": { "other": "Запрос сохранен. Можно ввести другой адрес." },
-  "access_request.another": { "other": "Ввести другой адрес" },
+  "access_request.title": { "other": "Создайте свой личный кабинет" },
+  "access_request.description": { "other": "Работайте отдельно от коллег:" },
+  "access_request.benefit_1": { "other": "в кабинете будут только ваши паушалы;" },
+  "access_request.benefit_2": { "other": "другие пользователи не смогут случайно изменить ваши данные;" },
+  "access_request.benefit_3": { "other": "вход будет привязан к вашей почте, а не к общему аккаунту." },
+  "access_request.prompt": { "other": "Укажите свою рабочую почту в поле ниже — и я сам создам отдельный доступ и перенесу ваши данные. Текущая работа сохранится, ничего не потеряется." },
+  "access_request.email": { "other": "Ваша рабочая почта" },
+  "access_request.submit": { "other": "Указать свою почту" },
+  "access_request.success": { "other": "Ваша почта сохранена." },
+  "access_request.another": { "other": "Указать другую почту" },
   "nav.entrepreneurs": {
     "other": "Предприниматели"
   },
