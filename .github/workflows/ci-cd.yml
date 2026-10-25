@@ -52,7 +52,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          target: base
+          target: production
           platforms: linux/amd64
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: |
@@ -86,8 +86,16 @@ jobs:
         id: window
         shell: bash
         run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+            echo "automatic=false" >> "$GITHUB_OUTPUT"
+            echo "Manual deployment: window check bypassed"
+            exit 0
+          fi
+
           hour="$(TZ=Europe/Belgrade date +%H)"
           hour="$((10#$hour))"
+          echo "automatic=true" >> "$GITHUB_OUTPUT"
           if (( hour >= 20 && hour < 22 )); then
             echo "allowed=true" >> "$GITHUB_OUTPUT"
             echo "Deployment window is open: $(TZ=Europe/Belgrade date)"
@@ -101,6 +109,7 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -109,6 +118,7 @@ jobs:
           set -euo pipefail
           : "${DEPLOY_HOST:?missing DEPLOY_HOST}"
           : "${DEPLOY_USER:?missing DEPLOY_USER}"
+          : "${DEPLOY_PORT:?missing DEPLOY_PORT}"
           : "${DEPLOY_PATH:?missing DEPLOY_PATH}"
           : "${DEPLOY_SSH_KEY:?missing DEPLOY_SSH_KEY}"
           : "${DEPLOY_KNOWN_HOSTS:?missing DEPLOY_KNOWN_HOSTS}"
@@ -119,8 +129,13 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$key"
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$known_hosts"
 
-          printf -v remote_command 'cd -- %q && ./scripts/deploy.sh deploy' "$DEPLOY_PATH"
+          if [[ "${{ steps.window.outputs.automatic }}" == "true" ]]; then
+            printf -v remote_command 'cd -- %q && ./scripts/deploy.sh deploy --automatic' "$DEPLOY_PATH"
+          else
+            printf -v remote_command 'cd -- %q && ./scripts/deploy.sh deploy' "$DEPLOY_PATH"
+          fi
           ssh -i "$key" \
+            -p "$DEPLOY_PORT" \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$known_hosts" \

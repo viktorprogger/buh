@@ -1,5 +1,6 @@
 # Task History
 
+- [2026-10-25 Production container runtime image](2026-10-25-production-container-runtime-image.md) — Multi-stage build keeps Go/Tailwind tooling in development while shipping only a stripped binary and required Debian runtime dependencies
 - [2026-09-11 Uplatnica download filenames](2026-09-11-uplatnica-download-filenames.md) — Single and bulk slip downloads now use official entrepreneur and purpose slugs while preserving ZIP delivery
 - [2026-09-11 Container output for visit logging](2026-09-11-container-visit-logging.md) — Authenticated visit diagnostics now go to the container logger for `docker logs`
 - [2026-08-23 Trusted HTML for in-app update descriptions](2026-08-23-in-app-updates-html-content.md) — Migration-authored semantic HTML bodies rendered through the trusted template type; test fixture excluded from production migration
