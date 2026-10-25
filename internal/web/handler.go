@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"buh/internal/accessrequest"
 	"buh/internal/accountant"
 	"buh/internal/auth"
 	"buh/internal/bankaccount"
@@ -69,7 +70,7 @@ func langMiddleware(bundle *i18n.Bundle) func(http.Handler) http.Handler {
 }
 
 // NewHandler returns an HTTP handler for the web UI.
-func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo, sessions *auth.SessionManager, db *sql.DB) http.Handler {
+func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo, sessions *auth.SessionManager, db *sql.DB, access ...*accessrequest.Service) http.Handler {
 	entrepreneurs := entrepreneur.NewRepo(db)
 	slips := sliprecord.NewRepo(db)
 	slipHistory := sliphistory.NewRepo(db)
@@ -98,6 +99,7 @@ func NewHandler(accts *accountant.Repo, entrepreneurUsers *entrepreneuruser.Repo
 		invitations,
 		invoices,
 		tmpl,
+		access...,
 	)
 	eH := webentrepreneur.NewHandler(
 		sessions,

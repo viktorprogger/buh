@@ -17,6 +17,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
 
+	"buh/internal/accessrequest"
 	"buh/internal/accountant"
 	"buh/internal/auth"
 	"buh/internal/config"
@@ -98,7 +99,12 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	sessions := auth.NewSessionManager(hashKey, blockKey)
 	entrepreneurUserRepo := entrepreneuruser.NewRepo(db)
-	handler := web.NewHandler(accountantRepo, entrepreneurUserRepo, sessions, db)
+	accessStore := accessrequest.NewStore(cfg.AccessRequestsFile)
+	accessService := accessrequest.NewService(accessStore, accessrequest.Telegram{Token: cfg.TelegramBotToken, ChatID: cfg.TelegramChatID, ThreadID: cfg.TelegramThreadID})
+	accessCtx, accessCancel := context.WithCancel(context.Background())
+	defer accessCancel()
+	accessService.Start(accessCtx)
+	handler := web.NewHandler(accountantRepo, entrepreneurUserRepo, sessions, db, accessService)
 	if cfg.VisitLoggingEnabled {
 		resolver := visitlog.RepositoryResolver{Accountants: accountantRepo, Entrepreneurs: entrepreneurUserRepo}
 		handler = visitlog.Middleware(sessions, resolver, log.Default())(handler)
@@ -135,6 +141,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	go func() {
 		<-shutdownCtx.Done()
 		workerCancel()
+		accessCancel()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {

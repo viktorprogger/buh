@@ -29,6 +29,14 @@
   </div>
 </header>
 {{end}}
+{{if .AccessRequest.Show}}
+<section class="max-w-5xl mx-auto px-4 pt-4 w-full">
+<details class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3"><summary class="cursor-pointer font-medium">{{T "access_request.title"}}</summary>
+<p class="text-sm mt-2">{{T "access_request.description"}}</p>
+{{if .AccessRequest.Success}}<p class="text-sm mt-2 text-green-700">{{T "access_request.success"}}</p><button type="button" class="mt-2 bg-blue-600 text-white rounded px-3 py-1" onclick="document.getElementById('access-request-email').focus()">{{T "access_request.another"}}</button>{{end}}
+<form id="access-request-form" method="POST" action="/a/access-request" class="mt-3 flex gap-2"><input id="access-request-email" type="email" name="email" required class="border rounded px-2 py-1 flex-1" placeholder="{{T "access_request.email"}}"><button class="bg-blue-600 text-white rounded px-3 py-1" type="submit">{{T "access_request.submit"}}</button></form>
+</details></section>
+{{end}}
 <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
 {{if .Notice}}
 <div class="mb-4 flex items-start justify-between gap-4 bg-amber-50 border border-amber-200 rounded-lg px-6 py-3 text-sm text-amber-900">

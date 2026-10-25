@@ -70,13 +70,20 @@ func Middleware(sessions *auth.SessionManager, resolver Resolver, logger Logger)
 					// Capture request data before detaching: the request and its URL may
 					// be reused or mutated after the handler returns.
 					method := r.Method
-					requestURI := r.URL.RequestURI()
+					requestURI := visitRequestURI(r)
 					go notifyVisit(resolver, logger, session, method, requestURI)
 				}
 			}
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func visitRequestURI(r *http.Request) string {
+	if r.URL.Path == "/a/access-request" {
+		return r.URL.Path
+	}
+	return r.URL.RequestURI()
 }
 
 func notifyVisit(resolver Resolver, logger Logger, session auth.Session, method, requestURI string) {

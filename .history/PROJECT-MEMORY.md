@@ -1,5 +1,13 @@
 # Project Memory
 
+## Shared accountant access requests
+
+- **Current rule:** Only the authenticated accountant whose stored login equals the hardcoded `viktorprogger@gmail.com` in `internal/web/accountant/handler.go` sees the voluntary access-request banner. Accepted emails are stored as distinct rows in `/data/accountant-access-requests.csv` with exactly `email,sent`; storage is process-locally locked, atomically rewritten, and fail-closed when the mount is missing or malformed. Telegram notification is asynchronous and at-least-once, with startup, immediate, and hourly retries; `sent` changes only after successful delivery.
+- **Why:** The shared login cannot reliably identify individuals, while requests must survive Telegram outages and container recreation without changing existing access or automatically creating accounts/copying data.
+- **Authority:** [ADR 013 — accountant access request persistence and notification](../docs/adr/013-accountant-access-requests.md), [`internal/accessrequest`](../internal/accessrequest), [`../buh_prod/compose.yaml`](../../buh_prod/compose.yaml), and the [production migration runbook](../../buh_prod/docs/production-migration-runbook.md).
+- **History:** [Accountant access requests](2026-10-25-accountant-access-requests.md).
+- **Revisit:** Reconsider the CSV and single-replica boundary if volume, replication, exactly-once delivery, or automated account/data ownership becomes a requirement. Keep account creation and data-copy decisions manual until the ownership policy is explicit.
+
 ## Production deployment orchestration
 
 - **Current rule:** The application workflow publishes the immutable production image and participates in GitHub Actions automatic reconciliation: weekday eligibility is `20:00–21:59 Europe/Belgrade`, weekend pushes are unrestricted, and `workflow_dispatch` is immediate. Telegram reports attempted deployment outcomes without changing workflow conclusions.

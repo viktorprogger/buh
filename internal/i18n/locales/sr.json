@@ -2,6 +2,12 @@
   "app.title": {
     "other": "Паушалне уплатнице"
   },
+  "access_request.title": { "other": "Затражите посебан налог рачуновође" },
+  "access_request.description": { "other": "Унесите имејл како би оператер размотрио захтев." },
+  "access_request.email": { "other": "Имејл адреса" },
+  "access_request.submit": { "other": "Пошаљи захтев" },
+  "access_request.success": { "other": "Захтев је сачуван. Можете унети другу адресу." },
+  "access_request.another": { "other": "Унесите другу адресу" },
   "nav.entrepreneurs": {
     "other": "Предузетници"
   },

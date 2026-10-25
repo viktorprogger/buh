@@ -2,6 +2,12 @@
   "app.title": {
     "other": "Tax Payments"
   },
+  "access_request.title": { "other": "Request a separate accountant account" },
+  "access_request.description": { "other": "Enter your email so the operator can review your request." },
+  "access_request.email": { "other": "Email address" },
+  "access_request.submit": { "other": "Submit request" },
+  "access_request.success": { "other": "Request saved. You can enter another address." },
+  "access_request.another": { "other": "Enter another address" },
   "nav.entrepreneurs": {
     "other": "Entrepreneurs"
   },

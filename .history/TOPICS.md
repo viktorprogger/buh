@@ -1,5 +1,9 @@
 # Task Topics
 
+## Accountant access requests
+
+- [Accountant access requests](2026-10-25-accountant-access-requests.md)
+
 ## Operations and observability
 
 - [Container output for visit logging](2026-09-11-container-visit-logging.md)

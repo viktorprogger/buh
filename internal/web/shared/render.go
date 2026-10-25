@@ -58,6 +58,11 @@ func cloneWithT(tmpl *template.Template, r *http.Request) *template.Template {
 func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl *template.Template, data any) {
 	t := cloneWithT(tmpl, r)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if v := AccessRequestFromContext(r.Context()); v.Show {
+		if m, ok := data.(map[string]any); ok {
+			m["AccessRequest"] = v
+		}
+	}
 	if notice := NoticeFromContext(r.Context()); notice != "" {
 		l := i18n.FromContext(r.Context())
 		if m, ok := data.(map[string]any); ok {

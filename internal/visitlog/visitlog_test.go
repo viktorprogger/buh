@@ -89,6 +89,30 @@ func TestMiddlewareLogsExactMessageAndPreservesResponse(t *testing.T) {
 	}
 }
 
+func TestMiddlewareRedactsAccessRequestQueryFromVisitLog(t *testing.T) {
+	sessions := auth.NewSessionManager([]byte("12345678901234567890123456789012"), []byte("abcdefghijklmnopqrstuvwxzy123456"))
+	started := make(chan struct{})
+	logger := &fakeLogger{started: started}
+	h := Middleware(sessions, fakeResolver{login: "a@example.test"}, logger)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+
+	r := requestWithSession(t, sessions, "/a/access-request?email=submitted@example.test", auth.Session{UserType: auth.UserTypeAccountant, UserID: "id"})
+	h.ServeHTTP(httptest.NewRecorder(), r)
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("visit was not logged")
+	}
+
+	if messages := logger.messagesSnapshot(); len(messages) != 1 || messages[0] != "#buh #visited a@example.test\nGET /a/access-request" {
+		t.Fatalf("messages: %#v", messages)
+	}
+	if strings.Contains(logger.messagesSnapshot()[0], "submitted@example.test") {
+		t.Fatal("visit log contains submitted access-request email")
+	}
+}
+
 func TestMiddlewareDoesNotWaitForLogging(t *testing.T) {
 	sessions := auth.NewSessionManager([]byte("12345678901234567890123456789012"), []byte("abcdefghijklmnopqrstuvwxzy123456"))
 	started := make(chan struct{})

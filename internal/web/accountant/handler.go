@@ -1,10 +1,12 @@
 package accountant
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 
+	"buh/internal/accessrequest"
 	acctcore "buh/internal/accountant"
 	"buh/internal/auth"
 	"buh/internal/entrepreneur"
@@ -20,18 +22,19 @@ import (
 )
 
 type Handler struct {
-	sessions          *auth.SessionManager
-	accountants       *acctcore.Repo
-	entrepreneurs     *entrepreneur.Repo
-	slips             *sliprecord.Repo
-	slipHistory       *sliphistory.Repo
-	slipMerges        *slipmerge.Repo
-	kpoBooks          *kpo.Repo
-	uploadQueue       *uploadqueue.Repo
-	entrepreneurUsers *entrepreneuruser.Repo
-	invitations       *invitation.Repo
-	invoices          *invoice.Repo
+	sessions           *auth.SessionManager
+	accountants        *acctcore.Repo
+	entrepreneurs      *entrepreneur.Repo
+	slips              *sliprecord.Repo
+	slipHistory        *sliphistory.Repo
+	slipMerges         *slipmerge.Repo
+	kpoBooks           *kpo.Repo
+	uploadQueue        *uploadqueue.Repo
+	entrepreneurUsers  *entrepreneuruser.Repo
+	invitations        *invitation.Repo
+	invoices           *invoice.Repo
 	tmpl              shared.Templates
+	accessRequests     *accessrequest.Service
 }
 
 func NewHandler(
@@ -47,7 +50,12 @@ func NewHandler(
 	invitations *invitation.Repo,
 	invoices *invoice.Repo,
 	tmpl shared.Templates,
+	access ...*accessrequest.Service,
 ) *Handler {
+	var accessService *accessrequest.Service
+	if len(access) > 0 {
+		accessService = access[0]
+	}
 	return &Handler{
 		sessions:          sessions,
 		accountants:       accountants,
@@ -61,7 +69,22 @@ func NewHandler(
 		invitations:       invitations,
 		invoices:          invoices,
 		tmpl:              tmpl,
+		accessRequests:    accessService,
 	}
+}
+
+const accessRequestAccountantEmail = "viktorprogger@gmail.com"
+
+func shouldShowAccessRequestBanner(email string) bool {
+	return email == accessRequestAccountantEmail
+}
+
+func (h *Handler) isAccessRequestAccountant(r *http.Request, id uuid.UUID) bool {
+	if h.accountants == nil {
+		return false
+	}
+	accountant, err := h.accountants.FindByID(r.Context(), id.String())
+	return err == nil && shouldShowAccessRequestBanner(accountant.Email)
 }
 
 func (h *Handler) accountantFromSession(r *http.Request) (uuid.UUID, bool) {
@@ -111,6 +134,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /slips/{id}/pdf", h.handleSlipPDF)
 	mux.HandleFunc("/", h.handleAccountantIndex)
 	mux.HandleFunc("POST /notices/dismiss", h.handleDismissNotice)
+	mux.HandleFunc("POST /access-request", h.handleAccessRequest)
 	return h.noticeMiddleware(mux)
 }
 
@@ -120,9 +144,30 @@ func (h *Handler) noticeMiddleware(next http.Handler) http.Handler {
 			if notice, err := h.accountants.GetPendingNotice(r.Context(), accountantID.String()); err == nil && notice != "" {
 				r = r.WithContext(shared.WithNotice(r.Context(), notice))
 			}
+			if h.accessRequests != nil && h.isAccessRequestAccountant(r, accountantID) {
+				r = r.WithContext(shared.WithAccessRequest(r.Context(), shared.AccessRequestView{Show: true, Success: r.URL.Query().Get("access_submitted") == "1"}))
+			}
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (h *Handler) handleAccessRequest(w http.ResponseWriter, r *http.Request) {
+	_, ok := h.accountantFromSession(r)
+	if !ok || h.accessRequests == nil {
+		h.renderError(w, r, http.StatusForbidden)
+		return
+	}
+	if err := h.accessRequests.Store.Append(r.PostFormValue("email")); err != nil {
+		code := http.StatusInternalServerError
+		if errors.Is(err, accessrequest.ErrInvalidEmail) {
+			code = http.StatusBadRequest
+		}
+		http.Error(w, "invalid or unavailable request", code)
+		return
+	}
+	h.accessRequests.Notify()
+	http.Redirect(w, r, "/a/?access_submitted=1", http.StatusSeeOther)
 }
 
 func (h *Handler) handleDismissNotice(w http.ResponseWriter, r *http.Request) {

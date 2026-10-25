@@ -2,6 +2,12 @@
   "app.title": {
     "other": "Налоговые платежи"
   },
+  "access_request.title": { "other": "Запросить отдельную учетную запись бухгалтера" },
+  "access_request.description": { "other": "Введите электронную почту для рассмотрения оператором." },
+  "access_request.email": { "other": "Электронная почта" },
+  "access_request.submit": { "other": "Отправить запрос" },
+  "access_request.success": { "other": "Запрос сохранен. Можно ввести другой адрес." },
+  "access_request.another": { "other": "Ввести другой адрес" },
   "nav.entrepreneurs": {
     "other": "Предприниматели"
   },
