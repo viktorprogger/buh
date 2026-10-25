@@ -1,5 +1,13 @@
 # Project Memory
 
+## Production deployment orchestration
+
+- **Current rule:** The application workflow publishes the immutable production image and participates in GitHub Actions automatic reconciliation: weekday eligibility is `20:00–21:59 Europe/Belgrade`, weekend pushes are unrestricted, and `workflow_dispatch` is immediate. Telegram reports attempted deployment outcomes without changing workflow conclusions.
+- **Why:** Deployment timing and effective-state deduplication are owned by the production workflow/server boundary while image publication remains in this repository.
+- **Authority:** [CI and CD workflow](../.github/workflows/ci-cd.yml) and the production repository's deployment ADR.
+- **History:** The deployment reconciliation record is maintained in `buh_prod/.history/`.
+- **Revisit:** Reconsider if deployment ownership moves to a single cross-repository coordinator or exact-time scheduling becomes required.
+
 ## Payment slip download filenames
 
 - **Current rule:** Single slip PDFs and PDFs inside bulk archives use `uplatnica-<official-entrepreneur-slug>-<purpose-slug>.pdf`; bulk responses use `uplatnice-<official-entrepreneur-slug>.zip`. Managed entrepreneur `Name` is authoritative, with payer/`slip` fallback for direct unpaired slips.
