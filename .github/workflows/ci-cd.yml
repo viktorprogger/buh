@@ -26,19 +26,15 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
-
       - name: Run Go tests
         run: go test ./...
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to GHCR
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/login-action@v3
@@ -46,7 +42,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build production image
         uses: docker/build-push-action@v6
         with:
@@ -60,52 +55,49 @@ jobs:
             ghcr.io/viktorprogger/buh:sha-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
       - name: Build summary
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          WORKFLOW_SHA: ${{ github.sha }}
         run: |
           {
             echo "### Published image"
             echo
             echo "ghcr.io/viktorprogger/buh:main"
             echo
-            echo "Source commit: ${{ github.sha }}"
+            echo "Source commit: $WORKFLOW_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: build
     if: >-
-      always() &&
-      (github.event_name == 'push' ||
-       github.event_name == 'schedule' ||
-       github.event_name == 'workflow_dispatch') &&
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
       (needs.build.result == 'success' || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     steps:
-      - name: Check Europe/Belgrade deployment window
+      - name: Check automatic eligibility (Europe/Belgrade)
         id: window
+        env:
+          WORKFLOW_EVENT_NAME: ${{ github.event_name }}
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "allowed=true" >> "$GITHUB_OUTPUT"
-            echo "automatic=false" >> "$GITHUB_OUTPUT"
-            echo "Manual deployment: window check bypassed"
-            exit 0
+          echo "allowed=false" >> "$GITHUB_OUTPUT"
+          if [[ "$WORKFLOW_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"; echo "Manual deployment is eligible at any time"; exit 0
           fi
-
-          hour="$(TZ=Europe/Belgrade date +%H)"
-          hour="$((10#$hour))"
-          echo "automatic=true" >> "$GITHUB_OUTPUT"
-          if (( hour >= 20 && hour < 22 )); then
+          read -r weekday hour offset < <(TZ=Europe/Belgrade date '+%u %H %z')
+          hour=$((10#$hour))
+          if (( weekday >= 6 || (hour >= 20 && hour < 22) )); then
             echo "allowed=true" >> "$GITHUB_OUTPUT"
-            echo "Deployment window is open: $(TZ=Europe/Belgrade date)"
+            echo "Eligible local time: weekday=$weekday hour=$hour offset=$offset"
           else
-            echo "allowed=false" >> "$GITHUB_OUTPUT"
-            echo "Deployment deferred: current Europe/Belgrade time is $(TZ=Europe/Belgrade date)"
+            echo "Deployment deferred: weekday=$weekday hour=$hour offset=$offset"
           fi
 
       - name: Deploy through the server-side locked script
+        id: deploy
         if: steps.window.outputs.allowed == 'true'
+        continue-on-error: true
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -115,29 +107,82 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         shell: bash
         run: |
-          set -euo pipefail
-          : "${DEPLOY_HOST:?missing DEPLOY_HOST}"
-          : "${DEPLOY_USER:?missing DEPLOY_USER}"
-          : "${DEPLOY_PORT:?missing DEPLOY_PORT}"
-          : "${DEPLOY_PATH:?missing DEPLOY_PATH}"
-          : "${DEPLOY_SSH_KEY:?missing DEPLOY_SSH_KEY}"
-          : "${DEPLOY_KNOWN_HOSTS:?missing DEPLOY_KNOWN_HOSTS}"
-
-          key="$RUNNER_TEMP/buh-deploy-key"
-          known_hosts="$RUNNER_TEMP/buh-known-hosts"
-          umask 077
-          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key"
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$known_hosts"
-
-          if [[ "${{ steps.window.outputs.automatic }}" == "true" ]]; then
-            printf -v remote_command 'cd -- %q && ./scripts/deploy.sh deploy --automatic' "$DEPLOY_PATH"
+          set -u
+          echo "attempted=true" >> "$GITHUB_OUTPUT"
+          echo "failure_context=failure=runner_setup" >> "$GITHUB_OUTPUT"
+          : "${DEPLOY_HOST:?missing DEPLOY_HOST}"; : "${DEPLOY_USER:?missing DEPLOY_USER}"
+          : "${DEPLOY_PORT:?missing DEPLOY_PORT}"; : "${DEPLOY_PATH:?missing DEPLOY_PATH}"
+          : "${DEPLOY_SSH_KEY:?missing DEPLOY_SSH_KEY}"; : "${DEPLOY_KNOWN_HOSTS:?missing DEPLOY_KNOWN_HOSTS}"
+          key="$RUNNER_TEMP/buh-deploy-key"; known_hosts="$RUNNER_TEMP/buh-known-hosts"; output="$RUNNER_TEMP/deploy-output"
+          umask 077; printf '%s\n' "$DEPLOY_SSH_KEY" > "$key"; printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$known_hosts"
+          printf -v remote_command 'cd -- %q && ./scripts/deploy.sh deploy' "$DEPLOY_PATH"
+          set +e
+          ssh -i "$key" -p "$DEPLOY_PORT" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" "$remote_command" >"$output" 2>&1
+          rc=$?
+          set -e
+          cat "$output"
+          result="$(sed -n 's/^DEPLOY_RESULT=//p' "$output" | tail -n 1)"
+          config_ref="$(sed -n 's/^DEPLOY_CONFIG_REF=//p' "$output" | tail -n 1)"
+          image="$(sed -n 's/^DEPLOY_IMAGE=//p' "$output" | tail -n 1)"
+          if [[ "$config_ref" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "config_ref=$config_ref" >> "$GITHUB_OUTPUT"
           else
-            printf -v remote_command 'cd -- %q && ./scripts/deploy.sh deploy' "$DEPLOY_PATH"
+            config_ref=""
           fi
-          ssh -i "$key" \
-            -p "$DEPLOY_PORT" \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$known_hosts" \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
-            "$remote_command"
+          if [[ "$image" =~ ^ghcr\.io/viktorprogger/buh@sha256:[0-9a-f]{64}$ ]]; then
+            echo "image=$image" >> "$GITHUB_OUTPUT"
+          else
+            image=""
+          fi
+          (( rc == 0 )) || result=failed
+          if [[ "$result" != deployed && "$result" != no-op ]]; then
+            result=failed
+            if [[ "$rc" =~ ^[0-9]+$ && "$rc" -ne 0 ]]; then
+              echo "failure_context=ssh_exit=$rc" >> "$GITHUB_OUTPUT"
+            else
+              echo "failure_context=failure=invalid_result" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+          echo "outcome=$result" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+
+      - name: Notify Telegram (non-authoritative)
+        if: always() && steps.deploy.outputs.attempted == 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
+          TELEGRAM_THREAD_ID: ${{ vars.TELEGRAM_THREAD_ID }}
+          DEPLOY_OUTCOME: ${{ steps.deploy.outputs.outcome }}
+          DEPLOY_CONFIG_REF: ${{ steps.deploy.outputs.config_ref }}
+          DEPLOY_IMAGE: ${{ steps.deploy.outputs.image }}
+          DEPLOY_FAILURE_CONTEXT: ${{ steps.deploy.outputs.failure_context }}
+          WORKFLOW_REPOSITORY: ${{ github.repository }}
+          WORKFLOW_EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_REF_NAME: ${{ github.ref_name }}
+          WORKFLOW_SHA: ${{ github.sha }}
+          WORKFLOW_SERVER_URL: ${{ github.server_url }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -u
+          outcome="${DEPLOY_OUTCOME:-}"; [[ -n "$outcome" ]] || outcome=failed
+          if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" ]]; then
+            echo '::warning::Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing'; exit 0
+          fi
+          text="Deployment $outcome | repo=$WORKFLOW_REPOSITORY | event=$WORKFLOW_EVENT_NAME | ref=$WORKFLOW_REF_NAME | sha=$WORKFLOW_SHA | workflow=$WORKFLOW_SERVER_URL/$WORKFLOW_REPOSITORY/actions/runs/$WORKFLOW_RUN_ID"
+          [[ "${DEPLOY_CONFIG_REF:-}" =~ ^[0-9a-f]{40}$ ]] && text+=" | config=$DEPLOY_CONFIG_REF"
+          [[ "${DEPLOY_IMAGE:-}" =~ ^ghcr\.io/viktorprogger/buh@sha256:[0-9a-f]{64}$ ]] && text+=" | image=$DEPLOY_IMAGE"
+          [[ "${DEPLOY_FAILURE_CONTEXT:-}" =~ ^(ssh_exit=[0-9]+|failure=[a-z_]+)$ ]] && text+=" | $DEPLOY_FAILURE_CONTEXT"
+          args=(-d "chat_id=$TELEGRAM_CHAT_ID" --data-urlencode "text=$text")
+          [[ -n "${TELEGRAM_THREAD_ID:-}" ]] && args+=(-d "message_thread_id=$TELEGRAM_THREAD_ID")
+          curl --fail --silent --show-error --max-time 15 -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" "${args[@]}" >/dev/null \
+            || echo '::warning::Telegram notification failed; deployment result is unchanged'
+
+      - name: Preserve deployment conclusion
+        if: always() && steps.deploy.outputs.attempted == 'true'
+        env:
+          DEPLOY_OUTCOME: ${{ steps.deploy.outputs.outcome }}
+        shell: bash
+        run: |
+          [[ "$DEPLOY_OUTCOME" == deployed || "$DEPLOY_OUTCOME" == no-op ]] || exit 1
