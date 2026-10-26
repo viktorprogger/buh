@@ -25,3 +25,7 @@ Frontend is built using the default go templating.
 For styling Tailwind V4 is used, and we should always follow the Tailwind best practices.
 For dynamic data load HTMX should always be used.
 
+## Translatins
+
+All the UI texts should be displayed via the i18n package. The transations themselves are in `internal/i18n/locales`.
+Currently we support 3 languages: Serbian, English and Russian. The primary one is Serbian, as the service is designed primarily for Serbian accountants. All UI copy must be perfectly clear and unambiguous for the target audience of accountants approximately 20–70 years old; audience comprehension and precise meaning take priority over stylistic preferences, including whether a phrase sounds formal or bureaucratic. Serbian copy should be written in natural Serbian Cyrillic. English and Russian are translations, but they should sound natural too: prefer translation by meaning over literal translation, while preserving the same unambiguous terminology and distinctions.
