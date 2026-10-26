@@ -256,7 +256,7 @@
     "other": "KPO — Income Book"
   },
   "kpo.rsd_note": {
-    "other": "Amounts in the table are RSD; the applied rate is shown next to the currency."
+    "other": "Amounts in the table are in RSD; the original foreign-currency amount is shown below."
   },
   "kpo.rate_tooltip": {
     "other": "Official NBS exchange rate for {{.Currency}} on {{.Date}}"
@@ -307,13 +307,16 @@
     "other": "Currency"
   },
   "kpo.col_product": {
-    "other": "Goods sales"
+    "other": "Goods sales, RSD"
   },
   "kpo.col_service": {
-    "other": "Services"
+    "other": "Services, RSD"
   },
   "kpo.col_total": {
-    "other": "Total"
+    "other": "Total, RSD"
+  },
+  "kpo.original_amount_tooltip": {
+    "other": "Original amount before conversion to RSD. The KPO PDF contains only the RSD amount."
   },
   "kpo.advance_tooltip": {
     "other": "This invoice is not counted in KPO"

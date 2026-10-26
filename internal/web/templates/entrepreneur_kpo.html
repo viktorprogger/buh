@@ -104,7 +104,7 @@
           <td class="px-3 py-2 text-center text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
           <td class="px-3 py-2 text-right font-mono text-gray-400">—</td>
-          <td class="px-3 py-2 text-right font-mono text-gray-500">{{printf "%.2f" .TotalRSD}}</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-500 whitespace-nowrap">{{printf "%.2f" .TotalRSD}}</td>
           {{if not $.CurrentBook.IsFinalized}}<td></td>{{end}}
         </tr>
         {{else}}
@@ -148,7 +148,8 @@
             {{end}}
           </td>
           <td class="px-3 py-2 text-right">
-            {{if eq .RateStatus "pending"}}<span class="view-val font-mono text-amber-700">—</span>{{else}}<span class="view-val font-mono text-gray-800">{{printf "%.2f" .ProductRevenue}}</span>{{end}}
+            {{if eq .RateStatus "pending"}}<span class="view-val font-mono text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="view-val font-mono text-gray-800 whitespace-nowrap">{{printf "%.2f" .ProductRevenue}}</span>{{end}}
+            {{if ne .Currency "RSD"}}<div class="view-val font-mono text-xs text-gray-500 whitespace-nowrap">{{printf "%.2f" .OriginalProductRevenue}} {{.Currency}}</div>{{end}}
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="product_revenue"
                    value="{{printf "%.2f" .OriginalProductRevenue}}" style="display:none"
@@ -156,14 +157,18 @@
             {{end}}
           </td>
           <td class="px-3 py-2 text-right">
-            {{if eq .RateStatus "pending"}}<span class="view-val font-mono text-amber-700">—</span>{{else}}<span class="view-val font-mono text-gray-800">{{printf "%.2f" .ServiceRevenue}}</span>{{end}}
+            {{if eq .RateStatus "pending"}}<span class="view-val font-mono text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="view-val font-mono text-gray-800 whitespace-nowrap">{{printf "%.2f" .ServiceRevenue}}</span>{{end}}
+            {{if ne .Currency "RSD"}}<div class="view-val font-mono text-xs text-gray-500 whitespace-nowrap">{{printf "%.2f" .OriginalServiceRevenue}} {{.Currency}}</div>{{end}}
             {{if not $.CurrentBook.IsFinalized}}
             <input form="edit-{{.EntryID}}" type="text" name="service_revenue"
                    value="{{printf "%.2f" .OriginalServiceRevenue}}" style="display:none"
                    class="edit-input w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary">
             {{end}}
           </td>
-          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">{{printf "%.2f" .EntryTotal}}</td>
+          <td class="px-3 py-2 text-right font-mono font-medium text-gray-900">
+            {{if eq .RateStatus "pending"}}<span class="view-val text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="view-val whitespace-nowrap">{{printf "%.2f" .EntryTotal}}</span>{{end}}
+            {{if ne .Currency "RSD"}}<div class="view-val text-xs text-gray-500 whitespace-nowrap"><span data-original-total data-original-product="{{printf "%.2f" .OriginalProductRevenue}}" data-original-service="{{printf "%.2f" .OriginalServiceRevenue}}"></span> {{.Currency}} <span data-original-amount-info tabindex="0" role="img" aria-label="{{T "kpo.original_amount_tooltip"}}" title="{{T "kpo.original_amount_tooltip"}}" class="cursor-help rounded text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-1 focus:ring-primary">ⓘ</span></div>{{end}}
+          </td>
           {{if not $.CurrentBook.IsFinalized}}
           <td class="px-2 py-2 text-center">
             <div class="view-actions flex gap-1 items-center justify-center">
@@ -195,9 +200,9 @@
           <td colspan="8" class="px-3 py-2 text-right text-xs text-amber-700 uppercase tracking-wide">{{T "kpo.pending_rate_badge"}}</td>
           {{else}}
           <td colspan="5" class="px-3 py-2 text-right text-xs text-gray-500 uppercase tracking-wide">{{T "kpo.totals"}}</td>
-          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalProduct}}</td>
-          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalService}}</td>
-          <td class="px-3 py-2 text-right font-mono">{{printf "%.2f" .TotalAll}}</td>
+          <td class="px-3 py-2 text-right font-mono whitespace-nowrap">{{printf "%.2f" .TotalProduct}}</td>
+          <td class="px-3 py-2 text-right font-mono whitespace-nowrap">{{printf "%.2f" .TotalService}}</td>
+          <td class="px-3 py-2 text-right font-mono whitespace-nowrap">{{printf "%.2f" .TotalAll}}</td>
           {{end}}
           {{if not .CurrentBook.IsFinalized}}<td></td>{{end}}
         </tr>
@@ -240,7 +245,7 @@
                    class="w-full rounded border border-gray-300 px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1 focus:ring-primary"
                    aria-label="{{T "kpo.field_service"}}">
           </td>
-          <td class="px-3 py-1 text-right font-mono text-sm font-medium text-gray-700 tabular-nums"
+          <td class="px-3 py-1 text-right font-mono text-sm font-medium text-gray-700 tabular-nums whitespace-nowrap"
               id="kpo-row-total">0.00</td>
           <td class="px-1 py-1">
             <button form="kpo-new" type="submit"
@@ -278,6 +283,9 @@
 </div>
 
 <script>
+document.querySelectorAll('[data-original-total]').forEach(function(el) {
+  el.textContent = (parseFloat(el.dataset.originalProduct) + parseFloat(el.dataset.originalService)).toFixed(2);
+});
 function rowEdit(id, on) {
   var row = document.querySelector('tr[data-id="' + id + '"]');
   if (!row) return;

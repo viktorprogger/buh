@@ -40,6 +40,14 @@
 - **History:** [In-app updates](2026-08-19-in-app-updates.md), [Trusted HTML for in-app update descriptions](2026-08-23-in-app-updates-html-content.md).
 - **Revisit:** Add a sanitizer or constrained content format before introducing admin/user-authored HTML; add a deliberate schema change if supported locales expand.
 
+## KPO web amount display
+
+- **Current rule:** KPO web tables show the converted RSD amount as the primary value and, for foreign-currency rows, the original amount with its currency code as a muted secondary value. Monetary headers identify RSD, and one localized tooltip beside the original total states that the official KPO PDF contains only the RSD amount; the PDF remains RSD-only.
+- **Why:** Inline secondary values preserve the compact accountant-facing table while making source amounts visible without confusing them with the official RSD ledger output.
+- **Authority:** [ADR 014 — KPO web display of original foreign-currency amounts](../docs/adr/014-kpo-original-amount-display.md), the KPO web templates, and the locale bundles.
+- **History:** [KPO original amount display](2026-10-26-kpo-original-amount-display.md).
+- **Revisit:** Reconsider if the official KPO representation or the web table's column structure changes.
+
 ## KPO currency conversion
 
 - **Current rule:** Non-RSD KPO and invoice amounts use the NBS historical middle rate for the operation date. Original amounts and applied snapshots are persisted; when NBS/cache data is unavailable, source data is saved with explicit `pending` status and retried on later relevant reads, never with a fallback rate. The shared currency picker renders its open menu as a body-level fixed overlay, repositioned on scroll and viewport changes.

@@ -180,3 +180,39 @@ test('tab key moves focus through KPO numeric entry fields', async ({ page }) =>
   await page.keyboard.press('Tab');
   await expect(page.locator('#kpo-service')).toBeFocused();
 });
+
+// ── 13. Original-amount display contract (seeded cache fixture) ─────────────
+test('shows converted RSD and original amounts without inventing pending RSD', async ({ page }) => {
+  await page.goto('/a/entrepreneurs/00000000-0000-0000-0000-000000000045');
+
+  await expect(page.getByRole('columnheader', { name: /RSD/ })).toHaveCount(3);
+
+  const foreign = page.getByRole('row').filter({ hasText: 'PW-EUR-1' });
+  await expect(foreign).toContainText(/587 ?500/);
+  await expect(foreign).toContainText(/235 ?000/);
+  await expect(foreign).toContainText(/5 ?000(?:[,.]00)? EUR/);
+  await expect(foreign).toContainText(/2 ?000(?:[,.]00)? EUR/);
+  await expect(foreign).toContainText('EUR');
+
+  const foreignRows = page.getByRole('row').filter({ hasText: /PW-EUR-1|PW-PENDING-1/ });
+  await expect(foreignRows).toHaveCount(2);
+  await expect(foreignRows.getByRole('img', { name: /Оригинални износ пре прерачунавања/ })).toHaveCount(2);
+  for (const row of await foreignRows.all()) {
+    await expect(row.getByRole('img', { name: /Оригинални износ пре прерачунавања/ })).toHaveCount(1);
+  }
+
+  const rsd = page.getByRole('row').filter({ hasText: 'PW-RSD-1' });
+  await expect(rsd).toContainText('300');
+  await expect(rsd).not.toContainText('EUR');
+  await expect(rsd.getByRole('img')).toHaveCount(0);
+
+  const pending = page.getByRole('row').filter({ hasText: 'PW-PENDING-1' });
+  await expect(pending).toContainText(/1234[,.]56/);
+  await expect(pending).toContainText('EUR');
+  await expect(pending).toContainText(/чека|pending/i);
+  await expect(pending).not.toContainText(/1[,.]?234[,.]?56 RSD/);
+
+  const total = foreign.getByText(/822 ?500/).first();
+  await expect(total).toBeVisible();
+  await expect(total).toHaveCSS('white-space', /nowrap|pre/);
+});

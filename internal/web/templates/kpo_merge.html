@@ -42,9 +42,9 @@
         <th class="px-4 py-2 text-left">{{T "kpo_merge.col_date"}}</th>
         <th class="px-4 py-2 text-left">{{T "kpo_merge.col_invoice"}}</th>
         <th class="px-4 py-2 text-left">{{T "kpo_merge.col_description"}}</th>
-        <th class="px-4 py-2 text-right">{{T "kpo_merge.col_product"}}</th>
-        <th class="px-4 py-2 text-right">{{T "kpo_merge.col_service"}}</th>
-        <th class="px-4 py-2 text-right">{{T "kpo_merge.col_total"}}</th>
+        <th class="px-4 py-2 text-right">{{T "kpo.col_product"}}</th>
+        <th class="px-4 py-2 text-right">{{T "kpo.col_service"}}</th>
+        <th class="px-4 py-2 text-right">{{T "kpo.col_total"}}</th>
         {{if not $.AccBook.IsFinalized}}<th class="px-4 py-2"></th>{{end}}
       </tr>
     </thead>
@@ -55,13 +55,18 @@
         <td class="px-4 py-2 text-gray-700">{{$e.CollectionDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-gray-800">{{$e.InvoiceNumber}}</td>
         <td class="px-4 py-2 text-gray-500 text-xs">{{$e.Description}}</td>
-        {{if $e.HasPendingRate}}
-        <td colspan="3" class="px-4 py-2 text-right font-mono text-amber-700">{{T "kpo.pending_rate_badge"}}</td>
-        {{else}}
-        <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ProductRevenue}}</td>
-        <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ServiceRevenue}}</td>
-        <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">{{printf "%.2f" $e.Total}}</td>
-        {{end}}
+        <td class="px-4 py-2 text-right">
+          {{if $e.HasPendingRate}}<span class="font-mono text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="font-mono text-gray-700 whitespace-nowrap">{{printf "%.2f" $e.ProductRevenue}}</span>{{end}}
+          {{if ne $e.Currency "RSD"}}<div class="font-mono text-xs text-gray-500 whitespace-nowrap">{{printf "%.2f" $e.OriginalProductRevenue}} {{$e.Currency}}</div>{{end}}
+        </td>
+        <td class="px-4 py-2 text-right">
+          {{if $e.HasPendingRate}}<span class="font-mono text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="font-mono text-gray-700 whitespace-nowrap">{{printf "%.2f" $e.ServiceRevenue}}</span>{{end}}
+          {{if ne $e.Currency "RSD"}}<div class="font-mono text-xs text-gray-500 whitespace-nowrap">{{printf "%.2f" $e.OriginalServiceRevenue}} {{$e.Currency}}</div>{{end}}
+        </td>
+        <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">
+          {{if $e.HasPendingRate}}<span class="text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="whitespace-nowrap">{{printf "%.2f" $e.Total}}</span>{{end}}
+          {{if ne $e.Currency "RSD"}}<div class="text-xs text-gray-500 whitespace-nowrap"><span data-original-total data-original-product="{{printf "%.2f" $e.OriginalProductRevenue}}" data-original-service="{{printf "%.2f" $e.OriginalServiceRevenue}}"></span> {{$e.Currency}} <span data-original-amount-info tabindex="0" role="img" aria-label="{{T "kpo.original_amount_tooltip"}}" title="{{T "kpo.original_amount_tooltip"}}" class="cursor-help rounded text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-1 focus:ring-primary">ⓘ</span></div>{{end}}
+        </td>
         {{if not $.AccBook.IsFinalized}}
         <td class="px-4 py-2 text-right">
           <form method="POST"
@@ -100,9 +105,9 @@
         <th class="px-4 py-2 text-left">{{T "kpo_merge.col_date"}}</th>
         <th class="px-4 py-2 text-left">{{T "kpo_merge.col_invoice"}}</th>
         <th class="px-4 py-2 text-left">{{T "kpo_merge.col_description"}}</th>
-        <th class="px-4 py-2 text-right">{{T "kpo_merge.col_product"}}</th>
-        <th class="px-4 py-2 text-right">{{T "kpo_merge.col_service"}}</th>
-        <th class="px-4 py-2 text-right">{{T "kpo_merge.col_total"}}</th>
+        <th class="px-4 py-2 text-right">{{T "kpo.col_product"}}</th>
+        <th class="px-4 py-2 text-right">{{T "kpo.col_service"}}</th>
+        <th class="px-4 py-2 text-right">{{T "kpo.col_total"}}</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
@@ -112,13 +117,18 @@
         <td class="px-4 py-2 text-gray-700">{{$e.CollectionDate.Format "02.01.2006."}}</td>
         <td class="px-4 py-2 text-gray-800">{{$e.InvoiceNumber}}</td>
         <td class="px-4 py-2 text-gray-500 text-xs">{{$e.Description}}</td>
-        {{if $e.HasPendingRate}}
-        <td colspan="3" class="px-4 py-2 text-right font-mono text-amber-700">{{T "kpo.pending_rate_badge"}}</td>
-        {{else}}
-        <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ProductRevenue}}</td>
-        <td class="px-4 py-2 text-right font-mono text-gray-700">{{printf "%.2f" $e.ServiceRevenue}}</td>
-        <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">{{printf "%.2f" $e.Total}}</td>
-        {{end}}
+        <td class="px-4 py-2 text-right">
+          {{if $e.HasPendingRate}}<span class="font-mono text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="font-mono text-gray-700 whitespace-nowrap">{{printf "%.2f" $e.ProductRevenue}}</span>{{end}}
+          {{if ne $e.Currency "RSD"}}<div class="font-mono text-xs text-gray-500 whitespace-nowrap">{{printf "%.2f" $e.OriginalProductRevenue}} {{$e.Currency}}</div>{{end}}
+        </td>
+        <td class="px-4 py-2 text-right">
+          {{if $e.HasPendingRate}}<span class="font-mono text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="font-mono text-gray-700 whitespace-nowrap">{{printf "%.2f" $e.ServiceRevenue}}</span>{{end}}
+          {{if ne $e.Currency "RSD"}}<div class="font-mono text-xs text-gray-500 whitespace-nowrap">{{printf "%.2f" $e.OriginalServiceRevenue}} {{$e.Currency}}</div>{{end}}
+        </td>
+        <td class="px-4 py-2 text-right font-mono font-semibold text-gray-900">
+          {{if $e.HasPendingRate}}<span class="text-amber-700 whitespace-nowrap">—</span>{{else}}<span class="whitespace-nowrap">{{printf "%.2f" $e.Total}}</span>{{end}}
+          {{if ne $e.Currency "RSD"}}<div class="text-xs text-gray-500 whitespace-nowrap"><span data-original-total data-original-product="{{printf "%.2f" $e.OriginalProductRevenue}}" data-original-service="{{printf "%.2f" $e.OriginalServiceRevenue}}"></span> {{$e.Currency}} <span data-original-amount-info tabindex="0" role="img" aria-label="{{T "kpo.original_amount_tooltip"}}" title="{{T "kpo.original_amount_tooltip"}}" class="cursor-help rounded text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-1 focus:ring-primary">ⓘ</span></div>{{end}}
+        </td>
       </tr>
       {{end}}
     </tbody>
@@ -128,5 +138,10 @@
   {{end}}
 </div>
 
+<script>
+document.querySelectorAll('[data-original-total]').forEach(function(el) {
+  el.textContent = (parseFloat(el.dataset.originalProduct) + parseFloat(el.dataset.originalService)).toFixed(2);
+});
+</script>
 {{end}}
 {{end}}

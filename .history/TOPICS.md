@@ -20,6 +20,7 @@
 
 ## KPO and accounting contracts
 
+- [KPO original amount display](2026-10-26-kpo-original-amount-display.md)
 - [Currency picker overlay positioning](2026-08-23-currency-picker-overlay.md)
 - [KPO book design](2026-06-28-kpo-book.md)
 - [KPO PDF export](2026-07-03-kpo-pdf-export.md)

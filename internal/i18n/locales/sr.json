@@ -256,7 +256,7 @@
     "other": "КПО — Књига прихода"
   },
   "kpo.rsd_note": {
-    "other": "Износи у табели су у RSD; примењени курс је приказан поред валуте."
+    "other": "Износи у табели су у RSD; оригинални износ у страној валути приказан је испод."
   },
   "kpo.rate_tooltip": {
     "other": "Званични курс НБС за {{.Currency}} на дан {{.Date}}"
@@ -307,13 +307,16 @@
     "other": "Валута"
   },
   "kpo.col_product": {
-    "other": "Продаја роба"
+    "other": "Продаја роба, RSD"
   },
   "kpo.col_service": {
-    "other": "Услуге"
+    "other": "Услуге, RSD"
   },
   "kpo.col_total": {
-    "other": "Укупно"
+    "other": "Укупно, RSD"
+  },
+  "kpo.original_amount_tooltip": {
+    "other": "Оригинални износ пре прерачунавања у RSD. У PDF-у КПО је само износ у RSD."
   },
   "kpo.advance_tooltip": {
     "other": "Ова фактура се не узима у обзир у КПО"
