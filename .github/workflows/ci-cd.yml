@@ -147,7 +147,9 @@ jobs:
           exit "$rc"
 
       - name: Notify Telegram (non-authoritative)
-        if: always() && steps.deploy.outputs.attempted == 'true'
+        if: >-
+          always() && steps.deploy.outputs.attempted == 'true' &&
+          steps.deploy.outputs.outcome != 'no-op'
         continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
