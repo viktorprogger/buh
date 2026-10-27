@@ -1,5 +1,6 @@
 # Task History
 
+- [2026-10-26 Access-request banner state](2026-10-26-access-request-banner-state.md) — Persists banner open state locally, keeps submitted requests compact after navigation/reload, and preserves the expanded correction flow
 - [2026-10-26 KPO original amount display](2026-10-26-kpo-original-amount-display.md) — Planned two-line web display of converted RSD and original foreign-currency amounts while keeping the official PDF RSD-only
 - [2026-10-25 Accountant access requests](2026-10-25-accountant-access-requests.md) — Gated voluntary email collection with persistent CSV storage, asynchronous Telegram retries, and a production `/data` volume
 - [2026-10-25 Production container runtime image](2026-10-25-production-container-runtime-image.md) — Multi-stage build keeps Go/Tailwind tooling in development while shipping only a stripped binary and required Debian runtime dependencies

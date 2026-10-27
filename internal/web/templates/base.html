@@ -30,33 +30,32 @@
 </header>
 {{end}}
 {{if .AccessRequest.Show}}
-<section class="mx-auto w-full max-w-5xl px-4 pt-4">
-<details open class="group overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xs">
-<summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition [&::-webkit-details-marker]:hidden {{if .AccessRequest.Success}}bg-emerald-50 hover:bg-emerald-100{{else}}bg-blue-50 hover:bg-blue-100{{end}}">
+<section class="mx-auto w-full max-w-5xl px-4 pt-4" data-access-request-section>
+<details open id="access-request" data-access-request data-server-success="{{if .AccessRequest.Success}}true{{else}}false{{end}}" class="group overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xs">
+<summary data-access-request-summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition [&::-webkit-details-marker]:hidden {{if .AccessRequest.Success}}bg-emerald-50 hover:bg-emerald-100{{else}}bg-blue-50 hover:bg-blue-100{{end}}">
   <span class="flex min-w-0 items-center gap-3">
-    {{if .AccessRequest.Success}}
-    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" aria-hidden="true">✓</span>
-    {{else}}
-    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+    <span data-access-request-success-icon class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700{{if .AccessRequest.Success}}{{else}} hidden{{end}}" aria-hidden="true">✓</span>
+    <span data-access-request-default-icon class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700{{if .AccessRequest.Success}} hidden{{end}}">
       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
         <circle cx="10" cy="8" r="4"></circle>
         <path d="M3 20a7 7 0 0 1 14 0"></path>
         <path d="M19 8v6M22 11h-6"></path>
       </svg>
     </span>
-    {{end}}
-    <span class="font-semibold leading-snug {{if .AccessRequest.Success}}text-emerald-900{{else}}text-slate-900{{end}}">{{if .AccessRequest.Success}}{{T "access_request.success"}}{{else}}{{T "access_request.title"}}{{end}}</span>
+    <span data-access-request-success-title class="font-semibold leading-snug text-emerald-900{{if .AccessRequest.Success}}{{else}} hidden{{end}}">{{T "access_request.success"}}</span>
+    <span data-access-request-default-title class="font-semibold leading-snug text-slate-900{{if .AccessRequest.Success}} hidden{{end}}">{{T "access_request.title"}}</span>
   </span>
   <svg class="h-5 w-5 shrink-0 text-slate-500 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
     <path d="m6 9 6 6 6-6"></path>
   </svg>
 </summary>
 <div class="border-t border-blue-100 px-5 py-5">
-{{if .AccessRequest.Success}}
+<div data-access-request-success-body{{if .AccessRequest.Success}}{{else}} hidden{{end}}>
 <div class="flex justify-start">
-  <button id="access-request-another" type="button" class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40" aria-controls="access-request-form" onclick="document.getElementById('access-request-form').hidden=false; this.hidden=true; document.getElementById('access-request-email').focus()">{{T "access_request.another"}}</button>
+  <button id="access-request-another" data-access-request-another type="button" class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40" aria-controls="access-request-form">{{T "access_request.another"}}</button>
 </div>
-{{else}}
+</div>
+<div data-access-request-default-body{{if .AccessRequest.Success}} hidden{{end}}>
 <p class="text-sm leading-6 text-slate-700">{{T "access_request.description"}}</p>
 <ul class="mt-3 grid gap-2 text-sm leading-6 text-slate-700 sm:grid-cols-3">
   <li class="flex gap-2"><span class="mt-1 text-blue-600" aria-hidden="true">✓</span><span>{{T "access_request.benefit_1"}}</span></li>
@@ -64,7 +63,7 @@
   <li class="flex gap-2"><span class="mt-1 text-blue-600" aria-hidden="true">✓</span><span>{{T "access_request.benefit_3"}}</span></li>
 </ul>
 <p class="mt-4 text-sm leading-6 text-slate-700">{{T "access_request.prompt"}}</p>
-{{end}}
+</div>
 <form id="access-request-form" method="POST" action="/a/access-request" class="mt-5 flex flex-col gap-3 sm:flex-row"{{if .AccessRequest.Success}} hidden{{end}}>
   <label for="access-request-email" class="sr-only">{{T "access_request.email"}}</label>
   <input id="access-request-email" type="email" name="email" required class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-xs outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="{{T "access_request.email"}}">
@@ -72,6 +71,7 @@
 </form>
 </div>
 </details></section>
+<script src="/static/access-request.js" defer></script>
 {{end}}
 <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
 {{if .Notice}}

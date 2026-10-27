@@ -2,6 +2,7 @@
 
 ## Accountant access requests
 
+- [Access-request banner state](2026-10-26-access-request-banner-state.md)
 - [Accountant access requests](2026-10-25-accountant-access-requests.md)
 
 ## Operations and observability
