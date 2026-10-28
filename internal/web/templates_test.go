@@ -44,7 +44,7 @@ func TestAccessRequestBannerPersistsItsStateInTheBrowser(t *testing.T) {
 	}
 }
 
-func TestAccessRequestStateScriptUsesLocalStorageAndToggleEvents(t *testing.T) {
+func TestAccessRequestStateScriptUsesLocalStorageAndResetsSubmittedState(t *testing.T) {
 	body, err := os.ReadFile("static/access-request.js")
 	if err != nil {
 		t.Fatal(err)
@@ -57,6 +57,11 @@ func TestAccessRequestStateScriptUsesLocalStorageAndToggleEvents(t *testing.T) {
 		`data-access-request`,
 		`addEventListener('toggle'`,
 		`data-access-request-another`,
+		`history.replaceState`,
+		`access_submitted`,
+		`state.submitted = false;
+        state.editing = false;
+        state.open = true;`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("access request script is missing %q", want)

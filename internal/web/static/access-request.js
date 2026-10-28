@@ -34,6 +34,14 @@
     if (element) element.classList.toggle('hidden', hidden);
   }
 
+  function clearSubmissionQuery() {
+    if (!window.history || !window.history.replaceState) return;
+    var url = new URL(window.location.href);
+    if (url.searchParams.get('access_submitted') !== '1') return;
+    url.searchParams.delete('access_submitted');
+    window.history.replaceState(window.history.state, document.title, url.pathname + url.search + url.hash);
+  }
+
   function applyState(elements, state, compact) {
     var success = state.submitted;
 
@@ -111,9 +119,10 @@
 
     if (elements.another) {
       elements.another.addEventListener('click', function () {
-        state.submitted = true;
-        state.editing = true;
+        state.submitted = false;
+        state.editing = false;
         state.open = true;
+        clearSubmissionQuery();
         writeState(state);
         applyState(elements, state, false);
         if (elements.email) elements.email.focus();

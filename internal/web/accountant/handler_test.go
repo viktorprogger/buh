@@ -44,7 +44,7 @@ func authenticatedAccessRequest(t *testing.T, h *Handler, accountantID uuid.UUID
 }
 
 func TestShouldShowAccessRequestBannerOnlyForHardcodedEmail(t *testing.T) {
-	if !shouldShowAccessRequestBanner("viktorprogger@gmail.com") {
+	if !shouldShowAccessRequestBanner("velibor.begovic@gmail.com") {
 		t.Fatal("expected the hardcoded accountant email to show the banner")
 	}
 	if shouldShowAccessRequestBanner("someone@example.com") {

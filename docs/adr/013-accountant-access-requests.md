@@ -26,7 +26,7 @@ Use a process-local locked CSV store at `/data/accountant-access-requests.csv` w
 
 A single in-process notifier retries every unsent row after startup, immediately after a successful append, and hourly. It sets `sent=true` only after a successful Telegram API response. Telegram is at-least-once: a crash after delivery and before the CSV rewrite may produce a duplicate notification. Missing Telegram configuration leaves persisted rows retryable and emits a redacted warning.
 
-The banner is rendered only when the authenticated accountant's stored login equals the hardcoded `viktorprogger@gmail.com` value in `internal/web/accountant/handler.go`. The access-request POST remains under the existing authenticated accountant route. Production mounts a pre-created host directory at `/data` with Compose host-path creation disabled. Account creation, invitations, password handling, email delivery, data copying, and multi-replica coordination are outside this boundary.
+The banner is rendered only when the authenticated accountant's stored login equals the hardcoded `velibor.begovic@gmail.com` value in `internal/web/accountant/handler.go`. The access-request POST remains under the existing authenticated accountant route. Production mounts a pre-created host directory at `/data` with Compose host-path creation disabled. Account creation, invitations, password handling, email delivery, data copying, and multi-replica coordination are outside this boundary.
 
 ## Consequences
 

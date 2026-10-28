@@ -22,19 +22,19 @@ import (
 )
 
 type Handler struct {
-	sessions           *auth.SessionManager
-	accountants        *acctcore.Repo
-	entrepreneurs      *entrepreneur.Repo
-	slips              *sliprecord.Repo
-	slipHistory        *sliphistory.Repo
-	slipMerges         *slipmerge.Repo
-	kpoBooks           *kpo.Repo
-	uploadQueue        *uploadqueue.Repo
-	entrepreneurUsers  *entrepreneuruser.Repo
-	invitations        *invitation.Repo
-	invoices           *invoice.Repo
+	sessions          *auth.SessionManager
+	accountants       *acctcore.Repo
+	entrepreneurs     *entrepreneur.Repo
+	slips             *sliprecord.Repo
+	slipHistory       *sliphistory.Repo
+	slipMerges        *slipmerge.Repo
+	kpoBooks          *kpo.Repo
+	uploadQueue       *uploadqueue.Repo
+	entrepreneurUsers *entrepreneuruser.Repo
+	invitations       *invitation.Repo
+	invoices          *invoice.Repo
 	tmpl              shared.Templates
-	accessRequests     *accessrequest.Service
+	accessRequests    *accessrequest.Service
 }
 
 func NewHandler(
@@ -73,7 +73,7 @@ func NewHandler(
 	}
 }
 
-const accessRequestAccountantEmail = "viktorprogger@gmail.com"
+const accessRequestAccountantEmail = "velibor.begovic@gmail.com"
 
 func shouldShowAccessRequestBanner(email string) bool {
 	return email == accessRequestAccountantEmail
